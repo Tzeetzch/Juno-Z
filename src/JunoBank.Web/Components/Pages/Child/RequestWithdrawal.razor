@@ -1,0 +1,178 @@
+@page "/child/request-withdrawal"
+@attribute [Authorize(Roles = "Child")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@inject CustomAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>Request Money</PageTitle>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+
+    <MudText Typo="Typo.h4" Style="margin-bottom: 2rem; text-align: center;">
+        💰 Request Money
+    </MudText>
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
+            @_errorMessage
+        </MudAlert>
+    }
+
+    @if (_submitted)
+    {
+        <MudAlert Severity="Severity.Success" Class="mb-4">
+            <MudText Typo="Typo.h6">Request Sent! ✅</MudText>
+            <MudText Typo="Typo.body2">
+                Mom or Dad will review your request soon!
+            </MudText>
+        </MudAlert>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   OnClick="GoBackToDashboard">
+            Back to My Piggy Bank
+        </MudButton>
+    }
+    else
+    {
+        <div class="neu-card" style="padding: 2rem;">
+            <EditForm Model="_model" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    How much money do you want? 🤔
+                </MudText>
+
+                <MudNumericField @bind-Value="_model.Amount"
+                                 Label="Amount"
+                                 Variant="Variant.Outlined"
+                                 Adornment="Adornment.Start"
+                                 AdornmentText="€"
+                                 Min="0.01m"
+                                 Max="1000m"
+                                 Step="0.01m"
+                                 Required="true"
+                                 HelperText="How much? (Max €1000)" />
+
+                <MudTextField @bind-Value="_model.Reason"
+                              Label="What do you want it for?"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              Required="true"
+                              MaxLength="500"
+                              Counter="500"
+                              Class="mt-4"
+                              HelperText="Tell Mom or Dad why you need the money"
+                              Placeholder="For candy, toys, etc." />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Class="mt-6"
+                           Disabled="_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Sending...</span>
+                    }
+                    else
+                    {
+                        <span>Ask Mom or Dad</span>
+                    }
+                </MudButton>
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           FullWidth="true"
+                           Class="mt-2"
+                           OnClick="GoBackToDashboard"
+                           Disabled="_isSubmitting">
+                    Cancel
+                </MudButton>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private WithdrawalRequestModel _model = new();
+    private bool _isSubmitting = false;
+    private bool _submitted = false;
+    private string _errorMessage = string.Empty;
+    private int _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+
+        // Verify session exists and user is a child
+        if (session == null || session.Role != UserRole.Child)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _userId = session.UserId;
+    }
+
+    private async Task HandleSubmit()
+    {
+        // Safety check
+        if (_userId == 0)
+        {
+            _errorMessage = "Invalid user session. Please log in again.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            await UserService.CreateMoneyRequestAsync(
+                _userId,
+                _model.Amount,
+                RequestType.Withdrawal,
+                _model.Reason
+            );
+
+            _submitted = true;
+        }
+        catch (ArgumentException ex)
+        {
+            // User-friendly validation errors
+            _errorMessage = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            // Generic error for unexpected issues
+            _errorMessage = "Oops! Something went wrong. Please try again.";
+            Console.WriteLine($"Error creating request: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void GoBackToDashboard()
+    {
+        Navigation.NavigateTo("/child");
+    }
+
+    public class WithdrawalRequestModel
+    {
+        public decimal Amount { get; set; } = 0.00m;  // Start empty, force intentional input
+        public string Reason { get; set; } = string.Empty;
+    }
+}

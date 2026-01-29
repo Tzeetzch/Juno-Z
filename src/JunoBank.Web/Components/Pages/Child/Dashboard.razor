@@ -6,6 +6,7 @@
 @using JunoBank.Web.Components.Shared
 @inject CustomAuthStateProvider AuthProvider
 @inject IUserService UserService
+@inject NavigationManager Navigation
 
 <PageTitle>My Piggy Bank</PageTitle>
 
@@ -37,6 +38,17 @@
             <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary); margin-top: 1rem;">
                 🐷 Piggy Bank Balance
             </MudText>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="@(() => Navigation.NavigateTo("/child/request-withdrawal"))">
+                💰 Request Money
+            </MudButton>
         </div>
 
         <!-- Transaction History -->

@@ -7,6 +7,7 @@ public interface IUserService
     Task<decimal> GetBalanceAsync(int userId);
     Task<List<Transaction>> GetRecentTransactionsAsync(int userId, int limit = 50);
     Task<ChildDashboardData> GetChildDashboardDataAsync(int userId);
+    Task<MoneyRequest> CreateMoneyRequestAsync(int childId, decimal amount, RequestType type, string description);
 }
 
 public class ChildDashboardData
