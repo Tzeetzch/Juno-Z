@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@using JunoBank.Web.Auth
 
 <MudThemeProvider Theme="_theme" IsDarkMode="true" />
 <MudPopoverProvider />
@@ -9,7 +10,17 @@
     <MudAppBar Color="Color.Primary" Elevation="4">
         <MudText Typo="Typo.h5" Class="ml-3">Juno Bank</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" />
+
+        <AuthorizeView>
+            <Authorized>
+                <MudText Class="mr-3">Hi, @context.User.Identity?.Name!</MudText>
+                <MudTooltip Text="Logout">
+                    <MudIconButton Icon="@Icons.Material.Filled.Logout"
+                                   Color="Color.Inherit"
+                                   OnClick="HandleLogout" />
+                </MudTooltip>
+            </Authorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudMainContent Class="pt-16 pa-4">
@@ -18,6 +29,9 @@
 </MudLayout>
 
 @code {
+    [Inject] private CustomAuthStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
     private MudTheme _theme = new()
     {
         PaletteLight = new PaletteLight
@@ -37,4 +51,10 @@
             TextSecondary = "rgba(255,255,255,0.7)"
         }
     };
+
+    private async Task HandleLogout()
+    {
+        await AuthProvider.LogoutAsync();
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
 }

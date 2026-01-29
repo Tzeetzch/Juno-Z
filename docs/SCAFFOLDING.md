@@ -27,16 +27,20 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 - Mom (mom@junobank.local / parent123)
 - Junior (picture password: cat→dog→star→moon, balance: €10)
 
-## Phase C: Authentication
+## Phase C: Authentication ✅ COMPLETE
 
-- [ ] Implement CustomAuthStateProvider
-- [ ] Parent login page (email/password)
-- [ ] Picture password component (3x3 grid)
-- [ ] Child login page (select user, enter picture sequence)
-- [ ] Logout functionality
-- [ ] Protect routes with [Authorize]
+- [x] Implement CustomAuthStateProvider
+- [x] Parent login page (email/password)
+- [x] Picture password component (3x3 emoji grid)
+- [x] Child login page (tap 4 pictures in sequence)
+- [x] Logout functionality
+- [x] Protect routes with [Authorize]
 
-**Verify:** Both login methods work, routes are protected
+**Verified:** Both login methods work, Home page protected
+
+**Test credentials:**
+- Parent: dad@junobank.local / parent123
+- Child: cat→dog→star→moon (tap the emojis)
 
 ## Phase D: Child Features
 
@@ -97,7 +101,7 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 ## Current Status
 
-**Completed:** Phase A, Phase B
-**Next:** Phase C (Authentication)
+**Completed:** Phase A, Phase B, Phase C
+**Next:** Phase D (Child Features)
 
-Tell Claude: "Start Phase C" to continue.
+Tell Claude: "Start Phase D" to continue.

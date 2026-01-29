@@ -1,0 +1,101 @@
+@namespace JunoBank.Web.Components.Shared
+
+<div class="picture-grid">
+    @foreach (var image in _displayImages)
+    {
+        <button class="picture-btn @(IsSelected(image) ? "selected" : "")"
+                @onclick="() => SelectImage(image)"
+                disabled="@IsComplete">
+            <span style="font-size: 2.5rem;">@GetEmoji(image)</span>
+        </button>
+    }
+</div>
+
+<div class="sequence-dots">
+    @for (int i = 0; i < RequiredLength; i++)
+    {
+        var index = i;
+        <div class="sequence-dot @(index < _selectedImages.Count ? "filled" : "")"></div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+}
+
+@code {
+    [Parameter] public int RequiredLength { get; set; } = 4;
+    [Parameter] public EventCallback<string[]> OnSequenceComplete { get; set; }
+    [Parameter] public EventCallback OnSequenceReset { get; set; }
+
+    private static readonly string[] AllImages =
+    {
+        "cat", "dog", "star", "moon", "sun", "tree",
+        "fish", "bird", "car", "flower", "heart", "apple"
+    };
+
+    private List<string> _displayImages = new();
+    private List<string> _selectedImages = new();
+    private string _error = string.Empty;
+
+    private bool IsComplete => _selectedImages.Count >= RequiredLength;
+
+    protected override void OnInitialized()
+    {
+        ShuffleImages();
+    }
+
+    private void ShuffleImages()
+    {
+        var random = new Random();
+        _displayImages = AllImages.OrderBy(_ => random.Next()).Take(9).ToList();
+    }
+
+    private bool IsSelected(string image) => _selectedImages.Contains(image);
+
+    private async Task SelectImage(string image)
+    {
+        if (IsComplete) return;
+
+        _error = string.Empty;
+        _selectedImages.Add(image);
+
+        if (_selectedImages.Count >= RequiredLength)
+        {
+            await OnSequenceComplete.InvokeAsync(_selectedImages.ToArray());
+        }
+    }
+
+    public void Reset()
+    {
+        _selectedImages.Clear();
+        _error = string.Empty;
+        ShuffleImages();
+        StateHasChanged();
+    }
+
+    public void ShowError(string message)
+    {
+        _error = message;
+        _selectedImages.Clear();
+        StateHasChanged();
+    }
+
+    private static string GetEmoji(string image) => image switch
+    {
+        "cat" => "🐱",
+        "dog" => "🐶",
+        "star" => "⭐",
+        "moon" => "🌙",
+        "sun" => "☀️",
+        "tree" => "🌳",
+        "fish" => "🐟",
+        "bird" => "🐦",
+        "car" => "🚗",
+        "flower" => "🌸",
+        "heart" => "❤️",
+        "apple" => "🍎",
+        _ => "❓"
+    };
+}

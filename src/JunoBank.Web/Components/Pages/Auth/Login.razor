@@ -1,0 +1,33 @@
+@page "/login"
+
+<PageTitle>Login - Juno Bank</PageTitle>
+
+<div style="max-width: 400px; margin: 2rem auto; text-align: center;">
+    <MudText Typo="Typo.h4" Class="mb-6">Welcome to Juno Bank</MudText>
+
+    <MudText Typo="Typo.body1" Class="mb-4">Who are you?</MudText>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <button class="neu-btn neu-btn-primary neu-btn-large" @onclick="GoToParentLogin">
+            I'm a Parent
+        </button>
+
+        <button class="neu-btn neu-btn-secondary neu-btn-large" @onclick="GoToChildLogin">
+            I'm a Kid
+        </button>
+    </div>
+</div>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void GoToParentLogin()
+    {
+        Navigation.NavigateTo("/login/parent");
+    }
+
+    private void GoToChildLogin()
+    {
+        Navigation.NavigateTo("/login/child");
+    }
+}

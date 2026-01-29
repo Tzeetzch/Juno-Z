@@ -1,5 +1,7 @@
+using JunoBank.Web.Auth;
 using JunoBank.Web.Components;
 using JunoBank.Web.Data;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
@@ -14,6 +16,12 @@ builder.Services.AddMudServices();
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Authentication
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<CustomAuthStateProvider>();
 
 var app = builder.Build();
 

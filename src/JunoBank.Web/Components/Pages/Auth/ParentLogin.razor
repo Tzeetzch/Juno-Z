@@ -1,0 +1,113 @@
+@page "/login/parent"
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Data
+@using JunoBank.Web.Data.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Parent Login - Juno Bank</PageTitle>
+
+<div style="max-width: 400px; margin: 2rem auto;">
+    <MudText Typo="Typo.h4" Class="mb-6" Align="Align.Center">Parent Login</MudText>
+
+    <div class="neu-card">
+        <MudTextField @bind-Value="_email"
+                      Label="Email"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Email"
+                      Class="mb-4"
+                      FullWidth="true" />
+
+        <MudTextField @bind-Value="_password"
+                      Label="Password"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Class="mb-4"
+                      FullWidth="true" />
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+        }
+
+        <button class="neu-btn neu-btn-primary neu-btn-large"
+                style="width: 100%;"
+                @onclick="HandleLogin"
+                disabled="@_isLoading">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Login</span>
+            }
+        </button>
+    </div>
+
+    <MudButton Variant="Variant.Text"
+               Color="Color.Secondary"
+               Class="mt-4"
+               FullWidth="true"
+               OnClick="GoBack">
+        ← Back
+    </MudButton>
+</div>
+
+@code {
+    [Inject] private AppDbContext Db { get; set; } = default!;
+    [Inject] private CustomAuthStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _error = string.Empty;
+    private bool _isLoading;
+
+    private async Task HandleLogin()
+    {
+        _error = string.Empty;
+        _isLoading = true;
+
+        try
+        {
+            var user = await Db.Users
+                .FirstOrDefaultAsync(u => u.Email == _email && u.Role == UserRole.Parent);
+
+            if (user == null)
+            {
+                _error = "Invalid email or password";
+                return;
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(_password, user.PasswordHash))
+            {
+                _error = "Invalid email or password";
+                return;
+            }
+
+            var session = new UserSession
+            {
+                UserId = user.Id,
+                UserName = user.Name,
+                Role = user.Role
+            };
+
+            await AuthProvider.LoginAsync(session);
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _error = "An error occurred. Please try again.";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

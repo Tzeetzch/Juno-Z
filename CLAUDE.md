@@ -55,8 +55,8 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Completed:** Phase A (project setup), Phase B (database entities)
-- **Next:** Phase C (Authentication) - Say "Start Phase C" to continue
+- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication)
+- **Next:** Phase D (Child Features) - Say "Start Phase D" to continue
 - **Full docs:** `docs/ARCHITECTURE.md`, `docs/SCAFFOLDING.md`, `docs/CONVENTIONS.md`, `docs/DEPLOYMENT.md`
 
 ### What's Built
@@ -65,6 +65,12 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 - Neumorphic CSS (`wwwroot/css/neumorphic.css`)
 - SQLite database with entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword
 - Seed data: Dad, Mom (parents), Junior (child with €10)
+- Authentication: Parent login (email/password), Child login (picture password)
+- Route protection with [Authorize]
+
+### Test Credentials
+- **Parent:** dad@junobank.local / parent123
+- **Child:** Tap cat→dog→star→moon
 
 ## Users
 | User | Auth | Capabilities |

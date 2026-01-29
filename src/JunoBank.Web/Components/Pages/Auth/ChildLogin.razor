@@ -1,0 +1,117 @@
+@page "/login/child"
+@using System.Security.Cryptography
+@using System.Text
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Data
+@using JunoBank.Web.Data.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Kid Login - Juno Bank</PageTitle>
+
+<div style="max-width: 400px; margin: 2rem auto; text-align: center;">
+    <MudText Typo="Typo.h4" Class="mb-2">Hi there!</MudText>
+    <MudText Typo="Typo.body1" Class="mb-6">Tap your secret pictures</MudText>
+
+    <PictureGrid @ref="_pictureGrid"
+                 RequiredLength="4"
+                 OnSequenceComplete="HandleSequenceComplete" />
+
+    <MudButton Variant="Variant.Text"
+               Color="Color.Secondary"
+               Class="mt-6"
+               OnClick="GoBack">
+        ← Back
+    </MudButton>
+</div>
+
+@code {
+    [Inject] private AppDbContext Db { get; set; } = default!;
+    [Inject] private CustomAuthStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private PictureGrid? _pictureGrid;
+    private User? _child;
+    private PicturePassword? _picturePassword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the child user (for now, just get the first child)
+        _child = await Db.Users
+            .Include(u => u.PicturePassword)
+            .FirstOrDefaultAsync(u => u.Role == UserRole.Child);
+
+        if (_child != null)
+        {
+            _picturePassword = _child.PicturePassword;
+        }
+    }
+
+    private async Task HandleSequenceComplete(string[] sequence)
+    {
+        if (_child == null || _picturePassword == null)
+        {
+            _pictureGrid?.ShowError("No account found");
+            return;
+        }
+
+        // Check lockout
+        if (_picturePassword.LockedUntil.HasValue && _picturePassword.LockedUntil > DateTime.UtcNow)
+        {
+            var remaining = (_picturePassword.LockedUntil.Value - DateTime.UtcNow).Minutes;
+            _pictureGrid?.ShowError($"Too many attempts. Try again in {remaining} minutes.");
+            return;
+        }
+
+        // Hash the sequence and compare
+        var sequenceHash = HashSequence(string.Join(",", sequence));
+
+        if (sequenceHash == _picturePassword.ImageSequenceHash)
+        {
+            // Success! Reset failed attempts
+            _picturePassword.FailedAttempts = 0;
+            _picturePassword.LockedUntil = null;
+            await Db.SaveChangesAsync();
+
+            var session = new UserSession
+            {
+                UserId = _child.Id,
+                UserName = _child.Name,
+                Role = _child.Role
+            };
+
+            await AuthProvider.LoginAsync(session);
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            // Failed attempt
+            _picturePassword.FailedAttempts++;
+
+            if (_picturePassword.FailedAttempts >= 5)
+            {
+                _picturePassword.LockedUntil = DateTime.UtcNow.AddMinutes(5);
+                await Db.SaveChangesAsync();
+                _pictureGrid?.ShowError("Too many attempts. Try again in 5 minutes.");
+            }
+            else
+            {
+                await Db.SaveChangesAsync();
+                var remaining = 5 - _picturePassword.FailedAttempts;
+                _pictureGrid?.ShowError($"Wrong sequence. {remaining} tries left.");
+            }
+        }
+    }
+
+    private static string HashSequence(string sequence)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sequence));
+        return Convert.ToBase64String(bytes);
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}
