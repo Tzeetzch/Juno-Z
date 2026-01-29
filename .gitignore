@@ -1,0 +1,47 @@
+# .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*~
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+publish/
+
+# NuGet
+*.nupkg
+packages/
+
+# SQLite database (don't commit actual data)
+*.db
+*.db-shm
+*.db-wal
+
+# User secrets
+secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json.example
+
+# Docker data volumes
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
