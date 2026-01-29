@@ -55,9 +55,16 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Phase:** All planning complete. Ready to scaffold.
-- **Next:** Say "Start Phase A scaffolding" to begin implementation
+- **Completed:** Phase A (project setup), Phase B (database entities)
+- **Next:** Phase C (Authentication) - Say "Start Phase C" to continue
 - **Full docs:** `docs/ARCHITECTURE.md`, `docs/SCAFFOLDING.md`, `docs/CONVENTIONS.md`, `docs/DEPLOYMENT.md`
+
+### What's Built
+- Blazor Server project at `src/JunoBank.Web/`
+- MudBlazor + dark theme (orange/purple)
+- Neumorphic CSS (`wwwroot/css/neumorphic.css`)
+- SQLite database with entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword
+- Seed data: Dad, Mom (parents), Junior (child with €10)
 
 ## Users
 | User | Auth | Capabilities |
@@ -97,15 +104,19 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 
 ## Solution Structure
 ```
-JunoPiggyBank/
-├── src/JunoPiggyBank.Web/     # Blazor Server project
-│   ├── Components/Pages/Child/   # Dashboard, History, RequestMoney
-│   ├── Components/Pages/Parent/  # Dashboard, Requests, Settings
-│   ├── Data/Entities/            # User, Transaction, MoneyRequest
-│   ├── Services/                 # Business logic
-│   └── Auth/                     # CustomAuthStateProvider
-├── docker/                    # Dockerfile, docker-compose.yml
-└── tests/
+Juno-Z/
+├── src/JunoBank.Web/              # Blazor Server project
+│   ├── Components/
+│   │   ├── Layout/                # MainLayout (MudBlazor themed)
+│   │   └── Pages/                 # Home (neumorphic demo)
+│   ├── Data/
+│   │   ├── Entities/              # User, Transaction, MoneyRequest, etc.
+│   │   ├── AppDbContext.cs
+│   │   └── DbInitializer.cs       # Seed data
+│   ├── wwwroot/css/neumorphic.css # 3D button styles
+│   └── Program.cs
+├── docs/                          # Architecture, conventions, deployment
+└── .claude/commands/              # Team commands (/spec, /plan, etc.)
 ```
 
 ## Key Packages

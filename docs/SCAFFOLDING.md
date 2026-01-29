@@ -2,25 +2,30 @@
 
 Implementation order for Juno Bank. Each phase builds on the previous.
 
-## Phase A: Project Setup
+## Phase A: Project Setup ✅ COMPLETE
 
-- [ ] Create Blazor Server project (`dotnet new blazorserver`)
-- [ ] Add NuGet packages (EF Core SQLite, BCrypt, MailKit, MudBlazor)
-- [ ] Configure MudBlazor with dark theme (orange/purple)
-- [ ] Create base layout with neumorphic CSS
-- [ ] Set up SQLite database connection
-- [ ] Create initial migration
+- [x] Create Blazor Server project (`dotnet new blazor --interactivity Server`)
+- [x] Add NuGet packages (EF Core SQLite, BCrypt, MailKit, MudBlazor)
+- [x] Configure MudBlazor with dark theme (orange/purple)
+- [x] Create base layout with neumorphic CSS (`wwwroot/css/neumorphic.css`)
+- [x] Set up SQLite database connection
+- [x] Create initial migration
 
-**Verify:** App runs, shows MudBlazor themed page
+**Verified:** App runs at https://localhost:5001 with themed page
 
-## Phase B: Database & Entities
+## Phase B: Database & Entities ✅ COMPLETE
 
-- [ ] Create entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword
-- [ ] Configure EF Core relationships
-- [ ] Create and apply migrations
-- [ ] Seed test data (1 child, 2 parents)
+- [x] Create entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword
+- [x] Configure EF Core relationships
+- [x] Create and apply migrations
+- [x] Seed test data (1 child, 2 parents)
 
-**Verify:** Database created with tables, seed data visible
+**Verified:** Database created with tables
+
+**Seed data:**
+- Dad (dad@junobank.local / parent123)
+- Mom (mom@junobank.local / parent123)
+- Junior (picture password: cat→dog→star→moon, balance: €10)
 
 ## Phase C: Authentication
 
@@ -90,8 +95,9 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 ---
 
-## To Start Scaffolding
+## Current Status
 
-Tell Claude: "Start Phase A scaffolding"
+**Completed:** Phase A, Phase B
+**Next:** Phase C (Authentication)
 
-Claude will create the project structure and verify each step.
+Tell Claude: "Start Phase C" to continue.
