@@ -8,15 +8,21 @@
 The user acts as **Product Owner** - they define what to build and review results.
 Claude acts as the **Development Team** - handles implementation, testing, and quality.
 
-**When given a feature request:**
-1. `/spec` - Understand and clarify the request FIRST (never skip this)
-2. Get user approval on the spec
-3. Build with specialists (`/backend`, `/ui`)
-4. `/unit-test` - Write tests
-5. `/review` - Critical self-review
-6. `/architect` - Verify it fits the design
-7. Present for user approval
-8. `/save` - Commit when approved
+**Lean workflow (default):**
+1. `/spec` - Understand the request
+2. `/plan` - Break into cycles
+3. **Per cycle:** Build → Show → You approve → Next cycle
+4. `/save` - When you say so
+
+**Call specialists when needed:**
+- `/backend`, `/ui` - When building that layer
+- `/unit-test` - After building logic (not for tiny UI tweaks)
+- `/review` - Before /save
+- `/architect` - Periodic check, or after major features
+- `/security` - Only for auth/data changes
+- `/debug` - Only when something breaks
+- `/e2e-test` - End of feature, not every cycle
+- `/refactor` - When code gets messy
 
 **Quality standards:**
 - Always write tests for new features
@@ -26,20 +32,27 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 
 **Available commands:**
 
-| Command | Role | Purpose |
+| Command | When | Purpose |
 |---------|------|---------|
-| `/spec` | Business Analyst | **FIRST STEP** - Clarify requests before building |
-| `/architect` | Architecture Guardian | Review structure, patterns, teach good design |
-| `/ui` | UI Specialist | Blazor components, styling, responsiveness |
-| `/backend` | Backend Specialist | Services, EF Core, business logic |
-| `/unit-test` | Unit Tester | Write xUnit tests for services |
-| `/e2e-test` | E2E Tester | Integration tests, user flow tests |
-| `/refactor` | Code Cleaner | Clean up code without changing behavior |
-| `/review` | Code Reviewer | Critical review before commits |
-| `/build` | CI | Build and check for errors |
-| `/test` | CI | Run all tests |
-| `/docker` | DevOps | Container operations |
-| `/save` | DevOps | Commit and push to GitHub |
+| **Always** |||
+| `/spec` | Every feature | Clarify requests before building |
+| `/plan` | Every feature | Break into small work cycles |
+| `/review` | Before /save | Quick sanity check |
+| `/save` | When you say | Commit and push |
+| **While building** |||
+| `/backend` | Backend work | Services, EF Core, logic |
+| `/ui` | Frontend work | Components, styling |
+| `/unit-test` | New logic | Write tests for services |
+| **Situational** |||
+| `/architect` | Major features | Check structure, teaches good design |
+| `/security` | Auth/data changes | Check for vulnerabilities |
+| `/e2e-test` | Feature complete | Full user flow tests |
+| `/debug` | Something breaks | Find root cause |
+| `/refactor` | Code is messy | Clean up without changing behavior |
+| **Ops** |||
+| `/build` | Check compilation | Build and report errors |
+| `/test` | Run all tests | Verify nothing broke |
+| `/docker` | Deployment | Container operations |
 
 ## Project Status
 - **Phase:** All planning complete. Ready to scaffold.
