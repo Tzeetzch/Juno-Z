@@ -3,9 +3,34 @@
 > Virtual allowance app for teaching a 5-year-old about money management.
 > Parents act as the "bank" - money is redeemable with parents, not connected to real financial systems.
 
+## Workflow: Product Owner Mode
+
+The user acts as **Product Owner** - they define what to build and review results.
+Claude acts as the **Development Team** - handles implementation, testing, and quality.
+
+**When given a feature request:**
+1. Clarify requirements if ambiguous
+2. Plan the implementation (update docs/ARCHITECTURE.md if needed)
+3. Write the code with tests
+4. Run `/build` and `/test` to verify
+5. Present a summary of what was built for review
+
+**Quality standards:**
+- Always write tests for new features
+- Run build after significant changes
+- Follow the coding conventions in docs/CONVENTIONS.md
+- Keep code simple - avoid over-engineering
+
+**Available commands:**
+- `/save` - Commit and push to GitHub
+- `/build` - Build and check for errors
+- `/test` - Run all tests
+- `/docker` - Container operations
+
 ## Project Status
-- **Phase:** Architecture planning complete, ready for Phases 3-8 (workflow, CI/CD, conventions, scaffolding)
-- **Full architecture:** `docs/ARCHITECTURE.md`
+- **Phase:** All planning complete. Ready to scaffold.
+- **Next:** Say "Start Phase A scaffolding" to begin implementation
+- **Full docs:** `docs/ARCHITECTURE.md`, `docs/SCAFFOLDING.md`, `docs/CONVENTIONS.md`, `docs/DEPLOYMENT.md`
 
 ## Users
 | User | Auth | Capabilities |
@@ -63,14 +88,6 @@ BCrypt.Net-Next (4.0.*)
 MailKit (4.3.*)
 MudBlazor (6.11.*)
 ```
-
-## Remaining Planning Phases
-- Phase 3: Claude Code skills/agents for dev workflow
-- Phase 4: GitHub workflow and CI/CD
-- Phase 5: Deployment strategy details
-- Phase 6: Coding conventions
-- Phase 7: Documentation approach
-- Phase 8: Scaffolding plan
 
 ## Development Notes
 - This is a learning project - no rush, focus on understanding Blazor

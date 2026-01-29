@@ -147,13 +147,17 @@ services:
 
 ---
 
-## Phases 3-8: TODO
+## Phases 3-8: Complete
 
-| Phase | Topic | Status |
-|-------|-------|--------|
-| 3 | Claude Code skills/agents for dev workflow | Pending |
-| 4 | GitHub workflow and CI/CD | Pending |
-| 5 | Deployment strategy details | Pending |
-| 6 | Coding conventions | Pending |
-| 7 | Documentation approach | Pending |
-| 8 | Scaffolding plan | Pending |
+| Phase | Topic | Document |
+|-------|-------|----------|
+| 3 | Claude Code workflow | `.claude/commands/` + CLAUDE.md |
+| 4 | CI/CD | `.github/workflows/release.yml` |
+| 5 | Deployment | `docs/DEPLOYMENT.md` |
+| 6 | Coding conventions | `docs/CONVENTIONS.md` |
+| 7 | Documentation | All docs/ files |
+| 8 | Scaffolding | `docs/SCAFFOLDING.md` |
+
+## Next Step
+
+Ready to scaffold. Say: **"Start Phase A scaffolding"**
