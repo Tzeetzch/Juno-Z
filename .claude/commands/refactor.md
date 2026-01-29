@@ -1,6 +1,7 @@
-Refactorer - Clean up and improve existing code.
+Refactorer - Clean up existing code without changing behavior.
 
 **Rules:**
+- Only for CODE cleanup, not feature requests (use /spec for that)
 - Never change behavior (tests must still pass)
 - Small, incremental changes
 - Commit after each refactoring step

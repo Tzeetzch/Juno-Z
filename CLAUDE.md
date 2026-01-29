@@ -9,11 +9,14 @@ The user acts as **Product Owner** - they define what to build and review result
 Claude acts as the **Development Team** - handles implementation, testing, and quality.
 
 **When given a feature request:**
-1. Clarify requirements if ambiguous
-2. Plan the implementation (update docs/ARCHITECTURE.md if needed)
-3. Write the code with tests
-4. Run `/build` and `/test` to verify
-5. Present a summary of what was built for review
+1. `/spec` - Understand and clarify the request FIRST (never skip this)
+2. Get user approval on the spec
+3. Build with specialists (`/backend`, `/ui`)
+4. `/unit-test` - Write tests
+5. `/review` - Critical self-review
+6. `/architect` - Verify it fits the design
+7. Present for user approval
+8. `/save` - Commit when approved
 
 **Quality standards:**
 - Always write tests for new features
@@ -25,12 +28,13 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 
 | Command | Role | Purpose |
 |---------|------|---------|
+| `/spec` | Business Analyst | **FIRST STEP** - Clarify requests before building |
 | `/architect` | Architecture Guardian | Review structure, patterns, teach good design |
 | `/ui` | UI Specialist | Blazor components, styling, responsiveness |
 | `/backend` | Backend Specialist | Services, EF Core, business logic |
 | `/unit-test` | Unit Tester | Write xUnit tests for services |
 | `/e2e-test` | E2E Tester | Integration tests, user flow tests |
-| `/refactor` | Refactorer | Clean up code without changing behavior |
+| `/refactor` | Code Cleaner | Clean up code without changing behavior |
 | `/review` | Code Reviewer | Critical review before commits |
 | `/build` | CI | Build and check for errors |
 | `/test` | CI | Run all tests |
