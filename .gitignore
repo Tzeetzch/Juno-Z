@@ -35,8 +35,8 @@ appsettings.*.json
 !appsettings.json
 !appsettings.Development.json.example
 
-# Docker data volumes
-data/
+# Docker data volumes (root level only)
+/data/
 
 # OS files
 .DS_Store

@@ -1,0 +1,245 @@
+/* Neumorphic Design System for Juno Bank */
+/* Dark theme with orange (#FF6B35) and purple (#9B59B6) */
+
+:root {
+    --bg-color: #1a1a2e;
+    --shadow-dark: #0d0d17;
+    --shadow-light: #272745;
+    --primary: #FF6B35;
+    --accent: #9B59B6;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+}
+
+/* Neumorphic Card */
+.neu-card {
+    background: var(--bg-color);
+    border-radius: 20px;
+    box-shadow:
+        8px 8px 16px var(--shadow-dark),
+        -8px -8px 16px var(--shadow-light);
+    padding: 1.5rem;
+}
+
+/* Neumorphic Button - Base */
+.neu-btn {
+    background: var(--bg-color);
+    border: none;
+    border-radius: 15px;
+    padding: 1rem 2rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow:
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+    transition: all 0.2s ease;
+}
+
+.neu-btn:hover {
+    box-shadow:
+        3px 3px 6px var(--shadow-dark),
+        -3px -3px 6px var(--shadow-light);
+}
+
+.neu-btn:active,
+.neu-btn.pressed {
+    box-shadow:
+        inset 5px 5px 10px var(--shadow-dark),
+        inset -5px -5px 10px var(--shadow-light);
+}
+
+/* Primary Button (Orange) - More 3D depth */
+.neu-btn-primary {
+    background: linear-gradient(145deg, #ff8555 0%, #ff6b35 50%, #e55a2b 100%);
+    color: white;
+    border-top: 1px solid rgba(255,255,255,0.3);
+    border-left: 1px solid rgba(255,255,255,0.2);
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    box-shadow:
+        6px 6px 12px var(--shadow-dark),
+        -4px -4px 10px var(--shadow-light),
+        inset 0 2px 4px rgba(255,255,255,0.2),
+        inset 0 -2px 4px rgba(0,0,0,0.2);
+}
+
+.neu-btn-primary:hover {
+    background: linear-gradient(145deg, #ff9966 0%, #ff7a47 50%, #ff6b35 100%);
+    transform: translateY(-1px);
+}
+
+.neu-btn-primary:active {
+    transform: translateY(1px);
+    box-shadow:
+        2px 2px 6px var(--shadow-dark),
+        -2px -2px 4px var(--shadow-light),
+        inset 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Secondary Button (Purple) - More 3D depth */
+.neu-btn-secondary {
+    background: linear-gradient(145deg, #b06cc8 0%, #9b59b6 50%, #8646a0 100%);
+    color: white;
+    border-top: 1px solid rgba(255,255,255,0.3);
+    border-left: 1px solid rgba(255,255,255,0.2);
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    box-shadow:
+        6px 6px 12px var(--shadow-dark),
+        -4px -4px 10px var(--shadow-light),
+        inset 0 2px 4px rgba(255,255,255,0.2),
+        inset 0 -2px 4px rgba(0,0,0,0.2);
+}
+
+.neu-btn-secondary:hover {
+    background: linear-gradient(145deg, #c07dd8 0%, #a864c4 50%, #9b59b6 100%);
+    transform: translateY(-1px);
+}
+
+.neu-btn-secondary:active {
+    transform: translateY(1px);
+    box-shadow:
+        2px 2px 6px var(--shadow-dark),
+        -2px -2px 4px var(--shadow-light),
+        inset 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Large Button - for child-friendly touch targets */
+.neu-btn-large {
+    padding: 1.5rem 3rem;
+    font-size: 1.25rem;
+    border-radius: 25px;
+    min-height: 60px;
+    min-width: 120px;
+}
+
+/* Extra Large - for main actions on child pages */
+.neu-btn-xl {
+    padding: 2rem 4rem;
+    font-size: 1.5rem;
+    border-radius: 30px;
+    min-height: 80px;
+}
+
+/* Neumorphic Input */
+.neu-input {
+    background: var(--bg-color);
+    border: none;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    width: 100%;
+    box-shadow:
+        inset 3px 3px 6px var(--shadow-dark),
+        inset -3px -3px 6px var(--shadow-light);
+}
+
+.neu-input:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Neumorphic Circle - for balance display or avatars */
+.neu-circle {
+    background: var(--bg-color);
+    border-radius: 50%;
+    box-shadow:
+        8px 8px 16px var(--shadow-dark),
+        -8px -8px 16px var(--shadow-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neu-circle-sm { width: 60px; height: 60px; }
+.neu-circle-md { width: 100px; height: 100px; }
+.neu-circle-lg { width: 150px; height: 150px; }
+.neu-circle-xl { width: 200px; height: 200px; }
+
+/* Pressed/Inset variant - for selected states */
+.neu-inset {
+    box-shadow:
+        inset 5px 5px 10px var(--shadow-dark),
+        inset -5px -5px 10px var(--shadow-light);
+}
+
+/* Balance Display */
+.neu-balance {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: center;
+}
+
+.neu-balance-label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+/* Picture Password Grid */
+.picture-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.picture-btn {
+    aspect-ratio: 1;
+    border-radius: 20px;
+    background: var(--bg-color);
+    box-shadow:
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+    border: none;
+    cursor: pointer;
+    padding: 0.75rem;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.picture-btn:active,
+.picture-btn.selected {
+    box-shadow:
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+}
+
+.picture-btn img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+}
+
+/* Sequence indicator dots */
+.sequence-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.sequence-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-color);
+    box-shadow:
+        inset 2px 2px 4px var(--shadow-dark),
+        inset -2px -2px 4px var(--shadow-light);
+}
+
+.sequence-dot.filled {
+    background: var(--primary);
+    box-shadow:
+        0 0 10px var(--primary),
+        inset 1px 1px 2px rgba(255,255,255,0.3);
+}

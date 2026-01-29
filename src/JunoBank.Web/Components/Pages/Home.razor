@@ -5,15 +5,51 @@
 <MudText Typo="Typo.h3" Class="mb-4">Welcome to Juno Bank</MudText>
 <MudText Typo="Typo.body1" Class="mb-6">Your family's virtual piggy bank</MudText>
 
-<MudGrid>
-    <MudItem xs="12" sm="6" md="4">
+<MudGrid Spacing="4">
+    @* MudBlazor themed buttons *@
+    <MudItem xs="12" md="6">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.h6">Theme Test</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">Orange primary, purple secondary</MudText>
+                <MudText Typo="Typo.h6" Class="mb-4">MudBlazor Theme</MudText>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Primary</MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Secondary">Secondary</MudButton>
             </MudCardContent>
         </MudCard>
+    </MudItem>
+
+    @* Neumorphic buttons *@
+    <MudItem xs="12" md="6">
+        <div class="neu-card">
+            <MudText Typo="Typo.h6" Class="mb-4">Neumorphic Buttons</MudText>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="neu-btn neu-btn-primary">Primary</button>
+                <button class="neu-btn neu-btn-secondary">Secondary</button>
+                <button class="neu-btn">Neutral</button>
+            </div>
+        </div>
+    </MudItem>
+
+    @* Large buttons for child UI *@
+    <MudItem xs="12" md="6">
+        <div class="neu-card">
+            <MudText Typo="Typo.h6" Class="mb-4">Child-Friendly (Large)</MudText>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="neu-btn neu-btn-primary neu-btn-large">Big Button</button>
+                <button class="neu-btn neu-btn-secondary neu-btn-large">Tap Me</button>
+            </div>
+        </div>
+    </MudItem>
+
+    @* Balance display preview *@
+    <MudItem xs="12" md="6">
+        <div class="neu-card" style="text-align: center;">
+            <MudText Typo="Typo.h6" Class="mb-4">Balance Preview</MudText>
+            <div class="neu-circle neu-circle-lg" style="margin: 0 auto;">
+                <div>
+                    <div class="neu-balance-label">Your Balance</div>
+                    <div class="neu-balance">€25</div>
+                </div>
+            </div>
+        </div>
     </MudItem>
 </MudGrid>
