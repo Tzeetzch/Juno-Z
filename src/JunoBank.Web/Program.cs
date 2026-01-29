@@ -18,7 +18,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Authentication
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Cookies";
+    options.DefaultChallengeScheme = "Cookies";
+}).AddCookie("Cookies", options =>
+{
+    options.LoginPath = "/login";
+});
+builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<CustomAuthStateProvider>();

@@ -1,6 +1,11 @@
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <Authorizing>
+                <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                </div>
+            </Authorizing>
             <NotAuthorized>
                 <RedirectToLogin />
             </NotAuthorized>

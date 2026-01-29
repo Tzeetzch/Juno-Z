@@ -93,7 +93,7 @@
             };
 
             await AuthProvider.LoginAsync(session);
-            Navigation.NavigateTo("/", forceLoad: true);
+            Navigation.NavigateTo("/");
         }
         catch (Exception ex)
         {

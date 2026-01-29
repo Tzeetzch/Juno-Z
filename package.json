@@ -1,0 +1,26 @@
+{
+  "name": "juno-z",
+  "version": "1.0.0",
+  "description": "A virtual allowance app for teaching kids about money management.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tzeetzch/Juno-Z.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tzeetzch/Juno-Z/issues"
+  },
+  "homepage": "https://github.com/Tzeetzch/Juno-Z#readme",
+  "dependencies": {
+    "playwright": "^1.58.0"
+  }
+}
