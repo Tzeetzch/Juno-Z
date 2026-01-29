@@ -1,0 +1,40 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Color="Color.Primary" Elevation="4">
+        <MudText Typo="Typo.h5" Class="ml-3">Juno Bank</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" />
+    </MudAppBar>
+
+    <MudMainContent Class="pt-16 pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#FF6B35",
+            Secondary = "#9B59B6",
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#FF6B35",
+            Secondary = "#9B59B6",
+            Background = "#1a1a2e",
+            Surface = "#16213e",
+            AppbarBackground = "#0f0f1a",
+            DrawerBackground = "#16213e",
+            TextPrimary = "#ffffff",
+            TextSecondary = "rgba(255,255,255,0.7)"
+        }
+    };
+}
