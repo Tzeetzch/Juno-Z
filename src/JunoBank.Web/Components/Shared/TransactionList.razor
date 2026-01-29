@@ -1,0 +1,67 @@
+@using JunoBank.Web.Data.Entities
+
+<div class="transaction-list">
+    @if (!Transactions.Any())
+    {
+        <MudText Typo="Typo.body1" Style="text-align: center; color: var(--mud-palette-text-secondary); padding: 2rem;">
+            No transactions yet! 💰
+        </MudText>
+    }
+    else
+    {
+        @foreach (var transaction in Transactions)
+        {
+            <div class="transaction-item neu-card" style="padding: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+
+                <!-- Icon based on type -->
+                <div style="font-size: 2rem; flex-shrink: 0;">
+                    @GetTransactionIcon(transaction.Type)
+                </div>
+
+                <!-- Description and date -->
+                <div style="flex-grow: 1;">
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">
+                        @transaction.Description
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-size: 0.875rem;">
+                        @transaction.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </MudText>
+                </div>
+
+                <!-- Amount -->
+                <div style="flex-shrink: 0; text-align: right;">
+                    <MudText Typo="Typo.h6" Style="@GetAmountStyle(transaction.Type)">
+                        @GetAmountDisplay(transaction.Amount, transaction.Type)
+                    </MudText>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<Transaction> Transactions { get; set; } = new();
+
+    private static string GetTransactionIcon(TransactionType type) => type switch
+    {
+        TransactionType.Deposit => "💰",
+        TransactionType.Withdrawal => "🛍️",
+        TransactionType.Allowance => "🎁",
+        _ => "💵"
+    };
+
+    private static string GetAmountStyle(TransactionType type)
+    {
+        var color = type == TransactionType.Withdrawal
+            ? "color: #f44336; font-weight: bold;" // Red for withdrawals
+            : "color: #4caf50; font-weight: bold;"; // Green for deposits/allowance
+        return color;
+    }
+
+    private static string GetAmountDisplay(decimal amount, TransactionType type)
+    {
+        var sign = type == TransactionType.Withdrawal ? "-" : "+";
+        return $"{sign}€{amount:F2}";
+    }
+}

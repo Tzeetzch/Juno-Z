@@ -1,0 +1,55 @@
+@page "/parent"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@inject CustomAuthStateProvider AuthProvider
+
+<PageTitle>Parent Dashboard</PageTitle>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+    <MudText Typo="Typo.h3" Style="margin-bottom: 2rem;">
+        Welcome, @_userName! 👨‍💼
+    </MudText>
+
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        <MudText Typo="Typo.h6">Parent Dashboard - Coming Soon</MudText>
+        <MudText Typo="Typo.body2">
+            Phase E will include: pending requests, transaction management, and allowance settings.
+        </MudText>
+    </MudAlert>
+
+    <div class="neu-card" style="padding: 2rem;">
+        <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+            📋 Parent Features (Phase E)
+        </MudText>
+        <MudList>
+            <MudListItem Icon="@Icons.Material.Filled.Pending">
+                <MudText>View and approve pending money requests</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.AccountBalance">
+                <MudText>Manual transactions (add/subtract money)</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Schedule">
+                <MudText>Configure scheduled weekly allowance</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.History">
+                <MudText>View complete transaction history</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Email">
+                <MudText>Email notifications for requests</MudText>
+            </MudListItem>
+        </MudList>
+    </div>
+</div>
+
+@code {
+    private string _userName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session != null)
+        {
+            _userName = session.UserName;
+        }
+    }
+}

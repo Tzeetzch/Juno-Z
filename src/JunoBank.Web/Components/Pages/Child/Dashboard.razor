@@ -1,0 +1,73 @@
+@page "/child"
+@attribute [Authorize(Roles = "Child")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@using JunoBank.Web.Components.Shared
+@inject CustomAuthStateProvider AuthProvider
+@inject IUserService UserService
+
+<PageTitle>My Piggy Bank</PageTitle>
+
+<div style="max-width: 600px; margin: 0 auto; padding: 2rem;">
+
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else
+    {
+        <!-- Welcome Message -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <MudText Typo="Typo.h3" Style="color: var(--mud-palette-primary);">
+                Hi @_userName! 👋
+            </MudText>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="neu-card" style="padding: 3rem; text-align: center; margin-bottom: 2rem;">
+            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 1rem;">
+                My Money
+            </MudText>
+
+            <MudText Typo="Typo.h1" Style="color: var(--mud-palette-primary); font-weight: bold;">
+                €@_balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+            </MudText>
+
+            <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary); margin-top: 1rem;">
+                🐷 Piggy Bank Balance
+            </MudText>
+        </div>
+
+        <!-- Transaction History -->
+        <div style="margin-top: 3rem;">
+            <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+                📜 My Money History
+            </MudText>
+            <TransactionList Transactions="_transactions" />
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private string _userName = string.Empty;
+    private decimal _balance = 0;
+    private List<Transaction> _transactions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+
+        if (session != null)
+        {
+            // ✅ FIXED: Single database query instead of multiple round-trips
+            var dashboardData = await UserService.GetChildDashboardDataAsync(session.UserId);
+            _userName = dashboardData.Name;
+            _balance = dashboardData.Balance;
+            _transactions = dashboardData.RecentTransactions;
+        }
+
+        _isLoading = false;
+    }
+}

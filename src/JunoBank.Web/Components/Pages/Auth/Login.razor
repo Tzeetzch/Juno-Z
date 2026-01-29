@@ -1,5 +1,6 @@
 @page "/login"
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Data.Entities
 
 <PageTitle>Login - Juno Bank</PageTitle>
 
@@ -37,7 +38,11 @@
             var user = await AuthProvider.GetCurrentUserAsync();
             if (user != null)
             {
-                Navigation.NavigateTo("/");
+                // Redirect to appropriate dashboard based on role
+                var redirectUrl = user.Role == JunoBank.Web.Data.Entities.UserRole.Child
+                    ? "/child"
+                    : "/parent";
+                Navigation.NavigateTo(redirectUrl);
             }
         }
     }

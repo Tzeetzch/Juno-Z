@@ -15,13 +15,15 @@
     @for (int i = 0; i < RequiredLength; i++)
     {
         var index = i;
-        <div class="sequence-dot @(index < _selectedImages.Count ? "filled" : "")"></div>
+        <div class="sequence-dot @(index < _selectedImages.Count ? "filled" : "")">
+        </div>
     }
 </div>
 
 @if (!string.IsNullOrEmpty(_error))
 {
-    <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+    <MudAlert Severity="Severity.Error"
+              Class="mt-4">@_error</MudAlert>
 }
 
 @code {
@@ -31,9 +33,9 @@
 
     private static readonly string[] AllImages =
     {
-        "cat", "dog", "star", "moon", "sun", "tree",
-        "fish", "bird", "car", "flower", "heart", "apple"
-    };
+"cat", "dog", "star", "moon", "sun", "tree",
+"fish", "bird", "car", "flower", "heart", "apple"
+};
 
     private List<string> _displayImages = new();
     private List<string> _selectedImages = new();
@@ -49,7 +51,7 @@
     private void ShuffleImages()
     {
         var random = new Random();
-        _displayImages = AllImages.OrderBy(_ => random.Next()).Take(9).ToList();
+        _displayImages = AllImages.Take(9).OrderBy(_ => random.Next()).ToList();
     }
 
     private bool IsSelected(string image) => _selectedImages.Contains(image);

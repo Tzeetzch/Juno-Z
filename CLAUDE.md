@@ -3,6 +3,16 @@
 > Virtual allowance app for teaching a 5-year-old about money management.
 > Parents act as the "bank" - money is redeemable with parents, not connected to real financial systems.
 
+## ⚠️ IMPORTANT: Load All Documentation First
+
+**Before responding to any request, ALWAYS read these files:**
+- `docs/ARCHITECTURE.md` - Full architecture and design decisions
+- `docs/SCAFFOLDING.md` - Implementation phases and current status
+- `docs/CONVENTIONS.md` - Coding standards and naming conventions
+- `docs/DEPLOYMENT.md` - Docker and deployment instructions
+
+This ensures you have complete context for the project. The information below is a summary only.
+
 ## Workflow: Product Owner Mode
 
 The user acts as **Product Owner** - they define what to build and review results.
@@ -57,7 +67,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 ## Project Status
 - **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication)
 - **Next:** Phase D (Child Features) - Say "Start Phase D" to continue
-- **Full docs:** `docs/ARCHITECTURE.md`, `docs/SCAFFOLDING.md`, `docs/CONVENTIONS.md`, `docs/DEPLOYMENT.md`
+- **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
 ### What's Built
 - Blazor Server project at `src/JunoBank.Web/`
@@ -67,6 +77,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 - Seed data: Dad, Mom (parents), Junior (child with €10)
 - Authentication: Parent login (email/password), Child login (picture password)
 - Route protection with [Authorize]
+- **E2E Testing:** Playwright setup in `tests/e2e/` (text-based, token-efficient)
 
 ### Test Credentials
 - **Parent:** dad@junobank.local / parent123
@@ -100,6 +111,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 | Email | MailKit + SMTP | Works with Gmail, SendGrid, etc. |
 | State | Scoped services + events | Simple; no Fluxor/Redux needed |
 | Hosting | Docker (self-hosted) | User has Docker-capable infrastructure |
+| **E2E Testing** | **Playwright (text-based)** | **Token-efficient: text output only, no screenshots unless debugging** |
 
 ## Design Requirements
 - **Theme:** Dark mode
@@ -121,6 +133,10 @@ Juno-Z/
 │   │   └── DbInitializer.cs       # Seed data
 │   ├── wwwroot/css/neumorphic.css # 3D button styles
 │   └── Program.cs
+├── tests/e2e/                     # Playwright E2E tests (Node.js project)
+│   ├── specs/                     # Test files (.spec.ts)
+│   ├── playwright.config.ts       # Test configuration
+│   └── package.json               # Node dependencies
 ├── docs/                          # Architecture, conventions, deployment
 └── .claude/commands/              # Team commands (/spec, /plan, etc.)
 ```
@@ -137,3 +153,20 @@ MudBlazor (6.11.*)
 - This is a learning project - no rush, focus on understanding Blazor
 - Keep it simple - avoid over-engineering for a 3-user family app
 - Responsive design required (works on tablet in store)
+
+## E2E Testing with Playwright
+
+**⚠️ IMPORTANT: Token-Efficient Testing Protocol**
+
+When running E2E tests (`/e2e-test` or manual request):
+1. Navigate to `tests/e2e/` directory
+2. Run `npm test` (auto-starts server, headless mode, text output)
+3. Parse the **console output** for pass/fail results
+4. Report results as text (e.g., "5 passed, 2 failed")
+5. **NEVER** take screenshots or read images unless explicitly asked
+6. **NEVER** use `--headed` mode unless user requests it
+7. Only suggest `npm run test:ui` or screenshots if debugging a specific failure
+
+**Why:** Screenshots consume 1000+ tokens each. Text output uses ~100 tokens total.
+
+See `tests/e2e/README.md` for full testing documentation.
