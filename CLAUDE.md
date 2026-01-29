@@ -22,10 +22,20 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 - Keep code simple - avoid over-engineering
 
 **Available commands:**
-- `/save` - Commit and push to GitHub
-- `/build` - Build and check for errors
-- `/test` - Run all tests
-- `/docker` - Container operations
+
+| Command | Role | Purpose |
+|---------|------|---------|
+| `/architect` | Architecture Guardian | Review structure, patterns, teach good design |
+| `/ui` | UI Specialist | Blazor components, styling, responsiveness |
+| `/backend` | Backend Specialist | Services, EF Core, business logic |
+| `/unit-test` | Unit Tester | Write xUnit tests for services |
+| `/e2e-test` | E2E Tester | Integration tests, user flow tests |
+| `/refactor` | Refactorer | Clean up code without changing behavior |
+| `/review` | Code Reviewer | Critical review before commits |
+| `/build` | CI | Build and check for errors |
+| `/test` | CI | Run all tests |
+| `/docker` | DevOps | Container operations |
+| `/save` | DevOps | Commit and push to GitHub |
 
 ## Project Status
 - **Phase:** All planning complete. Ready to scaffold.
