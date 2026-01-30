@@ -1,4 +1,4 @@
-@page "/child/request-withdrawal"
+@page "/child/request-deposit"
 @attribute [Authorize(Roles = "Child")]
 @using JunoBank.Web.Auth
 @using JunoBank.Web.Data.Entities
@@ -8,12 +8,12 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-<PageTitle>Request Money</PageTitle>
+<PageTitle>Request Deposit</PageTitle>
 
 <div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
 
     <MudText Typo="Typo.h4" Style="margin-bottom: 2rem; text-align: center;">
-        💰 Request Money
+        🎁 Add Money
     </MudText>
 
     @if (!string.IsNullOrEmpty(_errorMessage))
@@ -46,7 +46,7 @@
                 <DataAnnotationsValidator />
 
                 <MudText Typo="Typo.body1" Class="mb-4">
-                    How much money do you want? 🤔
+                    How much money did you get? 🤔
                 </MudText>
 
                 <MudNumericField @bind-Value="_model.Amount"
@@ -61,15 +61,15 @@
                                  HelperText="How much? (Max €1000)" />
 
                 <MudTextField @bind-Value="_model.Reason"
-                              Label="What do you want it for?"
+                              Label="Where did it come from?"
                               Variant="Variant.Outlined"
                               Lines="3"
                               Required="true"
                               MaxLength="500"
                               Counter="500"
                               Class="mt-4"
-                              HelperText="Tell Mom or Dad why you need the money"
-                              Placeholder="For candy, toys, etc." />
+                              HelperText="Tell Mom or Dad where the money came from"
+                              Placeholder="From grandma, birthday, etc." />
 
                 <MudButton ButtonType="ButtonType.Submit"
                            Variant="Variant.Filled"
@@ -102,7 +102,7 @@
 </div>
 
 @code {
-    private WithdrawalRequestModel _model = new();
+    private DepositRequestModel _model = new();
     private bool _isSubmitting = false;
     private bool _submitted = false;
     private string _errorMessage = string.Empty;
@@ -112,7 +112,6 @@
     {
         var session = await AuthProvider.GetCurrentUserAsync();
 
-        // Verify session exists and user is a child
         if (session == null || session.Role != UserRole.Child)
         {
             Navigation.NavigateTo("/");
@@ -124,7 +123,6 @@
 
     private async Task HandleSubmit()
     {
-        // Safety check
         if (_userId == 0)
         {
             _errorMessage = "Invalid user session. Please log in again.";
@@ -139,7 +137,7 @@
             await UserService.CreateMoneyRequestAsync(
                 _userId,
                 _model.Amount,
-                RequestType.Withdrawal,
+                RequestType.Deposit,
                 _model.Reason
             );
 
@@ -156,7 +154,6 @@
         }
         catch (Exception ex)
         {
-            // Generic error for unexpected issues
             _errorMessage = "Oops! Something went wrong. Please try again.";
             Console.WriteLine($"Error creating request: {ex.Message}");
         }
@@ -171,9 +168,9 @@
         Navigation.NavigateTo("/child");
     }
 
-    public class WithdrawalRequestModel
+    public class DepositRequestModel
     {
-        public decimal Amount { get; set; } = 0.00m;  // Start empty, force intentional input
+        public decimal Amount { get; set; } = 0.00m;
         public string Reason { get; set; } = string.Empty;
     }
 }

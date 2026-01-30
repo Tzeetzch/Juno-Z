@@ -41,6 +41,10 @@ public class UserService : IUserService
                     .Where(t => t.IsApproved)
                     .OrderByDescending(t => t.CreatedAt)
                     .Take(50)
+                    .ToList(),
+                RecentRequests = u.MoneyRequests
+                    .OrderByDescending(r => r.CreatedAt)
+                    .Take(20)
                     .ToList()
             })
             .FirstOrDefaultAsync();

@@ -13,6 +13,14 @@
 
 This ensures you have complete context for the project. The information below is a summary only.
 
+## ⚠️ IMPORTANT: Don't Waste Tokens Re-exploring
+
+**NEVER launch Explore/search agents to gather info you already have.** The docs above, CLAUDE.md, and git history provide full project context. Only explore when you genuinely need to discover something NOT already documented here or in the loaded docs.
+
+## ⚠️ IMPORTANT: Always Write Tests With Every Cycle
+
+**Every build cycle MUST include tests as part of the deliverable — not as a separate step.** When building a new page, service, or feature, write the matching E2E spec (and unit test if applicable) in the SAME cycle. Never consider a cycle complete without tests. Do NOT wait to be asked.
+
 ## Workflow: Product Owner Mode
 
 The user acts as **Product Owner** - they define what to build and review results.

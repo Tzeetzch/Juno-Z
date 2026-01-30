@@ -49,7 +49,46 @@
                        OnClick="@(() => Navigation.NavigateTo("/child/request-withdrawal"))">
                 💰 Request Money
             </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="@(() => Navigation.NavigateTo("/child/request-deposit"))">
+                🎁 Add Money
+            </MudButton>
         </div>
+
+        <!-- My Requests -->
+        @if (_requests.Any())
+        {
+            <div style="margin-top: 3rem;">
+                <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+                    📋 My Requests
+                </MudText>
+
+                @foreach (var request in _requests)
+                {
+                    <div class="neu-card" style="padding: 1rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <MudText Typo="Typo.body1">
+                                @(request.Type == RequestType.Withdrawal ? "💰" : "🎁") @request.Description
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                @request.CreatedAt.ToString("dd MMM yyyy")
+                            </MudText>
+                        </div>
+                        <div style="text-align: right;">
+                            <MudText Typo="Typo.body1" Style="font-weight: bold;">
+                                €@request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="@($"color: {GetStatusColor(request.Status)};")">
+                                @GetStatusText(request.Status)
+                            </MudText>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
 
         <!-- Transaction History -->
         <div style="margin-top: 3rem;">
@@ -66,6 +105,7 @@
     private string _userName = string.Empty;
     private decimal _balance = 0;
     private List<Transaction> _transactions = new();
+    private List<MoneyRequest> _requests = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,13 +113,29 @@
 
         if (session != null)
         {
-            // ✅ FIXED: Single database query instead of multiple round-trips
             var dashboardData = await UserService.GetChildDashboardDataAsync(session.UserId);
             _userName = dashboardData.Name;
             _balance = dashboardData.Balance;
             _transactions = dashboardData.RecentTransactions;
+            _requests = dashboardData.RecentRequests;
         }
 
         _isLoading = false;
     }
+
+    private static string GetStatusText(RequestStatus status) => status switch
+    {
+        RequestStatus.Pending => "⏳ Waiting",
+        RequestStatus.Approved => "✅ Approved",
+        RequestStatus.Denied => "❌ Denied",
+        _ => ""
+    };
+
+    private static string GetStatusColor(RequestStatus status) => status switch
+    {
+        RequestStatus.Pending => "#FFA726",
+        RequestStatus.Approved => "#4caf50",
+        RequestStatus.Denied => "#f44336",
+        _ => "inherit"
+    };
 }
