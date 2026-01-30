@@ -1,0 +1,153 @@
+@page "/parent/transaction"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@inject CustomAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Add/Remove Money</PageTitle>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+
+    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@(() => Navigation.NavigateTo("/parent"))">
+        ← Back to Dashboard
+    </MudButton>
+
+    <MudText Typo="Typo.h4" Style="margin: 1rem 0 2rem;">
+        💰 Add or Remove Money
+    </MudText>
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
+            @_errorMessage
+        </MudAlert>
+    }
+
+    <div class="neu-card" style="padding: 2rem;">
+        <EditForm Model="_model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <MudRadioGroup @bind-Value="_model.Type" Class="mb-4">
+                <MudRadio Value="TransactionType.Deposit" Color="Color.Success">
+                    Add Money (Deposit)
+                </MudRadio>
+                <MudRadio Value="TransactionType.Withdrawal" Color="Color.Error">
+                    Remove Money (Withdrawal)
+                </MudRadio>
+            </MudRadioGroup>
+
+            <MudNumericField @bind-Value="_model.Amount"
+                             Label="Amount"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentText="€"
+                             Min="0.01m"
+                             Max="1000m"
+                             Step="0.01m"
+                             Required="true"
+                             HelperText="Max €1000" />
+
+            <MudTextField @bind-Value="_model.Description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Lines="2"
+                          Required="true"
+                          MaxLength="500"
+                          Counter="500"
+                          Class="mt-4"
+                          HelperText="What is this for?"
+                          Placeholder="Chores, birthday money, etc." />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mt-6"
+                       Disabled="_isSubmitting">
+                @if (_isSubmitting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Processing...</span>
+                }
+                else
+                {
+                    <span>Submit</span>
+                }
+            </MudButton>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private ManualTransactionModel _model = new();
+    private bool _isSubmitting = false;
+    private string _errorMessage = string.Empty;
+    private int _parentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null || session.Role != UserRole.Parent)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _parentUserId = session.UserId;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (_parentUserId == 0)
+        {
+            _errorMessage = "Invalid session. Please log in again.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            await UserService.CreateManualTransactionAsync(
+                _parentUserId,
+                _model.Amount,
+                _model.Type,
+                _model.Description
+            );
+
+            var action = _model.Type == TransactionType.Deposit ? "added" : "removed";
+            Snackbar.Add($"€{_model.Amount:0.00} {action} successfully!", Severity.Success);
+
+            // Reset form
+            _model = new ManualTransactionModel();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (ArgumentException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    public class ManualTransactionModel
+    {
+        public TransactionType Type { get; set; } = TransactionType.Deposit;
+        public decimal Amount { get; set; } = 0.00m;
+        public string Description { get; set; } = string.Empty;
+    }
+}

@@ -34,6 +34,7 @@ secrets.json
 appsettings.*.json
 !appsettings.json
 !appsettings.Development.json.example
+!appsettings.Testing.json
 
 # Docker data volumes (root level only)
 /data/

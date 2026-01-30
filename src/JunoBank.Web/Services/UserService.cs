@@ -52,6 +52,140 @@ public class UserService : IUserService
         return user ?? new ChildDashboardData();
     }
 
+    public async Task<ParentDashboardData> GetParentDashboardDataAsync()
+    {
+        var child = await _db.Users
+            .Where(u => u.Role == UserRole.Child)
+            .Select(u => new { u.Name, u.Balance })
+            .FirstOrDefaultAsync();
+
+        var pendingCount = await _db.MoneyRequests
+            .CountAsync(r => r.Status == RequestStatus.Pending);
+
+        return new ParentDashboardData
+        {
+            ChildName = child?.Name ?? "Child",
+            ChildBalance = child?.Balance ?? 0,
+            PendingRequestCount = pendingCount
+        };
+    }
+
+    public async Task<List<MoneyRequest>> GetPendingRequestsAsync()
+    {
+        return await _db.MoneyRequests
+            .Include(r => r.Child)
+            .Where(r => r.Status == RequestStatus.Pending)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null)
+    {
+        var request = await _db.MoneyRequests
+            .Include(r => r.Child)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+            throw new ArgumentException("Request not found");
+
+        if (request.Status != RequestStatus.Pending)
+            throw new InvalidOperationException("Request has already been resolved");
+
+        var parent = await _db.Users.FindAsync(parentUserId);
+        if (parent == null || parent.Role != UserRole.Parent)
+            throw new InvalidOperationException("Only parents can resolve requests");
+
+        request.Status = approve ? RequestStatus.Approved : RequestStatus.Denied;
+        request.ResolvedByUserId = parentUserId;
+        request.ParentNote = parentNote;
+        request.ResolvedAt = DateTime.UtcNow;
+
+        if (approve)
+        {
+            var child = request.Child;
+
+            if (request.Type == RequestType.Withdrawal)
+            {
+                if (child.Balance < request.Amount)
+                    throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+                child.Balance -= request.Amount;
+            }
+            else
+            {
+                child.Balance += request.Amount;
+            }
+
+            // Create a matching transaction record
+            var transaction = new Transaction
+            {
+                UserId = child.Id,
+                Amount = request.Amount,
+                Type = request.Type == RequestType.Deposit ? TransactionType.Deposit : TransactionType.Withdrawal,
+                Description = request.Description,
+                IsApproved = true,
+                ApprovedByUserId = parentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _db.Transactions.Add(transaction);
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<List<Transaction>> GetAllTransactionsAsync(int limit = 100)
+    {
+        return await _db.Transactions
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<Transaction> CreateManualTransactionAsync(int parentUserId, decimal amount, TransactionType type, string description)
+    {
+        var parent = await _db.Users.FindAsync(parentUserId);
+        if (parent == null || parent.Role != UserRole.Parent)
+            throw new InvalidOperationException("Only parents can create manual transactions");
+
+        var child = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Child);
+        if (child == null)
+            throw new InvalidOperationException("No child account found");
+
+        if (amount <= 0)
+            throw new ArgumentException("Amount must be greater than zero", nameof(amount));
+
+        if (amount > 1000)
+            throw new ArgumentException("Amount cannot exceed €1000", nameof(amount));
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description is required", nameof(description));
+
+        if (type == TransactionType.Withdrawal && child.Balance < amount)
+            throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+        if (type == TransactionType.Deposit)
+            child.Balance += amount;
+        else if (type == TransactionType.Withdrawal)
+            child.Balance -= amount;
+
+        var transaction = new Transaction
+        {
+            UserId = child.Id,
+            Amount = amount,
+            Type = type,
+            Description = description,
+            IsApproved = true,
+            ApprovedByUserId = parentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.Transactions.Add(transaction);
+        await _db.SaveChangesAsync();
+
+        return transaction;
+    }
+
     public async Task<MoneyRequest> CreateMoneyRequestAsync(int childId, decimal amount, RequestType type, string description)
     {
         // Verify the user exists and is a child
@@ -91,5 +225,62 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
 
         return request;
+    }
+
+    public async Task<ScheduledAllowance?> GetAllowanceSettingsAsync()
+    {
+        return await _db.ScheduledAllowances
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task UpdateAllowanceSettingsAsync(int parentUserId, decimal amount, DayOfWeek dayOfWeek, bool isActive)
+    {
+        var parent = await _db.Users.FindAsync(parentUserId);
+        if (parent == null || parent.Role != UserRole.Parent)
+            throw new InvalidOperationException("Only parents can configure allowance");
+
+        if (amount <= 0)
+            throw new ArgumentException("Amount must be greater than zero", nameof(amount));
+
+        var child = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Child);
+        if (child == null)
+            throw new InvalidOperationException("No child account found");
+
+        var allowance = await _db.ScheduledAllowances.FirstOrDefaultAsync();
+
+        if (allowance == null)
+        {
+            allowance = new ScheduledAllowance
+            {
+                ChildId = child.Id,
+                CreatedByUserId = parentUserId,
+                Amount = amount,
+                DayOfWeek = dayOfWeek,
+                TimeOfDay = new TimeOnly(9, 0),
+                IsActive = isActive,
+                NextRunDate = CalculateNextRun(dayOfWeek),
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.ScheduledAllowances.Add(allowance);
+        }
+        else
+        {
+            allowance.Amount = amount;
+            allowance.DayOfWeek = dayOfWeek;
+            allowance.IsActive = isActive;
+            if (isActive)
+                allowance.NextRunDate = CalculateNextRun(dayOfWeek);
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    private static DateTime CalculateNextRun(DayOfWeek dayOfWeek)
+    {
+        var today = DateTime.UtcNow.Date;
+        var daysUntil = ((int)dayOfWeek - (int)today.DayOfWeek + 7) % 7;
+        if (daysUntil == 0)
+            daysUntil = 7; // Next week if today is the target day
+        return today.AddDays(daysUntil).Add(new TimeSpan(9, 0, 0));
     }
 }

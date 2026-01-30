@@ -1,0 +1,130 @@
+@page "/parent/requests"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@inject CustomAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Pending Requests</PageTitle>
+
+<div style="max-width: 700px; margin: 0 auto; padding: 2rem;">
+
+    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@(() => Navigation.NavigateTo("/parent"))">
+        ← Back to Dashboard
+    </MudButton>
+
+    <MudText Typo="Typo.h4" Style="margin: 1rem 0 2rem;">
+        📋 Pending Requests
+    </MudText>
+
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else if (!_requests.Any())
+    {
+        <div class="neu-card" style="padding: 2rem; text-align: center;">
+            <MudText Typo="Typo.h6">No pending requests!</MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                All caught up. Junior hasn't asked for anything yet.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        @foreach (var request in _requests)
+        {
+            <div class="neu-card" style="padding: 1.5rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div>
+                        <MudText Typo="Typo.body1" Style="font-weight: bold;">
+                            @(request.Type == RequestType.Withdrawal ? "💰 Withdrawal" : "🎁 Deposit") Request
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            @request.Description
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            From @request.Child.Name — @request.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                        </MudText>
+                    </div>
+                    <MudText Typo="Typo.h5" Style="color: var(--mud-palette-primary); font-weight: bold;">
+                        €@request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+                    </MudText>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               Size="Size.Medium"
+                               Style="flex: 1;"
+                               Disabled="_isProcessing"
+                               OnClick="@(() => Resolve(request.Id, true))">
+                        ✅ Approve
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Medium"
+                               Style="flex: 1;"
+                               Disabled="_isProcessing"
+                               OnClick="@(() => Resolve(request.Id, false))">
+                        ❌ Deny
+                    </MudButton>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<MoneyRequest> _requests = new();
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+    private int _parentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null || session.Role != UserRole.Parent)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _parentUserId = session.UserId;
+        await LoadRequests();
+    }
+
+    private async Task LoadRequests()
+    {
+        _isLoading = true;
+        _requests = await UserService.GetPendingRequestsAsync();
+        _isLoading = false;
+    }
+
+    private async Task Resolve(int requestId, bool approve)
+    {
+        _isProcessing = true;
+
+        try
+        {
+            await UserService.ResolveRequestAsync(requestId, _parentUserId, approve);
+            Snackbar.Add(approve ? "Request approved!" : "Request denied.", approve ? Severity.Success : Severity.Warning);
+            await LoadRequests();
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Something went wrong. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+}
