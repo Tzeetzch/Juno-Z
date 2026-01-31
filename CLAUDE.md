@@ -29,22 +29,36 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 **Lean workflow (default):**
 1. `/spec` - Understand the request
 2. `/plan` - Break into cycles
-3. **Per cycle:** Build → Show → You approve → Next cycle
-4. `/save` - When you say so
+3. `/ba-review` - Business Analyst reviews the plan
+4. **Per cycle:**
+   - `/backend` or `/ui` - Developer builds (no tests yet)
+   - `/unit-test` - Unit Test specialist writes unit tests
+   - `/e2e-test` - Playwright specialist writes E2E tests
+   - You approve → Next cycle
+5. **End of phase:**
+   - `/architect` - Architect reviews structure
+   - `/ux-review` - UI/UX expert reviews design
+   - You approve → Phase complete
+6. `/save` - When you say so
 
-**Call specialists when needed:**
-- `/backend`, `/ui` - When building that layer
-- `/unit-test` - After building logic (not for tiny UI tweaks)
-- `/review` - Before /save
-- `/architect` - Periodic check, or after major features
-- `/security` - Only for auth/data changes
-- `/debug` - Only when something breaks
-- `/e2e-test` - End of feature, not every cycle
-- `/refactor` - When code gets messy
+**Specialist roles:**
+| Role | Command | Responsibility |
+|------|---------|----------------|
+| Business Analyst | `/ba-review` | Reviews plan for completeness, edge cases, user stories |
+| Backend Developer | `/backend` | Services, EF Core, business logic |
+| UI Developer | `/ui` | Components, styling, Blazor pages |
+| Unit Test Specialist | `/unit-test` | xUnit tests for services and logic |
+| Playwright Specialist | `/e2e-test` | E2E tests (see `tests/e2e/E2E_CONTEXT.md`) |
+| Architect | `/architect` | Structure, patterns, technical debt |
+| UI/UX Expert | `/ux-review` | Usability, accessibility, design consistency |
+| Security Specialist | `/security` | Auth, data protection, vulnerabilities |
+| Debugger | `/debug` | Root cause analysis when things break |
 
 **Quality standards:**
-- Always write tests for new features
-- Run build after significant changes
+- Developers build, specialists test (separation of concerns)
+- Unit tests for all services and business logic
+- E2E tests for all user flows
+- Architect + UX approval required at end of each phase
 - Follow the coding conventions in docs/CONVENTIONS.md
 - Keep code simple - avoid over-engineering
 
@@ -52,19 +66,22 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 
 | Command | When | Purpose |
 |---------|------|---------|
-| **Always** |||
+| **Planning** |||
 | `/spec` | Every feature | Clarify requests before building |
 | `/plan` | Every feature | Break into small work cycles |
+| `/ba-review` | After /plan | Business Analyst validates the plan |
+| **Building (per cycle)** |||
+| `/backend` | Backend work | Developer: services, EF Core, logic |
+| `/ui` | Frontend work | Developer: components, styling |
+| `/unit-test` | After building | Unit Test Specialist: xUnit tests |
+| `/e2e-test` | After building | Playwright Specialist: E2E tests |
+| **Phase completion** |||
+| `/architect` | End of phase | Architect reviews structure |
+| `/ux-review` | End of phase | UI/UX expert reviews design |
 | `/review` | Before /save | Quick sanity check |
 | `/save` | When you say | Commit and push |
-| **While building** |||
-| `/backend` | Backend work | Services, EF Core, logic |
-| `/ui` | Frontend work | Components, styling |
-| `/unit-test` | New logic | Write tests for services |
 | **Situational** |||
-| `/architect` | Major features | Check structure, teaches good design |
 | `/security` | Auth/data changes | Check for vulnerabilities |
-| `/e2e-test` | Feature complete | Full user flow tests |
 | `/debug` | Something breaks | Find root cause |
 | `/refactor` | Code is messy | Clean up without changing behavior |
 | **Ops** |||
