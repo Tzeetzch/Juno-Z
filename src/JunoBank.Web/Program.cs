@@ -4,6 +4,7 @@ using JunoBank.Web.Components;
 using JunoBank.Web.Data;
 using JunoBank.Web.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
@@ -58,6 +59,15 @@ else
 
 // Background services
 builder.Services.AddHostedService<AllowanceBackgroundService>();
+
+// Data Protection - use custom path if specified (for Docker)
+var dataProtectionKeysPath = builder.Configuration["DataProtection:Keys"];
+if (!string.IsNullOrEmpty(dataProtectionKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
+        .SetApplicationName("JunoBank");
+}
 
 var app = builder.Build();
 

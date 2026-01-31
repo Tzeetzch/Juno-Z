@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  junobank:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: junobank
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    volumes:
+      # Persist SQLite database
+      - junobank-data:/app/data
+      # Persist ASP.NET Core Data Protection keys (for auth cookies)
+      - junobank-keys:/app/keys
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/junobank.db
+      - DataProtection__Keys=/app/keys
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  junobank-data:
+  junobank-keys:

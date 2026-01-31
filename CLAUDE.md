@@ -105,9 +105,9 @@ This ensures proper review cycles and user visibility into changes.
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance), Phase G (email + password reset)
-- **Next:** Phase H (Docker Deployment)
-- **Parked:** Request notifications to parents (future enhancement)
+- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance), Phase G (email + password reset), Phase H (Docker deployment)
+- **Next:** Phase I (Polish)
+- **Parked:** Request notifications to parents, Production email configuration
 - **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
 ### What's Built

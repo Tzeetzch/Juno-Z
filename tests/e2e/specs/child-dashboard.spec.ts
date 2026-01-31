@@ -34,8 +34,8 @@ test.describe('Child Dashboard', () => {
   test('should display child name and balance', async ({ page }) => {
     await loginAsChild(page);
 
-    // Check for welcome message with name (Hi [Name]! 👋)
-    await expect(page.getByText(/Hi.*!/)).toBeVisible({ timeout: 10000 });
+    // Check for welcome heading with name (Hi [Name]! 👋)
+    await expect(page.getByRole('heading', { name: /Hi.*!/ })).toBeVisible({ timeout: 10000 });
 
     // Check for balance display label
     await expect(page.getByText('🐷 Piggy Bank Balance')).toBeVisible();

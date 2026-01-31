@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Test projects
+tests/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Screenshots
+screenshots/
+
+# Local development files
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/appsettings.Development.json
+**/appsettings.Testing.json
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Node (E2E tests)
+**/node_modules/

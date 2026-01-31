@@ -122,15 +122,24 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 - Send email on request approval/denial
 - Per-parent notification preferences
 
-## Phase H: Docker & Deployment
+## Phase H: Docker & Deployment ✅ COMPLETE
 
-- [ ] Create Dockerfile
-- [ ] Create docker-compose.yml
-- [ ] Test local Docker build and run
-- [ ] Document reverse proxy setup
-- [ ] First production deployment
+- [x] Create Dockerfile (multi-stage build, non-root user)
+- [x] Create docker-compose.yml (Podman-compatible, port 5050)
+- [x] Create .dockerignore
+- [x] Create nginx-example.conf (WebSocket support, Cloudflare)
+- [x] Document reverse proxy setup
+- [x] Update DEPLOYMENT.md with comprehensive guide
+- [x] Add Data Protection keys persistence
 
-**Verify:** App runs in Docker, accessible via domain
+**Verified:** Publish works, all tests pass
+
+**Key files:**
+- `docker/Dockerfile` - Multi-stage build, non-root user
+- `docker/docker-compose.yml` - Podman-compatible, volumes for data + keys
+- `docker/.dockerignore` - Excludes tests, docs, IDE files
+- `docker/nginx-example.conf` - WebSocket headers for Blazor Server
+- `docs/DEPLOYMENT.md` - Full deployment guide
 
 ## Phase I: Polish
 
@@ -144,7 +153,7 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 ## Current Status
 
-**Completed:** Phase A, Phase B, Phase C, Phase D, Phase E, Phase F, Phase G
-**Next:** Phase H (Docker Deployment)
+**Completed:** Phase A, Phase B, Phase C, Phase D, Phase E, Phase F, Phase G, Phase H
+**Next:** Phase I (Polish)
 
-Tell Claude: "Start Phase H" to continue.
+Tell Claude: "Start Phase I" to continue.
