@@ -7,7 +7,11 @@ import { test, expect } from '@playwright/test';
 test('server responds', async ({ page }) => {
   const response = await page.goto('/');
   expect(response?.status()).toBeLessThan(500);
-  console.log('Server is responding!');
-  console.log('URL:', page.url());
-  console.log('Title:', await page.title());
+  await page.waitForLoadState('networkidle');
+});
+
+test('should redirect to login', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await expect(page).toHaveURL(/login/i);
 });

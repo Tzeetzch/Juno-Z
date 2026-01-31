@@ -3,11 +3,17 @@ import { test, expect } from '@playwright/test';
 /**
  * Example E2E tests for Juno Bank
  * These tests use text-based assertions (no screenshots)
+ * 
+ * MudBlazor-specific notes:
+ * - MudTextField: Use locator('.mud-input-control').filter({ hasText: 'Label' }).locator('input')
+ * - Buttons: Use getByRole or locator with text
+ * - Wait for networkidle after navigation for Blazor Server SignalR
  */
 
 test.describe('Home Page', () => {
   test('should load the home page', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
     // Check page title (text-based check)
     await expect(page).toHaveTitle(/Juno Bank/);
@@ -15,6 +21,7 @@ test.describe('Home Page', () => {
 
   test('should require authentication', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
     // Should redirect to login or show login UI
     await expect(page).toHaveURL(/login/i);
@@ -24,43 +31,51 @@ test.describe('Home Page', () => {
 test.describe('Parent Login', () => {
   test('should show parent login form', async ({ page }) => {
     await page.goto('/login/parent');
+    await page.waitForLoadState('networkidle');
 
-    // Check for email and password fields (text-based)
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    // Check for email and password fields using MudTextField structure
+    // MudBlazor renders labels inside the input control
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Email' })).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Password' })).toBeVisible();
   });
 
   test('should login with valid parent credentials', async ({ page }) => {
     await page.goto('/login/parent');
+    await page.waitForLoadState('networkidle');
 
-    // Fill in parent credentials
-    await page.getByLabel(/email/i).fill('dad@junobank.local');
-    await page.getByLabel(/password/i).fill('parent123');
-    await page.locator('button:has-text("Login")').click();
+    // Fill in parent credentials using MudBlazor selectors
+    await page.locator('.mud-input-control').filter({ hasText: 'Email' }).locator('input').fill('dad@junobank.local');
+    await page.locator('.mud-input-control').filter({ hasText: 'Password' }).locator('input').fill('parent123');
+    
+    // Click the Login button
+    await page.locator('button.neu-btn:has-text("Login")').click();
 
-    // Should redirect to parent dashboard
-    await expect(page).toHaveURL(/parent/i);
+    // Wait for navigation with extended timeout for Blazor Server
+    await expect(page).toHaveURL(/\/parent/, { timeout: 15000 });
+    await page.waitForLoadState('networkidle');
 
-    // Verify logged in state (check for logout button or username)
-    //await expect(page.getByText(/dad/i)).toBeVisible();
+    // Verify logged in state - check for welcome message
+    await expect(page.getByText(/Welcome, Dad/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('should reject invalid credentials', async ({ page }) => {
     await page.goto('/login/parent');
+    await page.waitForLoadState('networkidle');
 
-    await page.getByLabel(/email/i).fill('wrong@email.com');
-    await page.getByLabel(/password/i).fill('wrongpassword');
-    await page.locator('button:has-text("Login")').click();
+    // Fill invalid credentials
+    await page.locator('.mud-input-control').filter({ hasText: 'Email' }).locator('input').fill('wrong@email.com');
+    await page.locator('.mud-input-control').filter({ hasText: 'Password' }).locator('input').fill('wrongpassword');
+    await page.locator('button.neu-btn:has-text("Login")').click();
 
-    // Should show error message
-    await expect(page.getByText(/invalid/i)).toBeVisible();
-    //await expect(page.isVisible('text=invalid'));
+    // Should show error message (MudAlert with "Invalid email or password")
+    await expect(page.locator('.mud-alert').filter({ hasText: /invalid/i })).toBeVisible({ timeout: 10000 });
   });
 });
 
 test.describe('Child Picture Login', () => {
   test('should show picture password grid', async ({ page }) => {
     await page.goto('/login/child');
+    await page.waitForLoadState('networkidle');
 
     // Check for picture grid (9 buttons)
     const pictureButtons = page.locator('.picture-btn');
@@ -69,18 +84,19 @@ test.describe('Child Picture Login', () => {
 
   test('should login with correct picture sequence', async ({ page }) => {
     await page.goto('/login/child');
+    await page.waitForLoadState('networkidle');
 
-    // The test sequence is: cat→dog→star→moon
-    // Note: The grid is randomized, so we need to find the right emojis
-    await page.locator('button:has-text("🐱")').click();
-    await page.locator('button:has-text("🐶")').click();
-    await page.locator('button:has-text("⭐")').click();
-    await page.locator('button:has-text("🌙")').click();
+    // The test sequence is: cat→dog→star→moon (🐱→🐶→⭐→🌙)
+    await page.locator('.picture-btn:has-text("🐱")').click();
+    await page.locator('.picture-btn:has-text("🐶")').click();
+    await page.locator('.picture-btn:has-text("⭐")').click();
+    await page.locator('.picture-btn:has-text("🌙")').click();
 
     // Should redirect to child dashboard
-    await expect(page).toHaveURL(/child/i);
+    await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
+    await page.waitForLoadState('networkidle');
 
-    // Verify logged in state (check for welcome heading)
-    await expect(page.getByRole('heading', { name: /Hi Junior/i })).toBeVisible();
+    // Verify logged in state (check for welcome heading with child name)
+    await expect(page.getByText(/Hi.*!/i)).toBeVisible({ timeout: 10000 });
   });
 });

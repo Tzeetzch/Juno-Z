@@ -1,6 +1,8 @@
 # Juno Bank - E2E Tests
 
-Playwright tests for Juno Bank, configured for **text-based output** to minimize token usage.
+Playwright tests for Juno Bank Blazor Server application.
+
+> ⚠️ **CRITICAL**: Read [E2E_CONTEXT.md](E2E_CONTEXT.md) before writing or debugging tests!
 
 ## Quick Start
 

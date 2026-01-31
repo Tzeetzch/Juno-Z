@@ -42,25 +42,25 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 - Parent: dad@junobank.local / parent123
 - Child: cat→dog→star→moon (tap the emojis)
 
-## Phase D: Child Features
+## Phase D: Child Features ✅ COMPLETE
 
-- [ ] Child dashboard (balance display, large and visual)
-- [ ] Transaction history list
-- [ ] Request withdrawal form
-- [ ] Request deposit form
-- [ ] Visual feedback on request submission
+- [x] Child dashboard (balance display, large and visual)
+- [x] Transaction history list
+- [x] Request withdrawal form
+- [x] Request deposit form
+- [x] Visual feedback on request submission
 
-**Verify:** Child can view balance, history, and submit requests
+**Verified:** Child can view balance, history, and submit requests
 
-## Phase E: Parent Features
+## Phase E: Parent Features ✅ COMPLETE
 
-- [ ] Parent dashboard (pending requests count, child balance)
-- [ ] Pending requests list with approve/deny
-- [ ] Manual transaction form (add/subtract)
-- [ ] Transaction history (all transactions)
-- [ ] Settings page (scheduled allowance config)
+- [x] Parent dashboard (pending requests count, child balance)
+- [x] Pending requests list with approve/deny
+- [x] Manual transaction form (add/subtract)
+- [x] Transaction history (all transactions)
+- [x] Settings page (scheduled allowance config)
 
-**Verify:** Parent can manage requests and transactions
+**Verified:** Parent can manage requests and transactions
 
 ## Phase F: Scheduled Allowance
 
@@ -101,7 +101,7 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 ## Current Status
 
-**Completed:** Phase A, Phase B, Phase C
-**Next:** Phase D (Child Features)
+**Completed:** Phase A, Phase B, Phase C, Phase D, Phase E
+**Next:** Phase F (Scheduled Allowance) or Phase H (Docker Deployment)
 
-Tell Claude: "Start Phase D" to continue.
+Tell Claude: "Start Phase F" or "Start Phase H" to continue.

@@ -73,8 +73,8 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication)
-- **Next:** Phase D (Child Features) - Say "Start Phase D" to continue
+- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features)
+- **Next:** Phase F (Scheduled Allowance) or Phase H (Docker Deployment)
 - **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
 ### What's Built

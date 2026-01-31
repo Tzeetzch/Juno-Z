@@ -2,84 +2,101 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Cycle 4: Request Deposit Form
+ * 
+ * MudBlazor-specific handling for Blazor Server app
  */
+
+// Helper function to login as child
+async function loginAsChild(page: any) {
+  await page.goto('/login/child');
+  await page.waitForLoadState('networkidle');
+  
+  await page.locator('.picture-btn:has-text("🐱")').click();
+  await page.locator('.picture-btn:has-text("🐶")').click();
+  await page.locator('.picture-btn:has-text("⭐")').click();
+  await page.locator('.picture-btn:has-text("🌙")').click();
+  
+  await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
+  await page.waitForLoadState('networkidle');
+}
 
 test.describe('Request Deposit', () => {
 
   test('should show request deposit form', async ({ page }) => {
-    // Login as child
-    await page.goto('/login/child');
-    await page.locator('button:has-text("🐱")').click();
-    await page.locator('button:has-text("🐶")').click();
-    await page.locator('button:has-text("⭐")').click();
-    await page.locator('button:has-text("🌙")').click();
-
-    // Should be on dashboard
-    await page.waitForURL('/child');
+    await loginAsChild(page);
 
     // Click "Add Money" button
-    await page.getByRole('button', { name: /Add Money/i }).click();
+    await page.locator('button:has-text("Add Money")').click();
 
     // Should navigate to request deposit page
-    await expect(page).toHaveURL('/child/request-deposit');
+    await expect(page).toHaveURL('/child/request-deposit', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
     // Check form elements
-    await expect(page.getByRole('heading', { name: /Add Money/i })).toBeVisible();
-    await expect(page.getByLabel(/Amount/i)).toBeVisible();
-    await expect(page.getByLabel(/Where did it come from/i)).toBeVisible();
+    await expect(page.getByText('🎁 Add Money')).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Amount' })).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Where did it come from' })).toBeVisible();
+    await expect(page.locator('button:has-text("Ask Mom or Dad")')).toBeVisible();
   });
 
   test('should submit deposit request successfully', async ({ page }) => {
-    // Login
-    await page.goto('/login/child');
-    await page.locator('button:has-text("🐱")').click();
-    await page.locator('button:has-text("🐶")').click();
-    await page.locator('button:has-text("⭐")').click();
-    await page.locator('button:has-text("🌙")').click();
-    await page.waitForURL('/child');
+    await loginAsChild(page);
 
     // Go to request deposit
-    await page.getByRole('button', { name: /Add Money/i }).click();
-    await page.waitForURL('/child/request-deposit');
+    await page.locator('button:has-text("Add Money")').click();
+    await expect(page).toHaveURL('/child/request-deposit', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Fill form
-    await page.getByLabel(/Amount/i).fill('10.00');
-    await page.getByLabel(/Where did it come from/i).fill('Birthday money from grandma');
+    // Fill form using MudBlazor selectors
+    await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('10.00');
+    await page.locator('.mud-input-control').filter({ hasText: 'Where did it come from' }).locator('textarea').fill('Birthday money from grandma');
 
     // Submit
-    await page.getByRole('button', { name: /Ask Mom or Dad/i }).click();
+    await page.locator('button:has-text("Ask Mom or Dad")').click();
 
     // Should show success message
-    await expect(page.getByText(/Request Sent/i)).toBeVisible();
+    await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Mom or Dad will review/i)).toBeVisible();
 
     // Should have back button
-    await expect(page.getByRole('button', { name: /Back to My Piggy Bank/i })).toBeVisible();
+    await expect(page.locator('button:has-text("Back to My Piggy Bank")')).toBeVisible();
   });
 
   test('should navigate back to dashboard after success', async ({ page }) => {
-    // Login and submit request
-    await page.goto('/login/child');
-    await page.locator('button:has-text("🐱")').click();
-    await page.locator('button:has-text("🐶")').click();
-    await page.locator('button:has-text("⭐")').click();
-    await page.locator('button:has-text("🌙")').click();
-    await page.waitForURL('/child');
+    await loginAsChild(page);
 
-    await page.getByRole('button', { name: /Add Money/i }).click();
-    await page.waitForURL('/child/request-deposit');
+    // Go to request form
+    await page.locator('button:has-text("Add Money")').click();
+    await expect(page).toHaveURL('/child/request-deposit', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    await page.getByLabel(/Amount/i).fill('5.00');
-    await page.getByLabel(/Where did it come from/i).fill('Found in my pocket');
-    await page.getByRole('button', { name: /Ask Mom or Dad/i }).click();
+    // Fill and submit
+    await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('5.00');
+    await page.locator('.mud-input-control').filter({ hasText: 'Where did it come from' }).locator('textarea').fill('Found in my pocket');
+    await page.locator('button:has-text("Ask Mom or Dad")').click();
 
     // Wait for success message
-    await expect(page.getByText(/Request Sent/i)).toBeVisible();
+    await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 10000 });
 
     // Click back button
-    await page.getByRole('button', { name: /Back to My Piggy Bank/i }).click();
+    await page.locator('button:has-text("Back to My Piggy Bank")').click();
 
     // Should be back on dashboard
-    await expect(page).toHaveURL('/child');
+    await expect(page).toHaveURL('/child', { timeout: 10000 });
+  });
+
+  test('should show cancel button that returns to dashboard', async ({ page }) => {
+    await loginAsChild(page);
+
+    // Go to request form
+    await page.locator('button:has-text("Add Money")').click();
+    await expect(page).toHaveURL('/child/request-deposit', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
+
+    // Click cancel
+    await page.locator('button:has-text("Cancel")').click();
+
+    // Should return to dashboard
+    await expect(page).toHaveURL('/child', { timeout: 10000 });
   });
 });

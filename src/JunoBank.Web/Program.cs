@@ -14,9 +14,14 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddMudServices();
 
-// Database
+// Database - use JUNO_TEST_DB env var if set (for isolated test runs), otherwise use config
+var testDbName = Environment.GetEnvironmentVariable("JUNO_TEST_DB");
+var connectionString = string.IsNullOrEmpty(testDbName)
+    ? builder.Configuration.GetConnectionString("DefaultConnection")
+    : $"Data Source=Data/{testDbName}";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(connectionString));
 
 // Authentication
 builder.Services.AddAuthentication(options =>
@@ -53,10 +58,11 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Seed database
+// Ensure database is created and seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
     await DbInitializer.SeedAsync(context);
 }
 

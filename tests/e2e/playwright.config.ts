@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { randomUUID } from 'crypto';
+
+// Generate unique database name for this test run
+const testRunId = randomUUID().substring(0, 8);
+const testDbName = `junobank-test-${testRunId}.db`;
 
 /**
  * Playwright configuration for Juno Bank
@@ -6,13 +11,13 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './specs',
-  globalSetup: './global-setup.ts',
+  globalSetup: './global-setup.ts',  // Cleans up old test databases
 
   /* Maximum time one test can run for */
   timeout: 30 * 1000,
 
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /* Run tests serially to avoid session conflicts in Blazor Server */
+  fullyParallel: false,
 
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
@@ -20,8 +25,8 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 1 : undefined,
+  /* Single worker to avoid session state conflicts */
+  workers: 1,
 
   /* Reporter configuration - TEXT ONLY by default */
   reporter: [
@@ -73,9 +78,9 @@ export default defineConfig({
 
   /* Run local dev server before starting tests */
   webServer: {
-    command: 'cmd /c "cd ../../src/JunoBank.Web && dotnet run --launch-profile http-test"',
+    command: `cmd /c "cd ../../src/JunoBank.Web && set JUNO_TEST_DB=${testDbName} && dotnet run --launch-profile http-test"`,
     url: 'http://localhost:5208',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,  // Always start fresh server for tests
     timeout: 120 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
