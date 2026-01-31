@@ -30,16 +30,27 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 1. `/spec` - Understand the request
 2. `/plan` - Break into cycles
 3. `/ba-review` - Business Analyst reviews the plan
+   - If issues found → return to `/plan` with feedback (do NOT fix directly)
 4. **Per cycle:**
    - `/backend` or `/ui` - Developer builds (no tests yet)
    - `/unit-test` - Unit Test specialist writes unit tests
    - `/e2e-test` - Playwright specialist writes E2E tests
+   - If tests fail → return to previous step with feedback (do NOT fix directly)
    - You approve → Next cycle
 5. **End of phase:**
    - `/architect` - Architect reviews structure
    - `/ux-review` - UI/UX expert reviews design
+   - If review finds issues → return to relevant step with feedback
    - You approve → Phase complete
 6. `/save` - When you say so
+
+**⚠️ IMPORTANT: Review/Test Failure Protocol**
+When ANY review or test step identifies issues:
+1. **DO NOT fix the issues directly**
+2. **Return to the previous step** (e.g., /ba-review fails → back to /plan)
+3. **Include the feedback** from the review in the revised step
+4. **Re-run the review** after revisions
+This ensures proper review cycles and user visibility into changes.
 
 **Specialist roles:**
 | Role | Command | Responsibility |
@@ -61,6 +72,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 - Architect + UX approval required at end of each phase
 - Follow the coding conventions in docs/CONVENTIONS.md
 - Keep code simple - avoid over-engineering
+- **Reviews identify issues, they don't fix them** - fixes go through proper workflow
 
 **Available commands:**
 
