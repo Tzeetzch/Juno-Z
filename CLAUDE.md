@@ -91,7 +91,8 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 
 ## Project Status
 - **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance)
-- **Next:** Phase G (Email Notifications) or Phase H (Docker Deployment)
+- **Next:** Phase G (Email Infrastructure - password reset), Phase H (Docker Deployment)
+- **Parked:** Request notifications to parents (future enhancement)
 - **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
 ### What's Built

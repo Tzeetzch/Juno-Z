@@ -82,14 +82,20 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 - `BackgroundServices/AllowanceBackgroundService.cs` - Runs every minute (configurable)
 - `Components/Pages/Parent/Settings.razor` - Enhanced with description, time picker, live preview
 
-## Phase G: Email Notifications
+## Phase G: Email Infrastructure
 
-- [ ] Configure MailKit with SMTP settings
-- [ ] Send email on new request
-- [ ] Send email on request approval/denial
-- [ ] Toggle emails on/off in settings
+- [ ] Configure MailKit with SMTP settings (appsettings.json)
+- [ ] Create IEmailService interface and implementation
+- [ ] Console logging fallback when SMTP not configured
+- [ ] Password reset email (forgot password flow)
+- [ ] Unit tests for email service
 
-**Verify:** Emails sent when requests are made/resolved
+**Verify:** Password reset emails work, console fallback in dev
+
+**PARKED (Future):** Request notifications to parents
+- Send email on new request from child
+- Send email on request approval/denial
+- Per-parent notification preferences
 
 ## Phase H: Docker & Deployment
 
