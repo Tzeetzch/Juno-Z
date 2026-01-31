@@ -1,4 +1,5 @@
 using JunoBank.Web.Auth;
+using JunoBank.Web.BackgroundServices;
 using JunoBank.Web.Components;
 using JunoBank.Web.Data;
 using JunoBank.Web.Services;
@@ -38,7 +39,12 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 builder.Services.AddScoped<CustomAuthStateProvider>();
 
 // Application services
+builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAllowanceService, AllowanceService>();
+
+// Background services
+builder.Services.AddHostedService<AllowanceBackgroundService>();
 
 var app = builder.Build();
 

@@ -90,8 +90,8 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features)
-- **Next:** Phase F (Scheduled Allowance) or Phase H (Docker Deployment)
+- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance)
+- **Next:** Phase G (Email Notifications) or Phase H (Docker Deployment)
 - **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
 ### What's Built
@@ -149,6 +149,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
 ```
 Juno-Z/
 ├── src/JunoBank.Web/              # Blazor Server project
+│   ├── BackgroundServices/        # AllowanceBackgroundService (scheduled tasks)
 │   ├── Components/
 │   │   ├── Layout/                # MainLayout (MudBlazor themed)
 │   │   └── Pages/                 # Home (neumorphic demo)
@@ -156,12 +157,17 @@ Juno-Z/
 │   │   ├── Entities/              # User, Transaction, MoneyRequest, etc.
 │   │   ├── AppDbContext.cs
 │   │   └── DbInitializer.cs       # Seed data
+│   ├── Services/                  # IAllowanceService, IDateTimeProvider, etc.
 │   ├── wwwroot/css/neumorphic.css # 3D button styles
 │   └── Program.cs
-├── tests/e2e/                     # Playwright E2E tests (Node.js project)
-│   ├── specs/                     # Test files (.spec.ts)
-│   ├── playwright.config.ts       # Test configuration
-│   └── package.json               # Node dependencies
+├── tests/
+│   ├── e2e/                       # Playwright E2E tests (53 specs)
+│   │   ├── specs/                 # Test files (.spec.ts)
+│   │   ├── playwright.config.ts   # Test configuration
+│   │   └── E2E_CONTEXT.md         # Critical Blazor session handling rules
+│   └── JunoBank.Tests/            # xUnit unit tests (18 tests)
+│       ├── Services/              # AllowanceService tests
+│       └── BackgroundServices/    # Background service tests
 ├── docs/                          # Architecture, conventions, deployment
 └── .claude/commands/              # Team commands (/spec, /plan, etc.)
 ```

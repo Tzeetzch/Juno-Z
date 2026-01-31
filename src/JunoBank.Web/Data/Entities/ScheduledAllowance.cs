@@ -16,6 +16,7 @@ public class ScheduledAllowance
     public decimal Amount { get; set; }
     public DayOfWeek DayOfWeek { get; set; }
     public TimeOnly TimeOfDay { get; set; }
+    public string Description { get; set; } = "Weekly Allowance";
 
     // Schedule tracking
     public DateTime NextRunDate { get; set; }

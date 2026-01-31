@@ -62,13 +62,25 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 **Verified:** Parent can manage requests and transactions
 
-## Phase F: Scheduled Allowance
+## Phase F: Scheduled Allowance ✅ COMPLETE
 
-- [ ] BackgroundService for weekly allowance
-- [ ] Allowance configuration UI
-- [ ] Test with short interval, then set to weekly
+- [x] BackgroundService for weekly allowance (`AllowanceBackgroundService`)
+- [x] Allowance configuration UI (Settings page with description, time picker, day selector)
+- [x] `IAllowanceService` with catch-up logic for missed allowances
+- [x] `IDateTimeProvider` abstraction for testable time-dependent code
+- [x] Unit tests (18 tests in `tests/JunoBank.Tests/`)
+- [x] E2E tests (6 new Settings page tests, 53 total)
+- [x] Architecture review: approved
+- [x] UX review: approved (live preview added)
 
-**Verify:** Allowance auto-deposits on schedule
+**Verified:** Allowance auto-deposits on schedule, catches up missed weeks
+
+**Key files:**
+- `Services/IAllowanceService.cs` - Interface for allowance operations
+- `Services/AllowanceService.cs` - Business logic with catch-up
+- `Services/IDateTimeProvider.cs` - Mockable time abstraction
+- `BackgroundServices/AllowanceBackgroundService.cs` - Runs every minute (configurable)
+- `Components/Pages/Parent/Settings.razor` - Enhanced with description, time picker, live preview
 
 ## Phase G: Email Notifications
 

@@ -81,7 +81,8 @@ JunoBank/
 │       │   ├── AppDbContext.cs
 │       │   ├── Entities/            # User, Transaction, MoneyRequest, etc.
 │       │   └── Migrations/
-│       ├── Services/                # AccountService, TransactionService, EmailService
+│       ├── Services/                # IAllowanceService, IUserService, IDateTimeProvider
+│       ├── BackgroundServices/      # AllowanceBackgroundService (scheduled tasks)
 │       ├── Auth/                    # CustomAuthStateProvider
 │       └── wwwroot/css/             # app.css, neumorphic.css
 ├── docker/
@@ -89,6 +90,8 @@ JunoBank/
 │   └── docker-compose.yml
 ├── docs/                            # This folder
 └── tests/
+    ├── e2e/                         # Playwright E2E tests (53 specs)
+    └── JunoBank.Tests/              # xUnit unit tests (18 tests)
 ```
 
 ### Database Entities
@@ -113,7 +116,23 @@ MoneyRequest
 ScheduledAllowance
 ├── ChildId, CreatedByParentId
 ├── Amount, DayOfWeek, TimeOfDay
-└── NextRunDate, IsActive
+├── Description (custom text for transactions)
+├── NextRunDate, LastRunDate, IsActive
+└── CreatedAt
+
+### Services
+
+| Service | Purpose |
+|---------|---------|
+| `IUserService` | User lookup, authentication, balance updates |
+| `IAllowanceService` | Allowance CRUD, processing, catch-up logic |
+| `IDateTimeProvider` | Mockable DateTime.Now for unit testing |
+
+### Background Services
+
+| Service | Schedule | Purpose |
+|---------|----------|---------|
+| `AllowanceBackgroundService` | Every 60 sec | Check for due allowances, process catch-up |
 ```
 
 ### Key NuGet Packages

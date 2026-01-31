@@ -4,7 +4,7 @@
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @inject CustomAuthStateProvider AuthProvider
-@inject IUserService UserService
+@inject IAllowanceService AllowanceService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -38,7 +38,7 @@
                 Weekly Allowance
             </MudText>
 
-            <MudSwitch @bind-Value="_isActive" Color="Color.Primary" Label="Enable weekly allowance" Class="mb-4" />
+            <MudSwitch @bind-Value="_isActive" @bind-Value:after="UpdateNextRunPreview" Color="Color.Primary" Label="Enable weekly allowance" Class="mb-4" />
 
             <MudNumericField @bind-Value="_amount"
                              Label="Amount per week"
@@ -51,7 +51,15 @@
                              Disabled="!_isActive"
                              HelperText="How much per week? (Max €100)" />
 
-            <MudSelect @bind-Value="_dayOfWeek"
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Class="mt-4"
+                          Disabled="!_isActive"
+                          Placeholder="e.g., Pocket Money"
+                          HelperText="Shows in transaction history" />
+
+            <MudSelect @bind-Value="_dayOfWeek" @bind-Value:after="UpdateNextRunPreview"
                        Label="Day of week"
                        Variant="Variant.Outlined"
                        Class="mt-4"
@@ -64,6 +72,20 @@
                 <MudSelectItem Value="DayOfWeek.Saturday">Saturday</MudSelectItem>
                 <MudSelectItem Value="DayOfWeek.Sunday">Sunday</MudSelectItem>
             </MudSelect>
+
+            <MudTimePicker @bind-Time="_timeOfDay" @bind-Time:after="UpdateNextRunPreview"
+                           Label="Time of day"
+                           Variant="Variant.Outlined"
+                           Class="mt-4"
+                           Disabled="!_isActive"
+                           Editable="true" />
+
+            @if (_isActive && _nextRunPreview.HasValue)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-4" Dense="true">
+                    <strong>Next allowance:</strong> @_nextRunPreview.Value.ToString("dddd, MMM d 'at' h:mm tt")
+                </MudAlert>
+            }
 
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
@@ -93,7 +115,10 @@
 
     private bool _isActive = false;
     private decimal _amount = 5.00m;
-    private DayOfWeek _dayOfWeek = DayOfWeek.Sunday;
+    private string _description = "Weekly Allowance";
+    private DayOfWeek _dayOfWeek = DayOfWeek.Saturday;
+    private TimeSpan? _timeOfDay = new TimeSpan(9, 0, 0); // 9:00 AM default
+    private DateTime? _nextRunPreview;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,15 +131,31 @@
 
         _parentUserId = session.UserId;
 
-        var existing = await UserService.GetAllowanceSettingsAsync();
+        var existing = await AllowanceService.GetAllowanceAsync();
         if (existing != null)
         {
             _isActive = existing.IsActive;
             _amount = existing.Amount;
+            _description = existing.Description;
             _dayOfWeek = existing.DayOfWeek;
+            _timeOfDay = existing.TimeOfDay.ToTimeSpan();
+            _nextRunPreview = existing.IsActive ? existing.NextRunDate : null;
         }
 
         _isLoading = false;
+    }
+
+    private void UpdateNextRunPreview()
+    {
+        if (_isActive && _timeOfDay.HasValue)
+        {
+            var timeOnly = TimeOnly.FromTimeSpan(_timeOfDay.Value);
+            _nextRunPreview = AllowanceService.CalculateNextRunDate(_dayOfWeek, timeOnly, DateTime.Now);
+        }
+        else
+        {
+            _nextRunPreview = null;
+        }
     }
 
     private async Task SaveSettings()
@@ -124,7 +165,19 @@
 
         try
         {
-            await UserService.UpdateAllowanceSettingsAsync(_parentUserId, _amount, _dayOfWeek, _isActive);
+            var timeOnly = TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0));
+            await AllowanceService.UpdateAllowanceAsync(
+                _parentUserId,
+                _amount,
+                _dayOfWeek,
+                timeOnly,
+                _description,
+                _isActive);
+
+            // Update preview
+            var updated = await AllowanceService.GetAllowanceAsync();
+            _nextRunPreview = updated?.IsActive == true ? updated.NextRunDate : null;
+
             Snackbar.Add("Settings saved!", Severity.Success);
         }
         catch (Exception ex)
