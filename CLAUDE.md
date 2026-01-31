@@ -42,7 +42,8 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
    - `/ux-review` - UI/UX expert reviews design
    - If review finds issues → return to relevant step with feedback
    - You approve → Phase complete
-6. `/save` - When you say so
+6. `/handoff` - Update all docs/context for future sessions
+7. `/save` - When you say so
 
 **⚠️ IMPORTANT: Review/Test Failure Protocol**
 When ANY review or test step identifies issues:
@@ -90,6 +91,7 @@ This ensures proper review cycles and user visibility into changes.
 | **Phase completion** |||
 | `/architect` | End of phase | Architect reviews structure |
 | `/ux-review` | End of phase | UI/UX expert reviews design |
+| `/handoff` | After reviews | Update CLAUDE.md, SCAFFOLDING.md for future sessions |
 | `/review` | Before /save | Quick sanity check |
 | `/save` | When you say | Commit and push |
 | **Situational** |||
@@ -102,8 +104,8 @@ This ensures proper review cycles and user visibility into changes.
 | `/docker` | Deployment | Container operations |
 
 ## Project Status
-- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance)
-- **Next:** Phase G (Email Infrastructure - password reset), Phase H (Docker Deployment)
+- **Completed:** Phase A (project setup), Phase B (database entities), Phase C (authentication), Phase D (child features), Phase E (parent features), Phase F (scheduled allowance), Phase G (email + password reset)
+- **Next:** Phase H (Docker Deployment)
 - **Parked:** Request notifications to parents (future enhancement)
 - **Full docs:** See ARCHITECTURE.md, SCAFFOLDING.md, CONVENTIONS.md, DEPLOYMENT.md (already loaded)
 
@@ -111,7 +113,7 @@ This ensures proper review cycles and user visibility into changes.
 - Blazor Server project at `src/JunoBank.Web/`
 - MudBlazor + dark theme (orange/purple)
 - Neumorphic CSS (`wwwroot/css/neumorphic.css`)
-- SQLite database with entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword
+- SQLite database with entities: User, Transaction, MoneyRequest, ScheduledAllowance, PicturePassword, PasswordResetToken
 - Seed data: Dad, Mom (parents), Junior (child with €10)
 - Authentication: Parent login (email/password), Child login (picture password)
 - Route protection with [Authorize]
@@ -174,11 +176,11 @@ Juno-Z/
 │   ├── wwwroot/css/neumorphic.css # 3D button styles
 │   └── Program.cs
 ├── tests/
-│   ├── e2e/                       # Playwright E2E tests (53 specs)
+│   ├── e2e/                       # Playwright E2E tests (63 specs)
 │   │   ├── specs/                 # Test files (.spec.ts)
 │   │   ├── playwright.config.ts   # Test configuration
 │   │   └── E2E_CONTEXT.md         # Critical Blazor session handling rules
-│   └── JunoBank.Tests/            # xUnit unit tests (18 tests)
+│   └── JunoBank.Tests/            # xUnit unit tests (50 tests)
 │       ├── Services/              # AllowanceService tests
 │       └── BackgroundServices/    # Background service tests
 ├── docs/                          # Architecture, conventions, deployment

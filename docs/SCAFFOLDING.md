@@ -82,15 +82,40 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 - `BackgroundServices/AllowanceBackgroundService.cs` - Runs every minute (configurable)
 - `Components/Pages/Parent/Settings.razor` - Enhanced with description, time picker, live preview
 
-## Phase G: Email Infrastructure
+## Phase G: Email Infrastructure ✅ COMPLETE
 
-- [ ] Configure MailKit with SMTP settings (appsettings.json)
-- [ ] Create IEmailService interface and implementation
-- [ ] Console logging fallback when SMTP not configured
-- [ ] Password reset email (forgot password flow)
-- [ ] Unit tests for email service
+- [x] Configure MailKit with SMTP settings (appsettings.json)
+- [x] Create IEmailService interface (SmtpEmailService, ConsoleEmailService)
+- [x] Console logging fallback when SMTP not configured
+- [x] Password reset token service (15-min expiry, rate limiting, single-use)
+- [x] Forgot password page (/forgot-password)
+- [x] Reset password page (/reset-password/{token})
+- [x] Change password in Settings page
+- [x] Demo account blocking (@junobank.local cannot reset/change password)
+- [x] Unit tests (26 new tests, 50 total)
+- [x] E2E tests (10 new tests, 63 total)
+- [x] Architecture review: approved (9/10)
+- [x] UX review: approved (9/10)
 
-**Verify:** Password reset emails work, console fallback in dev
+**Verified:** Password reset flow works, console fallback in dev
+
+**Key files:**
+- `Services/IEmailService.cs` - Email abstraction interface
+- `Services/SmtpEmailService.cs` - Production SMTP via MailKit
+- `Services/ConsoleEmailService.cs` - Dev/test console logging
+- `Services/IPasswordResetService.cs` - Token management interface
+- `Services/PasswordResetService.cs` - Token logic with security measures
+- `Data/Entities/PasswordResetToken.cs` - Token entity
+- `Components/Pages/Auth/ForgotPassword.razor` - Email entry, generic success
+- `Components/Pages/Auth/ResetPassword.razor` - Token validation, new password
+
+**Security measures:**
+- Tokens expire after 15 minutes
+- Single-use tokens (marked used after reset)
+- Rate limiting: 3 requests per email per hour
+- Old tokens invalidated when new one requested
+- Generic success messages (don't reveal if email exists)
+- Demo accounts blocked from password operations
 
 **PARKED (Future):** Request notifications to parents
 - Send email on new request from child
@@ -119,7 +144,7 @@ Implementation order for Juno Bank. Each phase builds on the previous.
 
 ## Current Status
 
-**Completed:** Phase A, Phase B, Phase C, Phase D, Phase E
-**Next:** Phase F (Scheduled Allowance) or Phase H (Docker Deployment)
+**Completed:** Phase A, Phase B, Phase C, Phase D, Phase E, Phase F, Phase G
+**Next:** Phase H (Docker Deployment)
 
-Tell Claude: "Start Phase F" or "Start Phase H" to continue.
+Tell Claude: "Start Phase H" to continue.
