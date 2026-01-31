@@ -42,7 +42,7 @@ Claude acts as the **Development Team** - handles implementation, testing, and q
    - `/ux-review` - UI/UX expert reviews design
    - If review finds issues → return to relevant step with feedback
    - You approve → Phase complete
-6. `/handoff` - Update all docs/context for future sessions
+6. `/tech-writer` - Update all docs/context for future sessions
 7. `/save` - When you say so
 
 **⚠️ IMPORTANT: Review/Test Failure Protocol**
@@ -63,6 +63,7 @@ This ensures proper review cycles and user visibility into changes.
 | Playwright Specialist | `/e2e-test` | E2E tests (see `tests/e2e/E2E_CONTEXT.md`) |
 | Architect | `/architect` | Structure, patterns, technical debt |
 | UI/UX Expert | `/ux-review` | Usability, accessibility, design consistency |
+| Tech Writer | `/tech-writer` | Updates CLAUDE.md, SCAFFOLDING.md for future sessions |
 | Security Specialist | `/security` | Auth, data protection, vulnerabilities |
 | Debugger | `/debug` | Root cause analysis when things break |
 
@@ -91,7 +92,7 @@ This ensures proper review cycles and user visibility into changes.
 | **Phase completion** |||
 | `/architect` | End of phase | Architect reviews structure |
 | `/ux-review` | End of phase | UI/UX expert reviews design |
-| `/handoff` | After reviews | Update CLAUDE.md, SCAFFOLDING.md for future sessions |
+| `/tech-writer` | After reviews | Update CLAUDE.md, SCAFFOLDING.md for future sessions |
 | `/review` | Before /save | Quick sanity check |
 | `/save` | When you say | Commit and push |
 | **Situational** |||
