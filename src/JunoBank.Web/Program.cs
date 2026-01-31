@@ -40,8 +40,21 @@ builder.Services.AddScoped<CustomAuthStateProvider>();
 
 // Application services
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAllowanceService, AllowanceService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+
+// Email service - use SMTP if configured, otherwise console fallback
+var emailHost = builder.Configuration.GetValue<string>("Email:Host");
+if (!string.IsNullOrEmpty(emailHost))
+{
+    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
+}
 
 // Background services
 builder.Services.AddHostedService<AllowanceBackgroundService>();

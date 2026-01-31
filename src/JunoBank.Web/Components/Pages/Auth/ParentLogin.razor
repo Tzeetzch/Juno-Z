@@ -42,6 +42,14 @@
                 <span>Login</span>
             }
         </button>
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   Class="mt-2"
+                   FullWidth="true"
+                   OnClick="GoToForgotPassword">
+            Forgot Password?
+        </MudButton>
     </div>
 
     <MudButton Variant="Variant.Text"
@@ -109,5 +117,10 @@
     private void GoBack()
     {
         Navigation.NavigateTo("/login");
+    }
+
+    private void GoToForgotPassword()
+    {
+        Navigation.NavigateTo("/forgot-password");
     }
 }

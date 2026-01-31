@@ -133,4 +133,23 @@ test.describe('Parent Settings', () => {
     const descInput = page.locator('.mud-input-control').filter({ hasText: 'Description' }).locator('input');
     await expect(descInput).toBeDisabled();
   });
+
+  test('should show change password section', async ({ page }) => {
+    await loginAsParent(page);
+    
+    await page.locator('button:has-text("Settings")').click();
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: '🔒 Change Password' })).toBeVisible();
+  });
+
+  test('should show demo account message for change password', async ({ page }) => {
+    await loginAsParent(page);
+    
+    await page.locator('button:has-text("Settings")').click();
+    await page.waitForLoadState('networkidle');
+
+    // Demo accounts should see the info message
+    await expect(page.getByText('Password changes are not available for demo accounts')).toBeVisible();
+  });
 });

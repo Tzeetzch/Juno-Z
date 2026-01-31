@@ -1,10 +1,14 @@
 @page "/parent/settings"
 @attribute [Authorize(Roles = "Parent")]
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Data
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
+@using Microsoft.EntityFrameworkCore
 @inject CustomAuthStateProvider AuthProvider
 @inject IAllowanceService AllowanceService
+@inject IPasswordResetService PasswordResetService
+@inject AppDbContext Db
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -104,6 +108,68 @@
                 }
             </MudButton>
         </div>
+
+        @* Change Password Section *@
+        <div class="neu-card" style="padding: 2rem; margin-top: 2rem;">
+            <MudText Typo="Typo.h5" Style="margin-bottom: 1.5rem;">
+                🔒 Change Password
+            </MudText>
+
+            @if (_isDemoAccount)
+            {
+                <MudAlert Severity="Severity.Info">
+                    Password changes are not available for demo accounts.
+                </MudAlert>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_currentPassword"
+                              Label="Current Password"
+                              Variant="Variant.Outlined"
+                              InputType="@(_showCurrentPassword ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showCurrentPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showCurrentPassword = !_showCurrentPassword)"
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="_newPassword"
+                              Label="New Password"
+                              Variant="Variant.Outlined"
+                              InputType="@(_showNewPassword ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showNewPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showNewPassword = !_showNewPassword)"
+                              Class="mb-4"
+                              HelperText="Minimum 8 characters" />
+
+                <MudTextField @bind-Value="_confirmNewPassword"
+                              Label="Confirm New Password"
+                              Variant="Variant.Outlined"
+                              InputType="@(_showNewPassword ? InputType.Text : InputType.Password)"
+                              Class="mb-4" />
+
+                @if (!string.IsNullOrEmpty(_passwordError))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">@_passwordError</MudAlert>
+                }
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Secondary"
+                           FullWidth="true"
+                           Disabled="_isChangingPassword"
+                           OnClick="ChangePassword">
+                    @if (_isChangingPassword)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Changing...</span>
+                    }
+                    else
+                    {
+                        <span>Change Password</span>
+                    }
+                </MudButton>
+            }
+        </div>
     }
 </div>
 
@@ -112,13 +178,25 @@
     private bool _isSaving = false;
     private string _errorMessage = string.Empty;
     private int _parentUserId;
+    private string? _parentEmail;
+    private bool _isDemoAccount;
 
+    // Allowance fields
     private bool _isActive = false;
     private decimal _amount = 5.00m;
     private string _description = "Weekly Allowance";
     private DayOfWeek _dayOfWeek = DayOfWeek.Saturday;
     private TimeSpan? _timeOfDay = new TimeSpan(9, 0, 0); // 9:00 AM default
     private DateTime? _nextRunPreview;
+
+    // Change password fields
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _confirmNewPassword = string.Empty;
+    private string _passwordError = string.Empty;
+    private bool _isChangingPassword = false;
+    private bool _showCurrentPassword = false;
+    private bool _showNewPassword = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -130,6 +208,14 @@
         }
 
         _parentUserId = session.UserId;
+
+        // Get user email to check if demo account
+        var user = await Db.Users.FindAsync(_parentUserId);
+        if (user != null)
+        {
+            _parentEmail = user.Email;
+            _isDemoAccount = !string.IsNullOrEmpty(_parentEmail) && PasswordResetService.IsDemoAccount(_parentEmail);
+        }
 
         var existing = await AllowanceService.GetAllowanceAsync();
         if (existing != null)
@@ -187,6 +273,73 @@
         finally
         {
             _isSaving = false;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        _passwordError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_currentPassword))
+        {
+            _passwordError = "Please enter your current password.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _passwordError = "Please enter a new password.";
+            return;
+        }
+
+        if (_newPassword.Length < 8)
+        {
+            _passwordError = "New password must be at least 8 characters.";
+            return;
+        }
+
+        if (_newPassword != _confirmNewPassword)
+        {
+            _passwordError = "New passwords do not match.";
+            return;
+        }
+
+        _isChangingPassword = true;
+
+        try
+        {
+            var user = await Db.Users.FindAsync(_parentUserId);
+            if (user == null)
+            {
+                _passwordError = "User not found.";
+                return;
+            }
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(_currentPassword, user.PasswordHash))
+            {
+                _passwordError = "Current password is incorrect.";
+                return;
+            }
+
+            // Update password
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(_newPassword);
+            await Db.SaveChangesAsync();
+
+            // Clear fields
+            _currentPassword = string.Empty;
+            _newPassword = string.Empty;
+            _confirmNewPassword = string.Empty;
+
+            Snackbar.Add("Password changed successfully!", Severity.Success);
+        }
+        catch (Exception)
+        {
+            _passwordError = "An error occurred. Please try again.";
+        }
+        finally
+        {
+            _isChangingPassword = false;
         }
     }
 }
