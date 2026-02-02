@@ -17,9 +17,24 @@ public interface IAuthService
 
     /// <summary>
     /// Attempts to authenticate a child user with picture password sequence.
+    /// Legacy method - authenticates the first child found.
     /// </summary>
     /// <returns>AuthResult with success/failure and any error message</returns>
     Task<AuthResult> AuthenticateChildAsync(string[] pictureSequence);
+
+    /// <summary>
+    /// Attempts to authenticate a specific child user with picture password sequence.
+    /// </summary>
+    /// <param name="childId">The ID of the child to authenticate</param>
+    /// <param name="pictureSequence">The picture sequence entered by the child</param>
+    /// <returns>AuthResult with success/failure and any error message</returns>
+    Task<AuthResult> AuthenticateChildByIdAsync(int childId, string[] pictureSequence);
+
+    /// <summary>
+    /// Gets all children available for login.
+    /// </summary>
+    /// <returns>List of children with their Id and Name</returns>
+    Task<List<ChildLoginInfo>> GetChildrenForLoginAsync();
 
     /// <summary>
     /// Logs out the current user.
@@ -55,4 +70,13 @@ public class AuthResult
 
     public static AuthResult FailedWithAttemptsRemaining(int remaining) =>
         new() { Success = false, AttemptsRemaining = remaining, Error = $"Wrong sequence. {remaining} tries left." };
+}
+
+/// <summary>
+/// Information about a child for the login picker.
+/// </summary>
+public class ChildLoginInfo
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
 }

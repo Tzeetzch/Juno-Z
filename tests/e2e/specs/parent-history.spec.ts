@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Phase E Cycle 4: Parent Transaction History
+ * Updated for Phase J: Multi-child support - history shows all children
  * 
  * MudBlazor-specific handling for Blazor Server app
  */
@@ -16,6 +17,19 @@ async function loginAsParent(page: any) {
   await page.locator('button.neu-btn:has-text("Login")').click();
   
   await expect(page).toHaveURL(/\/parent/, { timeout: 15000 });
+  await page.waitForLoadState('networkidle');
+}
+
+// Helper function to navigate to a child's transaction page
+async function navigateToChildTransaction(page: any, childName: string) {
+  // Click on child card
+  await page.locator(`.child-card:has-text("${childName}")`).click();
+  await expect(page).toHaveURL(/\/parent\/child\/\d+/, { timeout: 10000 });
+  await page.waitForLoadState('networkidle');
+  
+  // Click Add/Remove Money button on child detail page
+  await page.locator('button:has-text("Add/Remove Money")').click();
+  await expect(page).toHaveURL(/\/parent\/child\/\d+\/transaction/, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
 }
 
@@ -38,21 +52,24 @@ test.describe('Parent Transaction History', () => {
     await expect(page).toHaveURL('/parent/history', { timeout: 10000 });
   });
 
-  test('should show transactions after manual add', async ({ page }) => {
+  test('should show transactions after manual add via child detail', async ({ page }) => {
     await loginAsParent(page);
 
-    // Navigate to transaction using dashboard button to preserve session
-    await page.locator('button:has-text("Add/Remove Money")').click();
-    await page.waitForLoadState('networkidle');
+    // Navigate to Junior's transaction page via child detail
+    await navigateToChildTransaction(page, 'Junior');
     
     await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('7.50');
     await page.locator('.mud-input-control').filter({ hasText: 'Description' }).locator('textarea').fill('History test deposit');
     await page.locator('button:has-text("Submit")').click();
     await expect(page.getByText(/added successfully/i)).toBeVisible({ timeout: 10000 });
 
-    // Navigate to history using back button then dashboard
-    await page.getByText('← Back to Dashboard').click();
+    // Navigate back to dashboard via child detail
+    await page.getByText(/← Back/i).click();
     await page.waitForLoadState('networkidle');
+    await page.getByText(/← Back/i).click();
+    await page.waitForLoadState('networkidle');
+    
+    // Go to transaction history
     await page.locator('button:has-text("Transaction History")').click();
     await page.waitForLoadState('networkidle');
     

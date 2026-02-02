@@ -1,0 +1,109 @@
+@page "/parent/child/{ChildId:int}"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Services
+@using JunoBank.Web.Utils
+@using JunoBank.Web.Data.Entities
+@inject IUserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>@(_child?.Name ?? "Child") - Juno Bank</PageTitle>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else if (_child == null)
+    {
+        <MudAlert Severity="Severity.Error">Child not found</MudAlert>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-4"
+                   OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Dashboard))">
+            Back to Dashboard
+        </MudButton>
+    }
+    else
+    {
+        <ChildContextHeader ChildName="@_child.Name" />
+
+        <!-- Balance Card -->
+        <div class="neu-card" style="padding: 2rem; text-align: center; margin-bottom: 2rem;">
+            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem;">
+                @_child.Name's Balance
+            </MudText>
+            <MudText Typo="Typo.h2" Style="color: var(--mud-palette-primary); font-weight: bold;">
+                €@_child.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+            </MudText>
+        </div>
+
+        <!-- Pending Requests -->
+        @if (_openRequestCount > 0)
+        {
+            <div class="neu-card" style="padding: 2rem; text-align: center; margin-bottom: 2rem; cursor: pointer;"
+                 @onclick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequests(ChildId)))">
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem;">
+                    Pending Requests
+                </MudText>
+                <MudText Typo="Typo.h2" Style="color: #FFA726; font-weight: bold;">
+                    @_openRequestCount
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); margin-top: 0.5rem;">
+                    Tap to review
+                </MudText>
+            </div>
+        }
+
+        <!-- Actions for this child -->
+        <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">Actions</MudText>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Style="flex: 1; min-width: 200px;"
+                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequests(ChildId)))">
+                📋 Pending Requests @if (_openRequestCount > 0) { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@_openRequestCount</MudChip> }
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       Size="Size.Large"
+                       Style="flex: 1; min-width: 200px;"
+                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildTransaction(ChildId)))">
+                💰 Add/Remove Money
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Default"
+                       Size="Size.Large"
+                       Style="flex: 1; min-width: 200px;"
+                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequestHistory(ChildId)))">
+                📜 Request History
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Default"
+                       Size="Size.Large"
+                       Style="flex: 1; min-width: 200px;"
+                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildSettings(ChildId)))">
+                ⚙️ Settings
+            </MudButton>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int ChildId { get; set; }
+
+    private User? _child;
+    private int _openRequestCount;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _child = await UserService.GetChildByIdAsync(ChildId);
+        if (_child != null)
+        {
+            _openRequestCount = await UserService.GetOpenRequestCountAsync(ChildId);
+        }
+        _isLoading = false;
+    }
+}

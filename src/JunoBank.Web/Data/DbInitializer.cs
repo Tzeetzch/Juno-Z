@@ -30,32 +30,48 @@ public static class DbInitializer
             Balance = 0
         };
 
-        // Create child
-        var child = new User
+        // Create children
+        var child1 = new User
         {
             Name = "Junior",
             Role = UserRole.Child,
             Balance = 10.00m // Starting balance of €10
         };
 
-        context.Users.AddRange(parent1, parent2, child);
+        var child2 = new User
+        {
+            Name = "Sophie",
+            Role = UserRole.Child,
+            Balance = 5.00m // Starting balance of €5
+        };
+
+        context.Users.AddRange(parent1, parent2, child1, child2);
         await context.SaveChangesAsync();
 
-        // Add picture password for child (sequence: cat, dog, star, moon)
-        var picturePassword = new PicturePassword
+        // Add picture password for Junior (sequence: cat, dog, star, moon)
+        var picturePasswordJunior = new PicturePassword
         {
-            UserId = child.Id,
+            UserId = child1.Id,
             ImageSequenceHash = SecurityUtils.HashPictureSequence("cat,dog,star,moon"),
             GridSize = 9,
             SequenceLength = 4
         };
 
-        context.PicturePasswords.Add(picturePassword);
-
-        // Add initial transaction (starting balance)
-        var initialDeposit = new Transaction
+        // Add picture password for Sophie (sequence: star, moon, cat, dog)
+        var picturePasswordSophie = new PicturePassword
         {
-            UserId = child.Id,
+            UserId = child2.Id,
+            ImageSequenceHash = SecurityUtils.HashPictureSequence("star,moon,cat,dog"),
+            GridSize = 9,
+            SequenceLength = 4
+        };
+
+        context.PicturePasswords.AddRange(picturePasswordJunior, picturePasswordSophie);
+
+        // Add initial transaction for Junior (starting balance)
+        var initialDepositJunior = new Transaction
+        {
+            UserId = child1.Id,
             Amount = 10.00m,
             Type = TransactionType.Deposit,
             Description = "Welcome to Juno Bank!",
@@ -63,7 +79,32 @@ public static class DbInitializer
             ApprovedByUserId = parent1.Id
         };
 
-        context.Transactions.Add(initialDeposit);
+        // Add initial transaction for Sophie (starting balance)
+        var initialDepositSophie = new Transaction
+        {
+            UserId = child2.Id,
+            Amount = 5.00m,
+            Type = TransactionType.Deposit,
+            Description = "Welcome to Juno Bank!",
+            IsApproved = true,
+            ApprovedByUserId = parent1.Id
+        };
+
+        context.Transactions.AddRange(initialDepositJunior, initialDepositSophie);
+
+        // Add a pending request for Sophie (for E2E testing)
+        var pendingRequestSophie = new MoneyRequest
+        {
+            ChildId = child2.Id,
+            Amount = 2.00m,
+            Type = RequestType.Deposit,
+            Description = "For stickers",
+            Status = RequestStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.MoneyRequests.Add(pendingRequestSophie);
+
         await context.SaveChangesAsync();
     }
 

@@ -1,24 +1,17 @@
 import { test, expect } from '@playwright/test';
+import { loginAsChild } from '../helpers';
 
 /**
  * Phase E Cycle 2: Pending requests with approve/deny
+ * Updated for Phase J: Multi-child support with 2-step login
  * 
  * MudBlazor-specific handling for Blazor Server app
  * IMPORTANT: Use in-app navigation instead of page.goto() to preserve session
  */
 
-// Helper: login as child and submit a withdrawal request
+// Helper: login as child (Junior) and submit a withdrawal request
 async function submitChildRequest(page: any, description: string = 'E2E test request') {
-  await page.goto('/login/child');
-  await page.waitForLoadState('networkidle');
-  
-  await page.locator('.picture-btn:has-text("🐱")').click();
-  await page.locator('.picture-btn:has-text("🐶")').click();
-  await page.locator('.picture-btn:has-text("⭐")').click();
-  await page.locator('.picture-btn:has-text("🌙")').click();
-  
-  await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
-  await page.waitForLoadState('networkidle');
+  await loginAsChild(page);
 
   await page.locator('button:has-text("Request Money")').click();
   await expect(page).toHaveURL('/child/request-withdrawal', { timeout: 10000 });

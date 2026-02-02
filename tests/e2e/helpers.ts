@@ -14,6 +14,7 @@ import { Page, expect } from '@playwright/test';
 export const PARENT_EMAIL = 'dad@junobank.local';
 export const PARENT_PASSWORD = 'parent123';
 export const CHILD_PICTURE_SEQUENCE = ['🐱', '🐶', '⭐', '🌙'];
+export const SOPHIE_PICTURE_SEQUENCE = ['⭐', '🌙', '🐱', '🐶'];
 
 // =============================================================================
 // LOGIN HELPERS
@@ -36,24 +37,55 @@ export async function loginAsParent(page: Page): Promise<void> {
 }
 
 /**
- * Login as child user via picture password grid.
+ * Login as child user (Junior) via picture password grid.
+ * Handles the 2-step flow: select child → enter picture password.
  * After this, use in-app navigation only (no page.goto).
  */
 export async function loginAsChild(page: Page): Promise<void> {
+  await loginAsChildByName(page, 'Junior', CHILD_PICTURE_SEQUENCE);
+}
+
+/**
+ * Login as a specific child by name.
+ * @param childName - Name of the child to select (e.g., 'Junior', 'Sophie')
+ * @param pictureSequence - Array of emoji strings for the picture password
+ */
+export async function loginAsChildByName(
+  page: Page, 
+  childName: string, 
+  pictureSequence: string[]
+): Promise<void> {
   await page.goto('/login/child');
   await page.waitForLoadState('networkidle');
   
-  // Wait for picture grid to load
+  // Step 1: Select child from picker (if visible)
+  // The child picker shows buttons with child names
+  const childButton = page.locator(`.child-selector button:has-text("${childName}")`);
+  const pickerVisible = await childButton.isVisible({ timeout: 3000 }).catch(() => false);
+  
+  if (pickerVisible) {
+    await childButton.click();
+    await page.waitForLoadState('networkidle');
+  }
+  
+  // Step 2: Enter picture password
   await page.waitForSelector('.picture-grid', { timeout: 10000 });
   
   // Click each picture in sequence
-  for (const emoji of CHILD_PICTURE_SEQUENCE) {
-    await page.locator(`.picture-grid button:has-text("${emoji}")`).click();
+  for (const emoji of pictureSequence) {
+    await page.locator(`.picture-btn:has-text("${emoji}")`).click();
     await page.waitForTimeout(100); // Small delay between clicks
   }
   
   await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
   await page.waitForLoadState('networkidle');
+}
+
+/**
+ * Login as Sophie (second child) for multi-child testing.
+ */
+export async function loginAsSophie(page: Page): Promise<void> {
+  await loginAsChildByName(page, 'Sophie', SOPHIE_PICTURE_SEQUENCE);
 }
 
 // =============================================================================

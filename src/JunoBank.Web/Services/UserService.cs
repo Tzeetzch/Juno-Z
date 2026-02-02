@@ -79,6 +79,34 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
+    public async Task<List<MoneyRequest>> GetPendingRequestsForChildAsync(int childId)
+    {
+        return await _db.MoneyRequests
+            .Include(r => r.Child)
+            .Where(r => r.ChildId == childId && r.Status == RequestStatus.Pending)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int limit = 50)
+    {
+        return await _db.MoneyRequests
+            .Include(r => r.Child)
+            .Where(r => r.ChildId == childId && r.Status != RequestStatus.Pending)
+            .OrderByDescending(r => r.ResolvedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100)
+    {
+        return await _db.Transactions
+            .Where(t => t.UserId == childId)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
     public async Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null)
     {
         var request = await _db.MoneyRequests
@@ -186,6 +214,50 @@ public class UserService : IUserService
         return transaction;
     }
 
+    public async Task<Transaction> CreateManualTransactionForChildAsync(int parentUserId, int childId, decimal amount, TransactionType type, string description)
+    {
+        var parent = await _db.Users.FindAsync(parentUserId);
+        if (parent == null || parent.Role != UserRole.Parent)
+            throw new InvalidOperationException("Only parents can create manual transactions");
+
+        var child = await _db.Users.FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
+        if (child == null)
+            throw new InvalidOperationException("Child account not found");
+
+        if (amount <= 0)
+            throw new ArgumentException("Amount must be greater than zero", nameof(amount));
+
+        if (amount > 1000)
+            throw new ArgumentException("Amount cannot exceed €1000", nameof(amount));
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description is required", nameof(description));
+
+        if (type == TransactionType.Withdrawal && child.Balance < amount)
+            throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+        if (type == TransactionType.Deposit)
+            child.Balance += amount;
+        else if (type == TransactionType.Withdrawal)
+            child.Balance -= amount;
+
+        var transaction = new Transaction
+        {
+            UserId = child.Id,
+            Amount = amount,
+            Type = type,
+            Description = description,
+            IsApproved = true,
+            ApprovedByUserId = parentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.Transactions.Add(transaction);
+        await _db.SaveChangesAsync();
+
+        return transaction;
+    }
+
     public async Task<MoneyRequest> CreateMoneyRequestAsync(int childId, decimal amount, RequestType type, string description)
     {
         // Verify the user exists and is a child
@@ -196,6 +268,11 @@ public class UserService : IUserService
 
         if (child.Role != UserRole.Child)
             throw new InvalidOperationException("Only children can create money requests");
+
+        // Check open request limit (max 5 per child)
+        var openRequestCount = await GetOpenRequestCountAsync(childId);
+        if (openRequestCount >= 5)
+            throw new InvalidOperationException("Maximum of 5 pending requests allowed. Please wait for a parent to review your existing requests.");
 
         // Validate amount
         if (amount <= 0)
@@ -225,5 +302,31 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
 
         return request;
+    }
+
+    public async Task<List<ChildSummary>> GetAllChildrenSummaryAsync()
+    {
+        return await _db.Users
+            .Where(u => u.Role == UserRole.Child)
+            .Select(u => new ChildSummary
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Balance = u.Balance,
+                PendingRequestCount = u.MoneyRequests.Count(r => r.Status == RequestStatus.Pending)
+            })
+            .ToListAsync();
+    }
+
+    public async Task<User?> GetChildByIdAsync(int childId)
+    {
+        return await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
+    }
+
+    public async Task<int> GetOpenRequestCountAsync(int childId)
+    {
+        return await _db.MoneyRequests
+            .CountAsync(r => r.ChildId == childId && r.Status == RequestStatus.Pending);
     }
 }

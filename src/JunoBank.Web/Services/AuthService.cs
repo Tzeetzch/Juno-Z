@@ -13,13 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
     private readonly IPasswordService _passwordService;
-    private readonly CustomAuthStateProvider _authProvider;
+    private readonly IAuthStateProvider _authProvider;
     private readonly TimeProvider _timeProvider;
 
     public AuthService(
         AppDbContext db,
         IPasswordService passwordService,
-        CustomAuthStateProvider authProvider,
+        IAuthStateProvider authProvider,
         TimeProvider timeProvider)
     {
         _db = db;
@@ -63,10 +63,27 @@ public class AuthService : IAuthService
     /// <inheritdoc />
     public async Task<AuthResult> AuthenticateChildAsync(string[] pictureSequence)
     {
-        // Get the child user with their picture password
+        // Legacy method - get the first child and authenticate
+        var firstChild = await _db.Users
+            .Where(u => u.Role == UserRole.Child)
+            .OrderBy(u => u.Id)
+            .FirstOrDefaultAsync();
+
+        if (firstChild == null)
+        {
+            return AuthResult.Failed("No account found");
+        }
+
+        return await AuthenticateChildByIdAsync(firstChild.Id, pictureSequence);
+    }
+
+    /// <inheritdoc />
+    public async Task<AuthResult> AuthenticateChildByIdAsync(int childId, string[] pictureSequence)
+    {
+        // Get the specific child user with their picture password
         var child = await _db.Users
             .Include(u => u.PicturePassword)
-            .FirstOrDefaultAsync(u => u.Role == UserRole.Child);
+            .FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
 
         if (child?.PicturePassword == null)
         {
@@ -117,6 +134,20 @@ public class AuthService : IAuthService
         await _db.SaveChangesAsync();
         var attemptsRemaining = 5 - picturePassword.FailedAttempts;
         return AuthResult.FailedWithAttemptsRemaining(attemptsRemaining);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<ChildLoginInfo>> GetChildrenForLoginAsync()
+    {
+        return await _db.Users
+            .Where(u => u.Role == UserRole.Child)
+            .OrderBy(u => u.Name)
+            .Select(u => new ChildLoginInfo
+            {
+                Id = u.Id,
+                Name = u.Name
+            })
+            .ToListAsync();
     }
 
     /// <inheritdoc />

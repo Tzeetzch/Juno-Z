@@ -3,7 +3,7 @@
 @using JunoBank.Web.Auth
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
-@inject CustomAuthStateProvider AuthProvider
+@inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -16,7 +16,23 @@
         💰 Request Money
     </MudText>
 
-    @if (!string.IsNullOrEmpty(_errorMessage))
+    @if (_isAtLimit)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            <MudText Typo="Typo.h6">Too Many Requests! 🛑</MudText>
+            <MudText Typo="Typo.body2">
+                You already have @_openRequestCount requests waiting. Please wait for Mom or Dad to review them first!
+            </MudText>
+        </MudAlert>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   OnClick="GoBackToDashboard">
+            Back to My Piggy Bank
+        </MudButton>
+    }
+    else if (!string.IsNullOrEmpty(_errorMessage))
     {
         <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
             @_errorMessage
@@ -107,6 +123,8 @@
     private bool _submitted = false;
     private string _errorMessage = string.Empty;
     private int _userId;
+    private int _openRequestCount;
+    private bool _isAtLimit = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,6 +138,8 @@
         }
 
         _userId = session.UserId;
+        _openRequestCount = await UserService.GetOpenRequestCountAsync(_userId);
+        _isAtLimit = _openRequestCount >= 5;
     }
 
     private async Task HandleSubmit()

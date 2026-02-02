@@ -5,18 +5,50 @@
 <PageTitle>Kid Login - Juno Bank</PageTitle>
 
 <div style="max-width: 400px; margin: 2rem auto; text-align: center;">
-    <MudText Typo="Typo.h4" Class="mb-2">Hi there!</MudText>
-    <MudText Typo="Typo.body1" Class="mb-6">Tap your secret pictures</MudText>
+    @if (_selectedChild == null)
+    {
+        <!-- Step 1: Child Picker -->
+        <MudText Typo="Typo.h4" Class="mb-2">Who's logging in?</MudText>
+        <MudText Typo="Typo.body1" Class="mb-6">Tap your name</MudText>
 
-    <PictureGrid @ref="_pictureGrid"
-                 RequiredLength="4"
-                 OnSequenceComplete="HandleSequenceComplete" />
+        @if (_isLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+        }
+        else if (_children.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">
+                No kid accounts found. Ask a parent to set one up!
+            </MudAlert>
+        }
+        else
+        {
+            <ChildSelector Children="_children" OnChildSelected="HandleChildSelected" />
+        }
+    }
+    else
+    {
+        <!-- Step 2: Picture Password -->
+        <MudText Typo="Typo.h4" Class="mb-2">Hi @_selectedChild.Name!</MudText>
+        <MudText Typo="Typo.body1" Class="mb-6">Tap your secret pictures</MudText>
+
+        <PictureGrid @ref="_pictureGrid"
+                     RequiredLength="4"
+                     OnSequenceComplete="HandleSequenceComplete" />
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Secondary"
+                   Class="mt-4"
+                   OnClick="GoBackToChildPicker">
+            ← Not @_selectedChild.Name?
+        </MudButton>
+    }
 
     <MudButton Variant="Variant.Text"
                Color="Color.Secondary"
-               Class="mt-6"
+               Class="mt-2"
                OnClick="GoBack">
-        ← Back
+        ← Back to login
     </MudButton>
 </div>
 
@@ -25,10 +57,33 @@
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     private PictureGrid? _pictureGrid;
+    private List<ChildLoginInfo> _children = new();
+    private ChildLoginInfo? _selectedChild;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _children = await AuthService.GetChildrenForLoginAsync();
+        
+        // If there's only one child, skip the picker
+        if (_children.Count == 1)
+        {
+            _selectedChild = _children[0];
+        }
+        
+        _isLoading = false;
+    }
+
+    private void HandleChildSelected(ChildLoginInfo child)
+    {
+        _selectedChild = child;
+    }
 
     private async Task HandleSequenceComplete(string[] sequence)
     {
-        var result = await AuthService.AuthenticateChildAsync(sequence);
+        if (_selectedChild == null) return;
+
+        var result = await AuthService.AuthenticateChildByIdAsync(_selectedChild.Id, sequence);
 
         if (result.Success)
         {
@@ -38,6 +93,12 @@
         {
             _pictureGrid?.ShowError(result.Error ?? "Authentication failed");
         }
+    }
+
+    private void GoBackToChildPicker()
+    {
+        _selectedChild = null;
+        _pictureGrid?.Reset();
     }
 
     private void GoBack()

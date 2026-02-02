@@ -1,26 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { loginAsChild } from '../helpers';
 
 /**
  * Cycle 1: Child Dashboard + Balance Display
+ * Updated for Phase J: Multi-child support with 2-step login
  * 
  * MudBlazor-specific handling for Blazor Server app
  */
-
-// Helper function to login as child
-async function loginAsChild(page: any) {
-  await page.goto('/login/child');
-  await page.waitForLoadState('networkidle');
-  
-  // Click the picture sequence: cat→dog→star→moon
-  await page.locator('.picture-btn:has-text("🐱")').click();
-  await page.locator('.picture-btn:has-text("🐶")').click();
-  await page.locator('.picture-btn:has-text("⭐")').click();
-  await page.locator('.picture-btn:has-text("🌙")').click();
-  
-  // Wait for navigation to child dashboard
-  await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
-  await page.waitForLoadState('networkidle');
-}
 
 test.describe('Child Dashboard', () => {
 

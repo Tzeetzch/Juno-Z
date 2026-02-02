@@ -1,24 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { loginAsChild } from '../helpers';
 
 /**
  * Cycle 5: Visual feedback & pending requests on child dashboard
+ * Updated for Phase J: Multi-child support with 2-step login
  * 
  * MudBlazor-specific handling for Blazor Server app
  */
-
-// Helper function to login as child
-async function loginAsChild(page: any) {
-  await page.goto('/login/child');
-  await page.waitForLoadState('networkidle');
-  
-  await page.locator('.picture-btn:has-text("🐱")').click();
-  await page.locator('.picture-btn:has-text("🐶")').click();
-  await page.locator('.picture-btn:has-text("⭐")').click();
-  await page.locator('.picture-btn:has-text("🌙")').click();
-  
-  await expect(page).toHaveURL(/\/child/, { timeout: 15000 });
-  await page.waitForLoadState('networkidle');
-}
 
 test.describe('Child Requests & Visual Feedback', () => {
 

@@ -1,8 +1,8 @@
 # Project Status
 
-## Current Phase: I (Polish)
+## Current Phase: K (First-Run Setup Wizard)
 
-**Completed:** Phases A through H  
+**Completed:** Phases A through J  
 
 | Phase | Topic |
 |-------|-------|
@@ -14,29 +14,52 @@
 | F | Scheduled Allowance (BackgroundService) |
 | G | Email Infrastructure (password reset) |
 | H | Docker & Deployment |
+| I | Polish (responsive, UX refinements) |
+| J | Multi-Child Support |
 
-### Phase I Tasks
-- [ ] Responsive design testing (tablet, phone)
-- [ ] Neumorphic button styling refinement
-- [ ] Kid-friendly icons and colors
-- [ ] Error handling and user feedback
-- [ ] Final testing with real family use
+---
+
+## Future Phases
+
+### Phase K: First-Run Setup Wizard
+Replace demo credentials with user-created accounts.  
+
+**Spec Summary:**
+- 4-step wizard: Parent 1 → Parent 2 (optional) → Children → Confirmation
+- Parent fields: name, email, password (min 8 chars), confirm password
+- Child fields: name, birthday (no age restriction), starting balance (€0-10000), picture password
+- Add multiple children in Step 3
+- All users created in single DB transaction
+- Progress indicator "Step X of 4"
+- Back navigation within session, refresh restarts
+- E2E: JUNO_SEED_DEMO=true env flag for test seeding
+
+**Validation:**
+- Names: 1-50 chars, trimmed
+- Email: valid format, 254 max, case-insensitive uniqueness
+- Password: min 8 chars, confirm must match
+- Birthday: valid date, strictly before today
+- Balance: 0-10000, 2 decimal places
+- Picture password: 4 selections from 3x3 grid (repeats allowed)
+
+**UX:**
+- Numbers 1-4 shown on selected pictures
+- Edit links on confirmation step
+- Loading spinner during submit
 
 ---
 
 ## Test Credentials
 
 - **Parent:** dad@junobank.local / parent123
-- **Child:** Tap cat → dog → star → moon
+- **Child (Junior):** Tap cat → dog → star → moon
+- **Child (Sophie):** Tap star → moon → cat → dog
 
 ---
 
 ## Open Tickets
 
 ### HIGH
-
-**TICKET-003: First-run setup wizard** (8-12 hours)  
-Replace demo credentials with setup wizard when database is empty.
 
 **TICKET-005: Parent login rate limiting** (2-3 hours)  
 Lock account for 5 min after 5 failed attempts.
@@ -49,14 +72,6 @@ Split into AllowanceSettings.razor and ChangePassword.razor.
 **TICKET-016: Create common CSS classes** (2 hours)  
 Add .page-container, .card-section to reduce inline styles.
 
-**TICKET-017: Document single-child assumption** (15 min)  
-Add Known Limitations section to ARCHITECTURE.md.
-
-### PARKED
-
-**TICKET-018: Result types for services**  
-Deferred - current exception approach works fine for app scale.
-
 ---
 
 ## Parked Features
@@ -64,3 +79,4 @@ Deferred - current exception approach works fine for app scale.
 - Request notifications to parents
 - Per-parent notification preferences
 - Production SMTP configuration
+- Multi-family support (device registration flow)

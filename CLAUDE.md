@@ -13,13 +13,14 @@ Before responding, read these files for full context:
 
 ## Project Status
 
-**Completed:** Phases A-H (setup through Docker deployment)  
-**Next:** Phase I (Polish)  
+**Completed:** Phases A-J (setup through multi-child support)  
+**Next:** Phase K (First-Run Setup Wizard)  
 **Parked:** Request notifications, production email config
 
 ### Test Credentials
 - **Parent:** dad@junobank.local / parent123
-- **Child:** Tap cat -> dog -> star -> moon
+- **Child (Junior):** Tap cat → dog → star → moon
+- **Child (Sophie):** Tap star → moon → cat → dog
 
 ## Workflow Commands
 

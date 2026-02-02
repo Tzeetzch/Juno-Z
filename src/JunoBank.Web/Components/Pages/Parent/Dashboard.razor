@@ -1,8 +1,10 @@
 @page "/parent"
 @attribute [Authorize(Roles = "Parent")]
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Services
-@inject CustomAuthStateProvider AuthProvider
+@using JunoBank.Web.Utils
+@inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
 
@@ -20,32 +22,38 @@
             Welcome, @_userName!
         </MudText>
 
-        <!-- Child Balance Card -->
-        <div class="neu-card" style="padding: 2rem; text-align: center; margin-bottom: 2rem;">
-            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem;">
-                @_data.ChildName's Balance
-            </MudText>
-            <MudText Typo="Typo.h2" Style="color: var(--mud-palette-primary); font-weight: bold;">
-                €@_data.ChildBalance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
-            </MudText>
-        </div>
-
-        <!-- Pending Requests Card -->
-        <div class="neu-card" style="padding: 2rem; text-align: center; margin-bottom: 2rem; cursor: pointer;"
-             @onclick="@(() => Navigation.NavigateTo("/parent/requests"))">
-            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem;">
-                Pending Requests
-            </MudText>
-            <MudText Typo="Typo.h2" Style="@($"color: {(_data.PendingRequestCount > 0 ? "#FFA726" : "#4caf50")}; font-weight: bold;")">
-                @_data.PendingRequestCount
-            </MudText>
-            @if (_data.PendingRequestCount > 0)
+        <!-- Children Cards -->
+        <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">Your Children</MudText>
+        <div class="children-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            @foreach (var child in _children)
             {
-                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); margin-top: 0.5rem;">
-                    Tap to review
-                </MudText>
+                <ChildCard Child="child" OnClick="HandleChildClick" />
             }
         </div>
+
+        @if (_children.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                No children found. Set up your first child in Settings!
+            </MudAlert>
+        }
+
+        <!-- Overall Pending Requests -->
+        @if (_totalPendingRequests > 0)
+        {
+            <div class="neu-card" style="padding: 2rem; text-align: center; margin-bottom: 2rem; cursor: pointer;"
+                 @onclick="@(() => Navigation.NavigateTo("/parent/requests"))">
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem;">
+                    Total Pending Requests
+                </MudText>
+                <MudText Typo="Typo.h2" Style="color: #FFA726; font-weight: bold;">
+                    @_totalPendingRequests
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); margin-top: 0.5rem;">
+                    Tap to review all
+                </MudText>
+            </div>
+        }
 
         <!-- Quick Actions -->
         <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">Quick Actions</MudText>
@@ -56,13 +64,6 @@
                        Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo("/parent/requests"))">
                 📋 Review Requests
-            </MudButton>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       Size="Size.Large"
-                       Style="flex: 1; min-width: 200px;"
-                       OnClick="@(() => Navigation.NavigateTo("/parent/transaction"))">
-                💰 Add/Remove Money
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Default"
@@ -85,7 +86,8 @@
 @code {
     private bool _isLoading = true;
     private string _userName = string.Empty;
-    private ParentDashboardData _data = new();
+    private List<ChildSummary> _children = new();
+    private int _totalPendingRequests;
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,9 +95,15 @@
         if (session != null)
         {
             _userName = session.UserName;
-            _data = await UserService.GetParentDashboardDataAsync();
+            _children = await UserService.GetAllChildrenSummaryAsync();
+            _totalPendingRequests = _children.Sum(c => c.PendingRequestCount);
         }
 
         _isLoading = false;
+    }
+
+    private void HandleChildClick(ChildSummary child)
+    {
+        Navigation.NavigateTo(AppRoutes.Parent.ChildDetail(child.Id));
     }
 }

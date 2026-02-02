@@ -1,0 +1,57 @@
+@using JunoBank.Web.Utils
+
+<div class="child-context-header">
+    <MudButton Variant="Variant.Text"
+               Color="Color.Secondary"
+               StartIcon="@Icons.Material.Filled.ArrowBack"
+               OnClick="GoBack">
+        Back
+    </MudButton>
+    
+    <div class="child-info">
+        <div class="child-avatar">@ChildName[0]</div>
+        <MudText Typo="Typo.h6">Managing: @ChildName</MudText>
+    </div>
+</div>
+
+<style>
+    .child-context-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .child-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .child-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-secondary) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: white;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public string ChildName { get; set; } = string.Empty;
+    [Parameter] public string BackUrl { get; set; } = AppRoutes.Parent.Dashboard;
+    
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo(BackUrl);
+    }
+}

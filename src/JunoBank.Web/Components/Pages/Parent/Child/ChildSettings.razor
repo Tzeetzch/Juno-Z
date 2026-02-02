@@ -1,0 +1,251 @@
+@page "/parent/child/{ChildId:int}/settings"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Data
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@using JunoBank.Web.Utils
+@using Microsoft.EntityFrameworkCore
+@inject IAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject IAllowanceService AllowanceService
+@inject AppDbContext Db
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings - @(_child?.Name ?? "Child")</PageTitle>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else if (_child == null)
+    {
+        <MudAlert Severity="Severity.Error">Child not found</MudAlert>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-4"
+                   OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Dashboard))">
+            Back to Dashboard
+        </MudButton>
+    }
+    else
+    {
+        <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
+
+        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
+            ⚙️ Settings for @_child.Name
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <!-- Weekly Allowance Section -->
+        <div class="neu-card" style="padding: 2rem; margin-bottom: 1.5rem;">
+            <MudText Typo="Typo.h5" Style="margin-bottom: 1.5rem;">
+                💰 Weekly Allowance
+            </MudText>
+
+            <MudSwitch @bind-Value="_isActive" @bind-Value:after="UpdateNextRunPreview" Color="Color.Primary" Label="Enable weekly allowance" Class="mb-4" />
+
+            <MudNumericField @bind-Value="_amount"
+                             Label="Amount per week"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentText="€"
+                             Min="0.01m"
+                             Max="100m"
+                             Step="0.50m"
+                             Disabled="!_isActive"
+                             HelperText="How much per week? (Max €100)" />
+
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Class="mt-4"
+                          Disabled="!_isActive"
+                          Placeholder="e.g., Pocket Money"
+                          HelperText="Shows in transaction history" />
+
+            <MudSelect @bind-Value="_dayOfWeek" @bind-Value:after="UpdateNextRunPreview"
+                       Label="Day of week"
+                       Variant="Variant.Outlined"
+                       Class="mt-4"
+                       Disabled="!_isActive">
+                <MudSelectItem Value="DayOfWeek.Monday">Monday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Tuesday">Tuesday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Wednesday">Wednesday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Thursday">Thursday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Friday">Friday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Saturday">Saturday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Sunday">Sunday</MudSelectItem>
+            </MudSelect>
+
+            <MudTimePicker @bind-Time="_timeOfDay" @bind-Time:after="UpdateNextRunPreview"
+                           Label="Time of day"
+                           Variant="Variant.Outlined"
+                           Class="mt-4"
+                           Disabled="!_isActive"
+                           Editable="true" />
+
+            @if (_isActive && _nextRunPreview.HasValue)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-4" Dense="true">
+                    <strong>Next allowance:</strong> @_nextRunPreview.Value.ToString("dddd, MMM d 'at' h:mm tt")
+                </MudAlert>
+            }
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mt-6"
+                       Disabled="_isSaving"
+                       OnClick="SaveSettings">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save Settings</span>
+                }
+            </MudButton>
+        </div>
+
+        <!-- Picture Password Section -->
+        <div class="neu-card" style="padding: 2rem;">
+            <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+                🖼️ Picture Password
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); margin-bottom: 1rem;">
+                Change @_child.Name's picture password for logging in.
+            </MudText>
+            <MudAlert Severity="Severity.Info">
+                Coming soon! For now, the picture password can be set during initial setup.
+            </MudAlert>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int ChildId { get; set; }
+
+    private User? _child;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private string _errorMessage = string.Empty;
+
+    // Allowance fields
+    private bool _isActive = false;
+    private decimal _amount = 5.00m;
+    private string _description = "Weekly Allowance";
+    private DayOfWeek _dayOfWeek = DayOfWeek.Saturday;
+    private TimeSpan? _timeOfDay = new TimeSpan(9, 0, 0);
+    private DateTime? _nextRunPreview;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null || session.Role != UserRole.Parent)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _child = await UserService.GetChildByIdAsync(ChildId);
+        
+        if (_child != null)
+        {
+            await LoadAllowanceSettings();
+        }
+        
+        _isLoading = false;
+    }
+
+    private async Task LoadAllowanceSettings()
+    {
+        var allowance = await Db.ScheduledAllowances
+            .FirstOrDefaultAsync(a => a.ChildId == ChildId);
+
+        if (allowance != null)
+        {
+            _isActive = allowance.IsActive;
+            _amount = allowance.Amount;
+            _description = allowance.Description;
+            _dayOfWeek = allowance.DayOfWeek;
+            _timeOfDay = allowance.TimeOfDay.ToTimeSpan();
+            UpdateNextRunPreview();
+        }
+    }
+
+    private void UpdateNextRunPreview()
+    {
+        if (_isActive && _timeOfDay.HasValue)
+        {
+            _nextRunPreview = AllowanceService.CalculateNextRunDate(
+                _dayOfWeek,
+                TimeOnly.FromTimeSpan(_timeOfDay.Value),
+                DateTime.Now);
+        }
+        else
+        {
+            _nextRunPreview = null;
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        if (_child == null) return;
+        
+        _isSaving = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var allowance = await Db.ScheduledAllowances
+                .FirstOrDefaultAsync(a => a.ChildId == ChildId);
+
+            if (allowance == null)
+            {
+                allowance = new ScheduledAllowance
+                {
+                    ChildId = ChildId
+                };
+                Db.ScheduledAllowances.Add(allowance);
+            }
+
+            allowance.IsActive = _isActive;
+            allowance.Amount = _amount;
+            allowance.Description = _description;
+            allowance.DayOfWeek = _dayOfWeek;
+            allowance.TimeOfDay = TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0));
+
+            if (_isActive)
+            {
+                allowance.NextRunDate = AllowanceService.CalculateNextRunDate(
+                    allowance.DayOfWeek,
+                    allowance.TimeOfDay,
+                    DateTime.UtcNow);
+            }
+
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add("Allowance settings saved!", Severity.Success);
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

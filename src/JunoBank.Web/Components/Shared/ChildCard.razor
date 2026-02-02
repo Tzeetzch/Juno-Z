@@ -1,0 +1,106 @@
+@using JunoBank.Web.Services
+@using JunoBank.Web.Utils
+
+<div class="neu-card child-card" @onclick="HandleClick">
+    <div class="child-header">
+        <div class="child-avatar">@Child.Name[0]</div>
+        <MudText Typo="Typo.h5" Class="child-name">@Child.Name</MudText>
+    </div>
+    
+    <div class="child-balance">
+        <MudText Typo="Typo.caption" Class="balance-label">Balance</MudText>
+        <MudText Typo="Typo.h4" Class="balance-value">
+            €@Child.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+        </MudText>
+    </div>
+
+    @if (Child.PendingRequestCount > 0)
+    {
+        <div class="pending-badge">
+            <MudIcon Icon="@Icons.Material.Filled.Notifications" Size="Size.Small" />
+            <span>@Child.PendingRequestCount pending</span>
+        </div>
+    }
+
+    <MudText Typo="Typo.caption" Class="tap-hint">Tap to manage</MudText>
+</div>
+
+<style>
+    .child-card {
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .child-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .child-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .child-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-secondary) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: white;
+    }
+
+    .child-name {
+        font-weight: 600;
+    }
+
+    .child-balance {
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    .balance-label {
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .balance-value {
+        color: var(--mud-palette-primary);
+        font-weight: bold;
+    }
+
+    .pending-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: #FFF3E0;
+        color: #E65100;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 0.5rem 0;
+    }
+
+    .tap-hint {
+        text-align: center;
+        color: var(--mud-palette-text-secondary);
+        margin-top: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public ChildSummary Child { get; set; } = default!;
+    [Parameter] public EventCallback<ChildSummary> OnClick { get; set; }
+
+    private async Task HandleClick()
+    {
+        await OnClick.InvokeAsync(Child);
+    }
+}
