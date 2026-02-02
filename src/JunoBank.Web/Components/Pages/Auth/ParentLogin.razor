@@ -6,48 +6,50 @@
 <div style="max-width: 400px; margin: 2rem auto;">
     <MudText Typo="Typo.h4" Class="mb-6" Align="Align.Center">Parent Login</MudText>
 
-    <div class="neu-card">
-        <MudTextField @bind-Value="_email"
-                      Label="Email"
-                      Variant="Variant.Outlined"
-                      InputType="InputType.Email"
-                      Class="mb-4"
-                      FullWidth="true" />
+    <form @onsubmit="HandleLogin" @onsubmit:preventDefault>
+        <div class="neu-card">
+            <MudTextField @bind-Value="_email"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Email"
+                          Class="mb-4"
+                          FullWidth="true" />
 
-        <MudTextField @bind-Value="_password"
-                      Label="Password"
-                      Variant="Variant.Outlined"
-                      InputType="InputType.Password"
-                      Class="mb-4"
-                      FullWidth="true" />
+            <MudTextField @bind-Value="_password"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Class="mb-4"
+                          FullWidth="true" />
 
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
-        }
-
-        <button class="neu-btn neu-btn-primary neu-btn-large"
-                style="width: 100%;"
-                @onclick="HandleLogin"
-                disabled="@_isLoading">
-            @if (_isLoading)
+            @if (!string.IsNullOrEmpty(_error))
             {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
             }
-            else
-            {
-                <span>Login</span>
-            }
-        </button>
 
-        <MudButton Variant="Variant.Text"
-                   Color="Color.Primary"
-                   Class="mt-2"
-                   FullWidth="true"
-                   OnClick="GoToForgotPassword">
-            Forgot Password?
-        </MudButton>
-    </div>
+            <button type="submit"
+                    class="neu-btn neu-btn-primary neu-btn-large"
+                    style="width: 100%;"
+                    disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
+
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Class="mt-2"
+                       FullWidth="true"
+                       OnClick="GoToForgotPassword">
+                Forgot Password?
+            </MudButton>
+        </div>
+    </form>
 
     <MudButton Variant="Variant.Text"
                Color="Color.Secondary"

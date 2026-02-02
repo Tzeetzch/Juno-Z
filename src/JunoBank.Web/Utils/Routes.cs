@@ -14,7 +14,7 @@ public static class AppRoutes
 
     public static class Parent
     {
-        public const string Dashboard = "/parent/dashboard";
+        public const string Dashboard = "/parent";
         public const string PendingRequests = "/parent/requests";
         public const string TransactionHistory = "/parent/history";
         public const string Settings = "/parent/settings";
@@ -32,7 +32,12 @@ public static class AppRoutes
         /// <summary>
         /// Generates the request history URL for a specific child.
         /// </summary>
-        public static string ChildRequestHistory(int childId) => $"/parent/child/{childId}/history";
+        public static string ChildRequestHistory(int childId) => $"/parent/child/{childId}/request-history";
+
+        /// <summary>
+        /// Generates the transaction history URL for a specific child.
+        /// </summary>
+        public static string ChildTransactionHistory(int childId) => $"/parent/child/{childId}/transactions";
 
         /// <summary>
         /// Generates the manual transaction URL for a specific child.
@@ -43,6 +48,16 @@ public static class AppRoutes
         /// Generates the settings URL for a specific child.
         /// </summary>
         public static string ChildSettings(int childId) => $"/parent/child/{childId}/settings";
+
+        /// <summary>
+        /// Generates the URL to create a new standing order for a child.
+        /// </summary>
+        public static string ChildOrderNew(int childId) => $"/parent/child/{childId}/order/new";
+
+        /// <summary>
+        /// Generates the URL to edit a standing order for a child.
+        /// </summary>
+        public static string ChildOrderEdit(int childId, int orderId) => $"/parent/child/{childId}/order/{orderId}";
     }
 
     public static class Auth

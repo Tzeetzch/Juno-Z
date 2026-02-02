@@ -66,11 +66,22 @@ Lock account for 5 min after 5 failed attempts.
 
 ### MEDIUM
 
+**TICKET-017: Paginate all list pages** (3-4 hours)  
+Add pagination to transaction history, request history, and standing orders lists.
+- Use MudBlazor's built-in pagination component
+- Default page size: 20 items
+- "Load more" or page numbers approach TBD
+
 **TICKET-015: Extract Settings.razor sub-components** (2-3 hours)  
 Split into AllowanceSettings.razor and ChangePassword.razor.
 
 **TICKET-016: Create common CSS classes** (2 hours)  
 Add .page-container, .card-section to reduce inline styles.
+
+### LOW
+
+**TICKET-018: Replace emoji icons with proper icons** (1-2 hours)  
+Current emoji icons (💰, 📋, ⚙️, etc.) look too "AI-generated". Replace with MudBlazor Material icons or a consistent icon set.
 
 ---
 

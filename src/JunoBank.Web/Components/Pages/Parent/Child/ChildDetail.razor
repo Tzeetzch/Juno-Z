@@ -76,6 +76,13 @@
                        Color="Color.Default"
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
+                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildTransactionHistory(ChildId)))">
+                📊 Transaction History
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Default"
+                       Size="Size.Large"
+                       Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequestHistory(ChildId)))">
                 📜 Request History
             </MudButton>

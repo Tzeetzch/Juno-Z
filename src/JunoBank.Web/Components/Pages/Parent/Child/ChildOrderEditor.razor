@@ -1,0 +1,306 @@
+@page "/parent/child/{ChildId:int}/order/new"
+@page "/parent/child/{ChildId:int}/order/{OrderId:int}"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@using JunoBank.Web.Utils
+@inject IAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject IAllowanceService AllowanceService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_isNew ? "New" : "Edit") Standing Order</PageTitle>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else if (_child == null)
+    {
+        <MudAlert Severity="Severity.Error">Child not found</MudAlert>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-4"
+                   OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Dashboard))">
+            Back to Dashboard
+        </MudButton>
+    }
+    else
+    {
+        <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildSettings(ChildId)" />
+
+        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
+            @(_isNew ? "➕ New Standing Order" : "✏️ Edit Standing Order")
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        }
+
+        <div class="neu-card" style="padding: 2rem;">
+            <MudSwitch @bind-Value="_isActive" Color="Color.Primary" Label="Active" Class="mb-4" />
+
+            <MudNumericField @bind-Value="_amount"
+                             Label="Amount"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentText="€"
+                             Min="0.01m"
+                             Max="1000m"
+                             Step="0.50m"
+                             HelperText="How much per payment? (Max €1000)" />
+
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Class="mt-4"
+                          Placeholder="e.g., Weekly Allowance"
+                          HelperText="Shows in transaction history" />
+
+            <MudSelect @bind-Value="_interval" @bind-Value:after="UpdateNextRunPreview"
+                       Label="How often?"
+                       Variant="Variant.Outlined"
+                       Class="mt-4">
+                <MudSelectItem Value="AllowanceInterval.Hourly">Every Hour (testing)</MudSelectItem>
+                <MudSelectItem Value="AllowanceInterval.Daily">Daily</MudSelectItem>
+                <MudSelectItem Value="AllowanceInterval.Weekly">Weekly</MudSelectItem>
+                <MudSelectItem Value="AllowanceInterval.Monthly">Monthly</MudSelectItem>
+                <MudSelectItem Value="AllowanceInterval.Yearly">Yearly</MudSelectItem>
+            </MudSelect>
+
+            @if (_interval == AllowanceInterval.Weekly)
+            {
+                <MudSelect @bind-Value="_dayOfWeek" @bind-Value:after="UpdateNextRunPreview"
+                           Label="Day of week"
+                           Variant="Variant.Outlined"
+                           Class="mt-4">
+                    <MudSelectItem Value="DayOfWeek.Monday">Monday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Tuesday">Tuesday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Wednesday">Wednesday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Thursday">Thursday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Friday">Friday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Saturday">Saturday</MudSelectItem>
+                    <MudSelectItem Value="DayOfWeek.Sunday">Sunday</MudSelectItem>
+                </MudSelect>
+            }
+
+            @if (_interval == AllowanceInterval.Monthly || _interval == AllowanceInterval.Yearly)
+            {
+                <MudNumericField @bind-Value="_dayOfMonth" @bind-Value:after="UpdateNextRunPreview"
+                                 Label="Day of month"
+                                 Variant="Variant.Outlined"
+                                 Class="mt-4"
+                                 Min="1"
+                                 Max="28"
+                                 HelperText="1-28 (to work for all months)" />
+            }
+
+            @if (_interval == AllowanceInterval.Yearly)
+            {
+                <MudSelect @bind-Value="_monthOfYear" @bind-Value:after="UpdateNextRunPreview"
+                           Label="Month"
+                           Variant="Variant.Outlined"
+                           Class="mt-4">
+                    <MudSelectItem Value="1">January</MudSelectItem>
+                    <MudSelectItem Value="2">February</MudSelectItem>
+                    <MudSelectItem Value="3">March</MudSelectItem>
+                    <MudSelectItem Value="4">April</MudSelectItem>
+                    <MudSelectItem Value="5">May</MudSelectItem>
+                    <MudSelectItem Value="6">June</MudSelectItem>
+                    <MudSelectItem Value="7">July</MudSelectItem>
+                    <MudSelectItem Value="8">August</MudSelectItem>
+                    <MudSelectItem Value="9">September</MudSelectItem>
+                    <MudSelectItem Value="10">October</MudSelectItem>
+                    <MudSelectItem Value="11">November</MudSelectItem>
+                    <MudSelectItem Value="12">December</MudSelectItem>
+                </MudSelect>
+            }
+
+            @if (_interval != AllowanceInterval.Hourly)
+            {
+                <MudTimePicker @bind-Time="_timeOfDay" @bind-Time:after="UpdateNextRunPreview"
+                               Label="Time of day"
+                               Variant="Variant.Outlined"
+                               Class="mt-4"
+                               Editable="true" />
+            }
+
+            @if (_isActive && _nextRunPreview.HasValue)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-4" Dense="true">
+                    <strong>Next payment:</strong> @FormatNextRun(_nextRunPreview.Value)
+                </MudAlert>
+            }
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Secondary"
+                           FullWidth="true"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Disabled="_isSaving"
+                           OnClick="Save">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    Save
+                </MudButton>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int ChildId { get; set; }
+    [Parameter] public int? OrderId { get; set; }
+
+    private User? _child;
+    private ScheduledAllowance? _existingOrder;
+    private bool _isNew => OrderId == null || OrderId == 0;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private string _errorMessage = string.Empty;
+
+    // Form fields
+    private bool _isActive = true;
+    private decimal _amount = 5.00m;
+    private string _description = "Allowance";
+    private AllowanceInterval _interval = AllowanceInterval.Weekly;
+    private DayOfWeek _dayOfWeek = DayOfWeek.Saturday;
+    private int _dayOfMonth = 1;
+    private int _monthOfYear = 1;
+    private TimeSpan? _timeOfDay = new TimeSpan(9, 0, 0);
+    private DateTime? _nextRunPreview;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null || session.Role != UserRole.Parent)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _child = await UserService.GetChildByIdAsync(ChildId);
+        
+        if (_child != null && !_isNew)
+        {
+            _existingOrder = await AllowanceService.GetOrderByIdAsync(OrderId!.Value);
+            if (_existingOrder != null)
+            {
+                _isActive = _existingOrder.IsActive;
+                _amount = _existingOrder.Amount;
+                _description = _existingOrder.Description;
+                _interval = _existingOrder.Interval;
+                _dayOfWeek = _existingOrder.DayOfWeek;
+                _dayOfMonth = _existingOrder.DayOfMonth;
+                _monthOfYear = _existingOrder.MonthOfYear;
+                _timeOfDay = _existingOrder.TimeOfDay.ToTimeSpan();
+            }
+        }
+        
+        UpdateNextRunPreview();
+        _isLoading = false;
+    }
+
+    private void UpdateNextRunPreview()
+    {
+        if (_isActive)
+        {
+            _nextRunPreview = AllowanceService.CalculateNextRunDate(
+                _interval,
+                _dayOfWeek,
+                _dayOfMonth,
+                _monthOfYear,
+                TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0)),
+                DateTime.Now);
+        }
+        else
+        {
+            _nextRunPreview = null;
+        }
+    }
+
+    private string FormatNextRun(DateTime next)
+    {
+        return _interval switch
+        {
+            AllowanceInterval.Hourly => next.ToString("MMM d 'at' h:mm tt"),
+            AllowanceInterval.Daily => next.ToString("MMM d 'at' h:mm tt"),
+            AllowanceInterval.Weekly => next.ToString("dddd, MMM d 'at' h:mm tt"),
+            AllowanceInterval.Monthly => next.ToString("MMM d, yyyy 'at' h:mm tt"),
+            AllowanceInterval.Yearly => next.ToString("MMMM d, yyyy 'at' h:mm tt"),
+            _ => next.ToString("f")
+        };
+    }
+
+    private async Task Save()
+    {
+        if (_child == null) return;
+        
+        _isSaving = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var session = await AuthProvider.GetCurrentUserAsync();
+            
+            if (_isNew)
+            {
+                var order = new ScheduledAllowance
+                {
+                    ChildId = ChildId,
+                    CreatedByUserId = session!.UserId,
+                    IsActive = _isActive,
+                    Amount = _amount,
+                    Description = _description,
+                    Interval = _interval,
+                    DayOfWeek = _dayOfWeek,
+                    DayOfMonth = _dayOfMonth,
+                    MonthOfYear = _monthOfYear,
+                    TimeOfDay = TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0))
+                };
+                await AllowanceService.CreateOrderAsync(order);
+                Snackbar.Add("Standing order created!", Severity.Success);
+            }
+            else
+            {
+                _existingOrder!.IsActive = _isActive;
+                _existingOrder.Amount = _amount;
+                _existingOrder.Description = _description;
+                _existingOrder.Interval = _interval;
+                _existingOrder.DayOfWeek = _dayOfWeek;
+                _existingOrder.DayOfMonth = _dayOfMonth;
+                _existingOrder.MonthOfYear = _monthOfYear;
+                _existingOrder.TimeOfDay = TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0));
+                await AllowanceService.UpdateOrderAsync(_existingOrder);
+                Snackbar.Add("Standing order updated!", Severity.Success);
+            }
+
+            Navigation.NavigateTo(AppRoutes.Parent.ChildSettings(ChildId));
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo(AppRoutes.Parent.ChildSettings(ChildId));
+    }
+}

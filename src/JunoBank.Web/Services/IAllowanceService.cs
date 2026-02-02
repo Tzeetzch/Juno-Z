@@ -3,20 +3,40 @@ using JunoBank.Web.Data.Entities;
 namespace JunoBank.Web.Services;
 
 /// <summary>
-/// Service for managing scheduled allowances.
+/// Service for managing scheduled standing orders (recurring transfers).
 /// </summary>
 public interface IAllowanceService
 {
     /// <summary>
-    /// Check if any allowances are due and process them.
-    /// Handles catch-up for missed allowances (e.g., server was offline).
+    /// Check if any orders are due and process them.
+    /// Handles catch-up for missed orders (e.g., server was offline).
     /// </summary>
     Task<int> ProcessDueAllowancesAsync();
 
     /// <summary>
-    /// Get the next scheduled run date for the active allowance.
+    /// Get all standing orders for a specific child.
     /// </summary>
-    Task<DateTime?> GetNextRunDateAsync();
+    Task<List<ScheduledAllowance>> GetOrdersForChildAsync(int childId);
+
+    /// <summary>
+    /// Get a specific standing order by ID.
+    /// </summary>
+    Task<ScheduledAllowance?> GetOrderByIdAsync(int orderId);
+
+    /// <summary>
+    /// Create a new standing order.
+    /// </summary>
+    Task<ScheduledAllowance> CreateOrderAsync(ScheduledAllowance order);
+
+    /// <summary>
+    /// Update an existing standing order.
+    /// </summary>
+    Task UpdateOrderAsync(ScheduledAllowance order);
+
+    /// <summary>
+    /// Delete a standing order.
+    /// </summary>
+    Task DeleteOrderAsync(int orderId);
 
     /// <summary>
     /// Calculate the next run date based on interval type and time settings.
@@ -33,9 +53,4 @@ public interface IAllowanceService
         int monthOfYear,
         TimeOnly timeOfDay,
         DateTime fromDate);
-
-    /// <summary>
-    /// Get current allowance settings.
-    /// </summary>
-    Task<ScheduledAllowance?> GetAllowanceAsync();
 }

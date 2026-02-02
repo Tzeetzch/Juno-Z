@@ -191,8 +191,45 @@ public class AllowanceService : IAllowanceService
     }
 
     /// <inheritdoc />
-    public async Task<ScheduledAllowance?> GetAllowanceAsync()
+    public async Task<List<ScheduledAllowance>> GetOrdersForChildAsync(int childId)
     {
-        return await _db.ScheduledAllowances.FirstOrDefaultAsync();
+        return await _db.ScheduledAllowances
+            .Where(a => a.ChildId == childId)
+            .OrderBy(a => a.Description)
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<ScheduledAllowance?> GetOrderByIdAsync(int orderId)
+    {
+        return await _db.ScheduledAllowances.FindAsync(orderId);
+    }
+
+    /// <inheritdoc />
+    public async Task<ScheduledAllowance> CreateOrderAsync(ScheduledAllowance order)
+    {
+        order.NextRunDate = CalculateNextRunDate(order, _timeProvider.GetLocalNow().DateTime);
+        _db.ScheduledAllowances.Add(order);
+        await _db.SaveChangesAsync();
+        return order;
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateOrderAsync(ScheduledAllowance order)
+    {
+        order.NextRunDate = CalculateNextRunDate(order, _timeProvider.GetLocalNow().DateTime);
+        _db.ScheduledAllowances.Update(order);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteOrderAsync(int orderId)
+    {
+        var order = await _db.ScheduledAllowances.FindAsync(orderId);
+        if (order != null)
+        {
+            _db.ScheduledAllowances.Remove(order);
+            await _db.SaveChangesAsync();
+        }
     }
 }

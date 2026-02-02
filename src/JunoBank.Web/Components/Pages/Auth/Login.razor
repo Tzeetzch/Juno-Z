@@ -1,4 +1,5 @@
 @page "/login"
+@using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 
@@ -12,17 +13,57 @@
         <div style="max-width: 400px; margin: 2rem auto; text-align: center;">
             <MudText Typo="Typo.h4" Class="mb-6">Welcome to Juno Bank</MudText>
 
-            <MudText Typo="Typo.body1" Class="mb-4">Who are you?</MudText>
+            @if (_selectedChild == null)
+            {
+                <!-- Parent Login Section -->
+                <div class="mb-6">
+                    <button class="neu-btn neu-btn-primary neu-btn-large" style="width: 100%;" @onclick="GoToParentLogin">
+                        I'm a Parent
+                    </button>
+                </div>
 
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <button class="neu-btn neu-btn-primary neu-btn-large" @onclick="GoToParentLogin">
-                    I'm a Parent
-                </button>
+                <!-- Divider -->
+                <div style="display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;">
+                    <div style="flex: 1; height: 1px; background: var(--mud-palette-lines-default);"></div>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">or</MudText>
+                    <div style="flex: 1; height: 1px; background: var(--mud-palette-lines-default);"></div>
+                </div>
 
-                <button class="neu-btn neu-btn-secondary neu-btn-large" @onclick="GoToChildLogin">
-                    I'm a Kid
-                </button>
-            </div>
+                <!-- Kid Login Section -->
+                <MudText Typo="Typo.h6" Class="mb-4">I'm a Kid</MudText>
+
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+                }
+                else if (_children.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        No kid accounts yet
+                    </MudText>
+                }
+                else
+                {
+                    <ChildSelector Children="_children" OnChildSelected="HandleChildSelected" />
+                }
+            }
+            else
+            {
+                <!-- Picture Password for selected child -->
+                <MudText Typo="Typo.h5" Class="mb-2">Hi @_selectedChild.Name!</MudText>
+                <MudText Typo="Typo.body1" Class="mb-6">Tap your secret pictures</MudText>
+
+                <PictureGrid @ref="_pictureGrid"
+                             RequiredLength="4"
+                             OnSequenceComplete="HandleSequenceComplete" />
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           Class="mt-4"
+                           OnClick="@GoBackToChildPicker">
+                    ← Not @_selectedChild.Name?
+                </MudButton>
+            }
         </div>
     </NotAuthorized>
 </AuthorizeView>
@@ -31,6 +72,17 @@
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IAuthService AuthService { get; set; } = default!;
 
+    private PictureGrid? _pictureGrid;
+    private List<ChildLoginInfo> _children = new();
+    private ChildLoginInfo? _selectedChild;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _children = await AuthService.GetChildrenForLoginAsync();
+        _isLoading = false;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -38,7 +90,6 @@
             var user = await AuthService.GetCurrentUserAsync();
             if (user != null)
             {
-                // Redirect to appropriate dashboard based on role
                 var redirectUrl = user.Role == UserRole.Child
                     ? "/child"
                     : "/parent";
@@ -47,13 +98,35 @@
         }
     }
 
+    private void HandleChildSelected(ChildLoginInfo child)
+    {
+        _selectedChild = child;
+    }
+
+    private async Task HandleSequenceComplete(string[] sequence)
+    {
+        if (_selectedChild == null) return;
+
+        var result = await AuthService.AuthenticateChildByIdAsync(_selectedChild.Id, sequence);
+
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/child");
+        }
+        else
+        {
+            _pictureGrid?.ShowError(result.Error ?? "Wrong pictures, try again!");
+        }
+    }
+
+    private void GoBackToChildPicker()
+    {
+        _selectedChild = null;
+        _pictureGrid?.Reset();
+    }
+
     private void GoToParentLogin()
     {
         Navigation.NavigateTo("/login/parent");
-    }
-
-    private void GoToChildLogin()
-    {
-        Navigation.NavigateTo("/login/child");
     }
 }

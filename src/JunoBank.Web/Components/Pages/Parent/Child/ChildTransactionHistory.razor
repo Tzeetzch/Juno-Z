@@ -1,0 +1,87 @@
+@page "/parent/child/{ChildId:int}/transactions"
+@attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Data
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@using JunoBank.Web.Utils
+@using Microsoft.EntityFrameworkCore
+@inject IAuthStateProvider AuthProvider
+@inject IUserService UserService
+@inject AppDbContext Db
+@inject NavigationManager Navigation
+
+<PageTitle>Transactions - @(_child?.Name ?? "Child")</PageTitle>
+
+<div style="max-width: 700px; margin: 0 auto; padding: 2rem;">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    }
+    else if (_child == null)
+    {
+        <MudAlert Severity="Severity.Error">Child not found</MudAlert>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-4"
+                   OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Dashboard))">
+            Back to Dashboard
+        </MudButton>
+    }
+    else
+    {
+        <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
+
+        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
+            💰 @_child.Name's Transactions
+        </MudText>
+
+        @if (_transactions.Count == 0)
+        {
+            <div class="neu-card" style="padding: 2rem; text-align: center;">
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary);">
+                    No transactions yet
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    Transactions will appear here once money is added or spent.
+                </MudText>
+            </div>
+        }
+        else
+        {
+            <TransactionList Transactions="_transactions" />
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public int ChildId { get; set; }
+
+    private User? _child;
+    private List<Transaction> _transactions = new();
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null || session.Role != UserRole.Parent)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _child = await UserService.GetChildByIdAsync(ChildId);
+        
+        if (_child != null)
+        {
+            _transactions = await Db.Transactions
+                .Where(t => t.UserId == ChildId && t.IsApproved)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(100)
+                .ToListAsync();
+        }
+        
+        _isLoading = false;
+    }
+}
