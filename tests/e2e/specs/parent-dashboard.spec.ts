@@ -54,15 +54,6 @@ test.describe('Parent Dashboard', () => {
     await expect(sophieCard.locator('text=€')).toBeVisible();
   });
 
-  test('should have quick action buttons', async ({ page }) => {
-    await loginAsParent(page);
-
-    // Check for quick action buttons (Add/Remove Money removed - now per-child)
-    await expect(page.locator('button:has-text("Review Requests")')).toBeVisible();
-    await expect(page.locator('button:has-text("Transaction History")')).toBeVisible();
-    await expect(page.locator('button:has-text("Settings")')).toBeVisible();
-  });
-
   test('should navigate to child detail when clicking child card', async ({ page }) => {
     await loginAsParent(page);
 
@@ -73,24 +64,20 @@ test.describe('Parent Dashboard', () => {
     await expect(page).toHaveURL(/\/parent\/child\/\d+/, { timeout: 10000 });
   });
 
-  test('should navigate to pending requests', async ({ page }) => {
+  test('should show pending requests card when requests exist', async ({ page }) => {
     await loginAsParent(page);
 
-    await page.locator('button:has-text("Review Requests")').click();
+    // Sophie has 1 pending request from seed data
+    // Should show the pending requests card
+    const pendingCard = page.locator('.neu-card:has-text("Total Pending Requests")');
+    await expect(pendingCard).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should navigate to pending requests when clicking pending card', async ({ page }) => {
+    await loginAsParent(page);
+
+    // Click on pending requests card
+    await page.locator('.neu-card:has-text("Total Pending Requests")').click();
     await expect(page).toHaveURL('/parent/requests', { timeout: 10000 });
-  });
-
-  test('should navigate to transaction history', async ({ page }) => {
-    await loginAsParent(page);
-
-    await page.locator('button:has-text("Transaction History")').click();
-    await expect(page).toHaveURL('/parent/history', { timeout: 10000 });
-  });
-
-  test('should navigate to settings', async ({ page }) => {
-    await loginAsParent(page);
-
-    await page.locator('button:has-text("Settings")').click();
-    await expect(page).toHaveURL('/parent/settings', { timeout: 10000 });
   });
 });

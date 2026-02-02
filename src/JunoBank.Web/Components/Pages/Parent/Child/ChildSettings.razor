@@ -214,9 +214,11 @@
 
             if (allowance == null)
             {
+                var session = await AuthProvider.GetCurrentUserAsync();
                 allowance = new ScheduledAllowance
                 {
-                    ChildId = ChildId
+                    ChildId = ChildId,
+                    CreatedByUserId = session!.UserId
                 };
                 Db.ScheduledAllowances.Add(allowance);
             }
