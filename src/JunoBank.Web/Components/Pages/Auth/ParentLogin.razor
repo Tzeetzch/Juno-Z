@@ -1,8 +1,5 @@
 @page "/login/parent"
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Data
-@using JunoBank.Web.Data.Entities
-@using Microsoft.EntityFrameworkCore
+@using JunoBank.Web.Services
 
 <PageTitle>Parent Login - Juno Bank</PageTitle>
 
@@ -62,8 +59,7 @@
 </div>
 
 @code {
-    [Inject] private AppDbContext Db { get; set; } = default!;
-    [Inject] private CustomAuthStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     private string _email = string.Empty;
@@ -78,29 +74,14 @@
 
         try
         {
-            var user = await Db.Users
-                .FirstOrDefaultAsync(u => u.Email == _email && u.Role == UserRole.Parent);
+            var result = await AuthService.AuthenticateParentAsync(_email, _password);
 
-            if (user == null)
+            if (!result.Success)
             {
-                _error = "Invalid email or password";
+                _error = result.Error ?? "Invalid email or password";
                 return;
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(_password, user.PasswordHash))
-            {
-                _error = "Invalid email or password";
-                return;
-            }
-
-            var session = new UserSession
-            {
-                UserId = user.Id,
-                UserName = user.Name,
-                Role = user.Role
-            };
-
-            await AuthProvider.LoginAsync(session);
             Navigation.NavigateTo("/parent");
         }
         catch (Exception ex)

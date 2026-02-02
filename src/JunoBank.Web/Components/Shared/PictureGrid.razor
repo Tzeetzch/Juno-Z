@@ -1,4 +1,5 @@
 @namespace JunoBank.Web.Components.Shared
+@using JunoBank.Web.Constants
 
 <div class="picture-grid">
     @foreach (var image in _displayImages)
@@ -27,15 +28,9 @@
 }
 
 @code {
-    [Parameter] public int RequiredLength { get; set; } = 4;
+    [Parameter] public int RequiredLength { get; set; } = PicturePasswordImages.DefaultSequenceLength;
     [Parameter] public EventCallback<string[]> OnSequenceComplete { get; set; }
     [Parameter] public EventCallback OnSequenceReset { get; set; }
-
-    private static readonly string[] AllImages =
-    {
-"cat", "dog", "star", "moon", "sun", "tree",
-"fish", "bird", "car", "flower", "heart", "apple"
-};
 
     private List<string> _displayImages = new();
     private List<string> _selectedImages = new();
@@ -51,7 +46,10 @@
     private void ShuffleImages()
     {
         var random = new Random();
-        _displayImages = AllImages.Take(9).OrderBy(_ => random.Next()).ToList();
+        _displayImages = PicturePasswordImages.AllImages
+            .Take(PicturePasswordImages.GridDisplayCount)
+            .OrderBy(_ => random.Next())
+            .ToList();
     }
 
     private bool IsSelected(string image) => _selectedImages.Contains(image);
@@ -84,20 +82,5 @@
         StateHasChanged();
     }
 
-    private static string GetEmoji(string image) => image switch
-    {
-        "cat" => "🐱",
-        "dog" => "🐶",
-        "star" => "⭐",
-        "moon" => "🌙",
-        "sun" => "☀️",
-        "tree" => "🌳",
-        "fish" => "🐟",
-        "bird" => "🐦",
-        "car" => "🚗",
-        "flower" => "🌸",
-        "heart" => "❤️",
-        "apple" => "🍎",
-        _ => "❓"
-    };
+    private static string GetEmoji(string image) => PicturePasswordImages.GetEmoji(image);
 }

@@ -29,9 +29,21 @@ Physical money is becoming rare, but kids still need to learn about saving and s
 
 ## Status
 
-🚧 **Planning phase** - Architecture complete, implementation pending.
+✅ **Feature complete** (Phase H) - Ready for polish and real-world testing.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details.
+## Quick Start
+
+```bash
+cd src/JunoBank.Web
+dotnet run
+# Open https://localhost:5001
+```
+
+**Test Credentials:**
+- Parent: `dad@junobank.local` / `parent123`
+- Child: Tap cat → dog → star → moon
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Docker production setup.
 
 ## Design
 

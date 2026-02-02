@@ -1,6 +1,5 @@
-using System.Security.Cryptography;
-using System.Text;
 using JunoBank.Web.Data.Entities;
+using JunoBank.Web.Utils;
 
 namespace JunoBank.Web.Data;
 
@@ -46,7 +45,7 @@ public static class DbInitializer
         var picturePassword = new PicturePassword
         {
             UserId = child.Id,
-            ImageSequenceHash = HashSequence("cat,dog,star,moon"),
+            ImageSequenceHash = SecurityUtils.HashPictureSequence("cat,dog,star,moon"),
             GridSize = 9,
             SequenceLength = 4
         };
@@ -71,12 +70,5 @@ public static class DbInitializer
     private static string HashPassword(string password)
     {
         return BCrypt.Net.BCrypt.HashPassword(password);
-    }
-
-    private static string HashSequence(string sequence)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sequence));
-        return Convert.ToBase64String(bytes);
     }
 }

@@ -1,20 +1,23 @@
 using JunoBank.Tests.Helpers;
 using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
+using Microsoft.Extensions.Time.Testing;
 
 namespace JunoBank.Tests.Services;
 
 public class AllowanceServiceTests : DatabaseTestBase
 {
-    private readonly FakeDateTimeProvider _dateTime;
+    private readonly FakeTimeProvider _timeProvider;
     private readonly AllowanceService _service;
 
     public AllowanceServiceTests()
     {
         // Start at Thursday, Jan 15 2026, 10:00 AM
-        _dateTime = new FakeDateTimeProvider(new DateTime(2026, 1, 15, 10, 0, 0));
-        _service = new AllowanceService(Db, _dateTime, CreateLogger<AllowanceService>());
+        _timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 15, 10, 0, 0, TimeSpan.Zero));
+        _service = new AllowanceService(Db, _timeProvider, CreateLogger<AllowanceService>());
     }
+
+    private DateTime Now => _timeProvider.GetLocalNow().DateTime;
 
     #region CalculateNextRunDate Tests
 
@@ -25,7 +28,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         var result = _service.CalculateNextRunDate(
             DayOfWeek.Thursday,
             new TimeOnly(14, 0),
-            _dateTime.Now);
+            Now);
 
         Assert.Equal(new DateTime(2026, 1, 15, 14, 0, 0), result);
     }
@@ -37,7 +40,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         var result = _service.CalculateNextRunDate(
             DayOfWeek.Thursday,
             new TimeOnly(9, 0),
-            _dateTime.Now);
+            Now);
 
         // Should be next Thursday
         Assert.Equal(new DateTime(2026, 1, 22, 9, 0, 0), result);
@@ -50,7 +53,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         var result = _service.CalculateNextRunDate(
             DayOfWeek.Saturday,
             new TimeOnly(9, 0),
-            _dateTime.Now);
+            Now);
 
         // Saturday is 2 days away (Jan 17)
         Assert.Equal(new DateTime(2026, 1, 17, 9, 0, 0), result);
@@ -63,7 +66,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         var result = _service.CalculateNextRunDate(
             DayOfWeek.Monday,
             new TimeOnly(9, 0),
-            _dateTime.Now);
+            Now);
 
         // Next Monday is 4 days away (Jan 19)
         Assert.Equal(new DateTime(2026, 1, 19, 9, 0, 0), result);
@@ -97,7 +100,7 @@ public class AllowanceServiceTests : DatabaseTestBase
             TimeOfDay = new TimeOnly(9, 0),
             Description = "Weekly Allowance",
             IsActive = false, // Inactive
-            NextRunDate = _dateTime.Now.AddDays(-1) // Past due
+            NextRunDate = Now.AddDays(-1) // Past due
         };
         Db.ScheduledAllowances.Add(allowance);
         await Db.SaveChangesAsync();
@@ -124,7 +127,7 @@ public class AllowanceServiceTests : DatabaseTestBase
             TimeOfDay = new TimeOnly(9, 0),
             Description = "Weekly Allowance",
             IsActive = true,
-            NextRunDate = _dateTime.Now.AddDays(3) // Future
+            NextRunDate = Now.AddDays(3) // Future
         };
         Db.ScheduledAllowances.Add(allowance);
         await Db.SaveChangesAsync();
@@ -143,7 +146,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         Db.Users.Add(child);
         await Db.SaveChangesAsync();
 
-        var scheduledTime = _dateTime.Now.AddMinutes(-5); // 5 minutes ago
+        var scheduledTime = Now.AddMinutes(-5); // 5 minutes ago
         var allowance = new ScheduledAllowance
         {
             ChildId = child.Id,
@@ -173,7 +176,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         Assert.Null(transaction.ApprovedByUserId); // System-generated
 
         // Check next run date was updated
-        Assert.True(allowance.NextRunDate > _dateTime.Now);
+        Assert.True(allowance.NextRunDate > Now);
         Assert.Equal(scheduledTime, allowance.LastRunDate);
     }
 
@@ -186,7 +189,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         await Db.SaveChangesAsync();
 
         // Allowance was due 3 weeks ago (missed 3 payments)
-        var threeWeeksAgo = _dateTime.Now.AddDays(-21);
+        var threeWeeksAgo = Now.AddDays(-21);
         var allowance = new ScheduledAllowance
         {
             ChildId = child.Id,
@@ -212,7 +215,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         Assert.True(transactions.Count >= 3);
 
         // Next run should be in the future
-        Assert.True(allowance.NextRunDate > _dateTime.Now);
+        Assert.True(allowance.NextRunDate > Now);
     }
 
     #endregion
@@ -243,7 +246,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         Assert.Equal(new TimeOnly(9, 0), allowance.TimeOfDay);
         Assert.Equal("Pocket money", allowance.Description);
         Assert.True(allowance.IsActive);
-        Assert.True(allowance.NextRunDate > _dateTime.Now);
+        Assert.True(allowance.NextRunDate > Now);
     }
 
     [Fact]
@@ -264,7 +267,7 @@ public class AllowanceServiceTests : DatabaseTestBase
             TimeOfDay = new TimeOnly(8, 0),
             Description = "Old description",
             IsActive = true,
-            NextRunDate = _dateTime.Now.AddDays(5)
+            NextRunDate = Now.AddDays(5)
         };
         Db.ScheduledAllowances.Add(existing);
         await Db.SaveChangesAsync();
@@ -332,7 +335,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         {
             ChildId = child.Id,
             IsActive = false,
-            NextRunDate = _dateTime.Now.AddDays(1)
+            NextRunDate = Now.AddDays(1)
         });
         await Db.SaveChangesAsync();
 
@@ -348,7 +351,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         Db.Users.Add(child);
         await Db.SaveChangesAsync();
 
-        var nextRun = _dateTime.Now.AddDays(3);
+        var nextRun = Now.AddDays(3);
         Db.ScheduledAllowances.Add(new ScheduledAllowance
         {
             ChildId = child.Id,
@@ -364,3 +367,4 @@ public class AllowanceServiceTests : DatabaseTestBase
 
     #endregion
 }
+

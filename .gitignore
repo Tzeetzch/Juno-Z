@@ -29,6 +29,13 @@ packages/
 *.db-shm
 *.db-wal
 
+# Database backups and test databases
+**/Data/*.db
+**/Data/*.db-shm
+**/Data/*.db-wal
+junobank*.db
+test_*.db
+
 # User secrets
 secrets.json
 appsettings.*.json

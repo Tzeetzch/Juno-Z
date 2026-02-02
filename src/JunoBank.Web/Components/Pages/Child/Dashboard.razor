@@ -4,6 +4,7 @@
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @using JunoBank.Web.Components.Shared
+@using JunoBank.Web.Utils
 @inject CustomAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
@@ -123,19 +124,7 @@
         _isLoading = false;
     }
 
-    private static string GetStatusText(RequestStatus status) => status switch
-    {
-        RequestStatus.Pending => "⏳ Waiting",
-        RequestStatus.Approved => "✅ Approved",
-        RequestStatus.Denied => "❌ Denied",
-        _ => ""
-    };
+    private static string GetStatusText(RequestStatus status) => StatusDisplayHelper.GetStatusText(status);
 
-    private static string GetStatusColor(RequestStatus status) => status switch
-    {
-        RequestStatus.Pending => "#FFA726",
-        RequestStatus.Approved => "#4caf50",
-        RequestStatus.Denied => "#f44336",
-        _ => "inherit"
-    };
+    private static string GetStatusColor(RequestStatus status) => StatusDisplayHelper.GetStatusColor(status);
 }

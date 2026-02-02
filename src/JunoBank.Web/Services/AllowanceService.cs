@@ -6,25 +6,25 @@ namespace JunoBank.Web.Services;
 
 /// <summary>
 /// Service for managing scheduled allowances.
-/// Uses IDateTimeProvider for testability.
+/// Uses TimeProvider for testability.
 /// </summary>
 public class AllowanceService : IAllowanceService
 {
     private readonly AppDbContext _db;
-    private readonly IDateTimeProvider _dateTime;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<AllowanceService> _logger;
 
-    public AllowanceService(AppDbContext db, IDateTimeProvider dateTime, ILogger<AllowanceService> logger)
+    public AllowanceService(AppDbContext db, TimeProvider timeProvider, ILogger<AllowanceService> logger)
     {
         _db = db;
-        _dateTime = dateTime;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<int> ProcessDueAllowancesAsync()
     {
-        var now = _dateTime.Now;
+        var now = _timeProvider.GetLocalNow().DateTime;
         var processedCount = 0;
 
         // Get active allowances that are due (NextRunDate <= now)
@@ -140,9 +140,9 @@ public class AllowanceService : IAllowanceService
                 Description = description,
                 IsActive = isActive,
                 NextRunDate = isActive 
-                    ? CalculateNextRunDate(dayOfWeek, timeOfDay, _dateTime.Now)
+                    ? CalculateNextRunDate(dayOfWeek, timeOfDay, _timeProvider.GetLocalNow().DateTime)
                     : DateTime.MaxValue,
-                CreatedAt = _dateTime.UtcNow
+                CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
             };
 
             _db.ScheduledAllowances.Add(allowance);
@@ -158,7 +158,7 @@ public class AllowanceService : IAllowanceService
             // Recalculate next run date if active
             if (isActive)
             {
-                allowance.NextRunDate = CalculateNextRunDate(dayOfWeek, timeOfDay, _dateTime.Now);
+                allowance.NextRunDate = CalculateNextRunDate(dayOfWeek, timeOfDay, _timeProvider.GetLocalNow().DateTime);
             }
         }
 

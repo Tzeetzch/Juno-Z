@@ -7,6 +7,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject CustomAuthStateProvider AuthProvider
 @inject IAllowanceService AllowanceService
+@inject IPasswordService PasswordService
 @inject IPasswordResetService PasswordResetService
 @inject AppDbContext Db
 @inject NavigationManager Navigation
@@ -316,14 +317,14 @@
             }
 
             // Verify current password
-            if (!BCrypt.Net.BCrypt.Verify(_currentPassword, user.PasswordHash))
+            if (!PasswordService.VerifyPassword(_currentPassword, user.PasswordHash ?? string.Empty))
             {
                 _passwordError = "Current password is incorrect.";
                 return;
             }
 
             // Update password
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(_newPassword);
+            user.PasswordHash = PasswordService.HashPassword(_newPassword);
             await Db.SaveChangesAsync();
 
             // Clear fields

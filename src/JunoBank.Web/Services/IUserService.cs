@@ -13,8 +13,6 @@ public interface IUserService
     Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null);
     Task<Transaction> CreateManualTransactionAsync(int parentUserId, decimal amount, TransactionType type, string description);
     Task<List<Transaction>> GetAllTransactionsAsync(int limit = 100);
-    Task<ScheduledAllowance?> GetAllowanceSettingsAsync();
-    Task UpdateAllowanceSettingsAsync(int parentUserId, decimal amount, DayOfWeek dayOfWeek, bool isActive);
 }
 
 public class ParentDashboardData

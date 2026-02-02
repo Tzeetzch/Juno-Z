@@ -126,7 +126,10 @@ ScheduledAllowance
 |---------|---------|
 | `IUserService` | User lookup, authentication, balance updates |
 | `IAllowanceService` | Allowance CRUD, processing, catch-up logic |
-| `IDateTimeProvider` | Mockable DateTime.Now for unit testing |
+| `IAuthService` | Parent/child authentication logic |
+| `IPasswordService` | BCrypt password hashing abstraction |
+| `IEmailService` | Email sending (SMTP or console fallback) |
+| `IPasswordResetService` | Token management for password reset |
 
 ### Background Services
 
@@ -163,20 +166,3 @@ services:
       - junobank-data:/app/data  # SQLite persistence
     restart: unless-stopped
 ```
-
----
-
-## Phases 3-8: Complete
-
-| Phase | Topic | Document |
-|-------|-------|----------|
-| 3 | Claude Code workflow | `.claude/commands/` + CLAUDE.md |
-| 4 | CI/CD | `.github/workflows/release.yml` |
-| 5 | Deployment | `docs/DEPLOYMENT.md` |
-| 6 | Coding conventions | `docs/CONVENTIONS.md` |
-| 7 | Documentation | All docs/ files |
-| 8 | Scaffolding | `docs/SCAFFOLDING.md` |
-
-## Next Step
-
-Ready to scaffold. Say: **"Start Phase A scaffolding"**
