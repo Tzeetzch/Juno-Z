@@ -61,11 +61,7 @@ public class AllowanceService : IAllowanceService
 
                 // Update schedule tracking
                 allowance.LastRunDate = allowance.NextRunDate;
-                allowance.NextRunDate = CalculateNextRunDate(
-                    allowance.DayOfWeek,
-                    allowance.TimeOfDay,
-                    allowance.NextRunDate.AddMinutes(1) // Start from just after current run
-                );
+                allowance.NextRunDate = CalculateNextRunDate(allowance, allowance.NextRunDate.AddMinutes(1));
 
                 processedCount++;
             }
@@ -92,21 +88,67 @@ public class AllowanceService : IAllowanceService
     }
 
     /// <inheritdoc />
-    public DateTime CalculateNextRunDate(DayOfWeek dayOfWeek, TimeOnly timeOfDay, DateTime fromDate)
+    public DateTime CalculateNextRunDate(ScheduledAllowance allowance, DateTime fromDate)
     {
-        // Find the next occurrence of the specified day of week
+        return CalculateNextRunDate(
+            allowance.Interval,
+            allowance.DayOfWeek,
+            allowance.DayOfMonth,
+            allowance.MonthOfYear,
+            allowance.TimeOfDay,
+            fromDate);
+    }
+
+    /// <inheritdoc />
+    public DateTime CalculateNextRunDate(
+        AllowanceInterval interval,
+        DayOfWeek dayOfWeek,
+        int dayOfMonth,
+        int monthOfYear,
+        TimeOnly timeOfDay,
+        DateTime fromDate)
+    {
+        return interval switch
+        {
+            AllowanceInterval.Hourly => CalculateNextHourly(fromDate),
+            AllowanceInterval.Daily => CalculateNextDaily(timeOfDay, fromDate),
+            AllowanceInterval.Weekly => CalculateNextWeekly(dayOfWeek, timeOfDay, fromDate),
+            AllowanceInterval.Monthly => CalculateNextMonthly(dayOfMonth, timeOfDay, fromDate),
+            AllowanceInterval.Yearly => CalculateNextYearly(dayOfMonth, monthOfYear, timeOfDay, fromDate),
+            _ => throw new ArgumentOutOfRangeException(nameof(interval))
+        };
+    }
+
+    private static DateTime CalculateNextHourly(DateTime fromDate)
+    {
+        // Next hour at minute 0
+        var next = fromDate.AddHours(1);
+        return new DateTime(next.Year, next.Month, next.Day, next.Hour, 0, 0);
+    }
+
+    private static DateTime CalculateNextDaily(TimeOnly timeOfDay, DateTime fromDate)
+    {
+        var todayAtTime = fromDate.Date.Add(timeOfDay.ToTimeSpan());
+        
+        if (fromDate < todayAtTime)
+        {
+            return todayAtTime;
+        }
+        
+        return todayAtTime.AddDays(1);
+    }
+
+    private static DateTime CalculateNextWeekly(DayOfWeek dayOfWeek, TimeOnly timeOfDay, DateTime fromDate)
+    {
         var daysUntilTarget = ((int)dayOfWeek - (int)fromDate.DayOfWeek + 7) % 7;
         
-        // If today is the target day, check if the time has passed
         if (daysUntilTarget == 0)
         {
             var todayAtTime = fromDate.Date.Add(timeOfDay.ToTimeSpan());
             if (fromDate < todayAtTime)
             {
-                // Time hasn't passed yet today
                 return todayAtTime;
             }
-            // Time already passed, schedule for next week
             daysUntilTarget = 7;
         }
 
@@ -114,59 +156,38 @@ public class AllowanceService : IAllowanceService
         return nextDate.Add(timeOfDay.ToTimeSpan());
     }
 
-    /// <inheritdoc />
-    public async Task UpdateAllowanceAsync(
-        int parentUserId,
-        decimal amount,
-        DayOfWeek dayOfWeek,
-        TimeOnly timeOfDay,
-        string description,
-        bool isActive)
+    private static DateTime CalculateNextMonthly(int dayOfMonth, TimeOnly timeOfDay, DateTime fromDate)
     {
-        var allowance = await _db.ScheduledAllowances.FirstOrDefaultAsync();
-
-        if (allowance == null)
+        // Clamp day to valid range (1-28 to be safe for all months)
+        dayOfMonth = Math.Clamp(dayOfMonth, 1, 28);
+        
+        var thisMonthAtDay = new DateTime(fromDate.Year, fromDate.Month, dayOfMonth).Add(timeOfDay.ToTimeSpan());
+        
+        if (fromDate < thisMonthAtDay)
         {
-            // Get the child (assumes single child for now)
-            var child = await _db.Users.FirstAsync(u => u.Role == UserRole.Child);
-
-            allowance = new ScheduledAllowance
-            {
-                ChildId = child.Id,
-                CreatedByUserId = parentUserId,
-                Amount = amount,
-                DayOfWeek = dayOfWeek,
-                TimeOfDay = timeOfDay,
-                Description = description,
-                IsActive = isActive,
-                NextRunDate = isActive 
-                    ? CalculateNextRunDate(dayOfWeek, timeOfDay, _timeProvider.GetLocalNow().DateTime)
-                    : DateTime.MaxValue,
-                CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
-            };
-
-            _db.ScheduledAllowances.Add(allowance);
+            return thisMonthAtDay;
         }
-        else
+        
+        // Move to next month
+        var nextMonth = fromDate.AddMonths(1);
+        return new DateTime(nextMonth.Year, nextMonth.Month, dayOfMonth).Add(timeOfDay.ToTimeSpan());
+    }
+
+    private static DateTime CalculateNextYearly(int dayOfMonth, int monthOfYear, TimeOnly timeOfDay, DateTime fromDate)
+    {
+        // Clamp values
+        dayOfMonth = Math.Clamp(dayOfMonth, 1, 28);
+        monthOfYear = Math.Clamp(monthOfYear, 1, 12);
+        
+        var thisYearAtDate = new DateTime(fromDate.Year, monthOfYear, dayOfMonth).Add(timeOfDay.ToTimeSpan());
+        
+        if (fromDate < thisYearAtDate)
         {
-            allowance.Amount = amount;
-            allowance.DayOfWeek = dayOfWeek;
-            allowance.TimeOfDay = timeOfDay;
-            allowance.Description = description;
-            allowance.IsActive = isActive;
-
-            // Recalculate next run date if active
-            if (isActive)
-            {
-                allowance.NextRunDate = CalculateNextRunDate(dayOfWeek, timeOfDay, _timeProvider.GetLocalNow().DateTime);
-            }
+            return thisYearAtDate;
         }
-
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation(
-            "Allowance updated: {Amount:C} on {Day}s at {Time}, Active: {IsActive}, Next: {NextRun}",
-            amount, dayOfWeek, timeOfDay, isActive, allowance.NextRunDate);
+        
+        // Move to next year
+        return new DateTime(fromDate.Year + 1, monthOfYear, dayOfMonth).Add(timeOfDay.ToTimeSpan());
     }
 
     /// <inheritdoc />

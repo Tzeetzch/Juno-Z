@@ -1,21 +1,12 @@
 @page "/parent/settings"
 @attribute [Authorize(Roles = "Parent")]
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Data
-@using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
-@using Microsoft.EntityFrameworkCore
-@inject CustomAuthStateProvider AuthProvider
-@inject IAllowanceService AllowanceService
-@inject IPasswordService PasswordService
-@inject IPasswordResetService PasswordResetService
-@inject AppDbContext Db
+@inject IUserService UserService
 @inject NavigationManager Navigation
-@inject ISnackbar Snackbar
 
 <PageTitle>Settings</PageTitle>
 
-<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+<div style="max-width: 600px; margin: 0 auto; padding: 2rem;">
 
     <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@(() => Navigation.NavigateTo("/parent"))">
         ← Back to Dashboard
@@ -25,149 +16,25 @@
         ⚙️ Settings
     </MudText>
 
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Settings are now managed per child. Select a child below to configure their allowance.
+    </MudAlert>
+
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
     }
     else
     {
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
-                @_errorMessage
-            </MudAlert>
-        }
-
-        <div class="neu-card" style="padding: 2rem;">
-            <MudText Typo="Typo.h5" Style="margin-bottom: 1.5rem;">
-                Weekly Allowance
-            </MudText>
-
-            <MudSwitch @bind-Value="_isActive" @bind-Value:after="UpdateNextRunPreview" Color="Color.Primary" Label="Enable weekly allowance" Class="mb-4" />
-
-            <MudNumericField @bind-Value="_amount"
-                             Label="Amount per week"
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.Start"
-                             AdornmentText="€"
-                             Min="0.01m"
-                             Max="100m"
-                             Step="0.50m"
-                             Disabled="!_isActive"
-                             HelperText="How much per week? (Max €100)" />
-
-            <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          Variant="Variant.Outlined"
-                          Class="mt-4"
-                          Disabled="!_isActive"
-                          Placeholder="e.g., Pocket Money"
-                          HelperText="Shows in transaction history" />
-
-            <MudSelect @bind-Value="_dayOfWeek" @bind-Value:after="UpdateNextRunPreview"
-                       Label="Day of week"
-                       Variant="Variant.Outlined"
-                       Class="mt-4"
-                       Disabled="!_isActive">
-                <MudSelectItem Value="DayOfWeek.Monday">Monday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Tuesday">Tuesday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Wednesday">Wednesday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Thursday">Thursday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Friday">Friday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Saturday">Saturday</MudSelectItem>
-                <MudSelectItem Value="DayOfWeek.Sunday">Sunday</MudSelectItem>
-            </MudSelect>
-
-            <MudTimePicker @bind-Time="_timeOfDay" @bind-Time:after="UpdateNextRunPreview"
-                           Label="Time of day"
-                           Variant="Variant.Outlined"
-                           Class="mt-4"
-                           Disabled="!_isActive"
-                           Editable="true" />
-
-            @if (_isActive && _nextRunPreview.HasValue)
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            @foreach (var child in _children)
             {
-                <MudAlert Severity="Severity.Info" Class="mt-4" Dense="true">
-                    <strong>Next allowance:</strong> @_nextRunPreview.Value.ToString("dddd, MMM d 'at' h:mm tt")
-                </MudAlert>
-            }
-
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       FullWidth="true"
-                       Class="mt-6"
-                       Disabled="_isSaving"
-                       OnClick="SaveSettings">
-                @if (_isSaving)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Saving...</span>
-                }
-                else
-                {
-                    <span>Save Settings</span>
-                }
-            </MudButton>
-        </div>
-
-        @* Change Password Section *@
-        <div class="neu-card" style="padding: 2rem; margin-top: 2rem;">
-            <MudText Typo="Typo.h5" Style="margin-bottom: 1.5rem;">
-                🔒 Change Password
-            </MudText>
-
-            @if (_isDemoAccount)
-            {
-                <MudAlert Severity="Severity.Info">
-                    Password changes are not available for demo accounts.
-                </MudAlert>
-            }
-            else
-            {
-                <MudTextField @bind-Value="_currentPassword"
-                              Label="Current Password"
-                              Variant="Variant.Outlined"
-                              InputType="@(_showCurrentPassword ? InputType.Text : InputType.Password)"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@(_showCurrentPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                              OnAdornmentClick="@(() => _showCurrentPassword = !_showCurrentPassword)"
-                              Class="mb-4" />
-
-                <MudTextField @bind-Value="_newPassword"
-                              Label="New Password"
-                              Variant="Variant.Outlined"
-                              InputType="@(_showNewPassword ? InputType.Text : InputType.Password)"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@(_showNewPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                              OnAdornmentClick="@(() => _showNewPassword = !_showNewPassword)"
-                              Class="mb-4"
-                              HelperText="Minimum 8 characters" />
-
-                <MudTextField @bind-Value="_confirmNewPassword"
-                              Label="Confirm New Password"
-                              Variant="Variant.Outlined"
-                              InputType="@(_showNewPassword ? InputType.Text : InputType.Password)"
-                              Class="mb-4" />
-
-                @if (!string.IsNullOrEmpty(_passwordError))
-                {
-                    <MudAlert Severity="Severity.Error" Class="mb-4">@_passwordError</MudAlert>
-                }
-
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Large"
                            FullWidth="true"
-                           Disabled="_isChangingPassword"
-                           OnClick="ChangePassword">
-                    @if (_isChangingPassword)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Changing...</span>
-                    }
-                    else
-                    {
-                        <span>Change Password</span>
-                    }
+                           OnClick="@(() => Navigation.NavigateTo($"/parent/child/{child.Id}/settings"))">
+                    ⚙️ @child.Name's Settings
                 </MudButton>
             }
         </div>
@@ -176,171 +43,11 @@
 
 @code {
     private bool _isLoading = true;
-    private bool _isSaving = false;
-    private string _errorMessage = string.Empty;
-    private int _parentUserId;
-    private string? _parentEmail;
-    private bool _isDemoAccount;
-
-    // Allowance fields
-    private bool _isActive = false;
-    private decimal _amount = 5.00m;
-    private string _description = "Weekly Allowance";
-    private DayOfWeek _dayOfWeek = DayOfWeek.Saturday;
-    private TimeSpan? _timeOfDay = new TimeSpan(9, 0, 0); // 9:00 AM default
-    private DateTime? _nextRunPreview;
-
-    // Change password fields
-    private string _currentPassword = string.Empty;
-    private string _newPassword = string.Empty;
-    private string _confirmNewPassword = string.Empty;
-    private string _passwordError = string.Empty;
-    private bool _isChangingPassword = false;
-    private bool _showCurrentPassword = false;
-    private bool _showNewPassword = false;
+    private List<ChildSummary> _children = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var session = await AuthProvider.GetCurrentUserAsync();
-        if (session == null || session.Role != UserRole.Parent)
-        {
-            Navigation.NavigateTo("/");
-            return;
-        }
-
-        _parentUserId = session.UserId;
-
-        // Get user email to check if demo account
-        var user = await Db.Users.FindAsync(_parentUserId);
-        if (user != null)
-        {
-            _parentEmail = user.Email;
-            _isDemoAccount = !string.IsNullOrEmpty(_parentEmail) && PasswordResetService.IsDemoAccount(_parentEmail);
-        }
-
-        var existing = await AllowanceService.GetAllowanceAsync();
-        if (existing != null)
-        {
-            _isActive = existing.IsActive;
-            _amount = existing.Amount;
-            _description = existing.Description;
-            _dayOfWeek = existing.DayOfWeek;
-            _timeOfDay = existing.TimeOfDay.ToTimeSpan();
-            _nextRunPreview = existing.IsActive ? existing.NextRunDate : null;
-        }
-
+        _children = await UserService.GetAllChildrenSummaryAsync();
         _isLoading = false;
-    }
-
-    private void UpdateNextRunPreview()
-    {
-        if (_isActive && _timeOfDay.HasValue)
-        {
-            var timeOnly = TimeOnly.FromTimeSpan(_timeOfDay.Value);
-            _nextRunPreview = AllowanceService.CalculateNextRunDate(_dayOfWeek, timeOnly, DateTime.Now);
-        }
-        else
-        {
-            _nextRunPreview = null;
-        }
-    }
-
-    private async Task SaveSettings()
-    {
-        _isSaving = true;
-        _errorMessage = string.Empty;
-
-        try
-        {
-            var timeOnly = TimeOnly.FromTimeSpan(_timeOfDay ?? new TimeSpan(9, 0, 0));
-            await AllowanceService.UpdateAllowanceAsync(
-                _parentUserId,
-                _amount,
-                _dayOfWeek,
-                timeOnly,
-                _description,
-                _isActive);
-
-            // Update preview
-            var updated = await AllowanceService.GetAllowanceAsync();
-            _nextRunPreview = updated?.IsActive == true ? updated.NextRunDate : null;
-
-            Snackbar.Add("Settings saved!", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = ex.Message;
-        }
-        finally
-        {
-            _isSaving = false;
-        }
-    }
-
-    private async Task ChangePassword()
-    {
-        _passwordError = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(_currentPassword))
-        {
-            _passwordError = "Please enter your current password.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_newPassword))
-        {
-            _passwordError = "Please enter a new password.";
-            return;
-        }
-
-        if (_newPassword.Length < 8)
-        {
-            _passwordError = "New password must be at least 8 characters.";
-            return;
-        }
-
-        if (_newPassword != _confirmNewPassword)
-        {
-            _passwordError = "New passwords do not match.";
-            return;
-        }
-
-        _isChangingPassword = true;
-
-        try
-        {
-            var user = await Db.Users.FindAsync(_parentUserId);
-            if (user == null)
-            {
-                _passwordError = "User not found.";
-                return;
-            }
-
-            // Verify current password
-            if (!PasswordService.VerifyPassword(_currentPassword, user.PasswordHash ?? string.Empty))
-            {
-                _passwordError = "Current password is incorrect.";
-                return;
-            }
-
-            // Update password
-            user.PasswordHash = PasswordService.HashPassword(_newPassword);
-            await Db.SaveChangesAsync();
-
-            // Clear fields
-            _currentPassword = string.Empty;
-            _newPassword = string.Empty;
-            _confirmNewPassword = string.Empty;
-
-            Snackbar.Add("Password changed successfully!", Severity.Success);
-        }
-        catch (Exception)
-        {
-            _passwordError = "An error occurred. Please try again.";
-        }
-        finally
-        {
-            _isChangingPassword = false;
-        }
     }
 }

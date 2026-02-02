@@ -14,7 +14,10 @@ public class ScheduledAllowance
 
     // Allowance details
     public decimal Amount { get; set; }
+    public AllowanceInterval Interval { get; set; } = AllowanceInterval.Weekly;
     public DayOfWeek DayOfWeek { get; set; }
+    public int DayOfMonth { get; set; } = 1; // For Monthly/Yearly intervals
+    public int MonthOfYear { get; set; } = 1; // For Yearly interval (1-12)
     public TimeOnly TimeOfDay { get; set; }
     public string Description { get; set; } = "Weekly Allowance";
 

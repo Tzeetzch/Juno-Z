@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 /**
  * Phase F: Settings Page (Per-Child Allowance Config)
  * Updated for Phase J: Access via child detail page
+ * Updated for flexible allowance intervals (hourly/daily/weekly/monthly/yearly)
  * 
  * MudBlazor-specific handling for Blazor Server app
  * IMPORTANT: Use in-app navigation instead of page.goto() to preserve session
@@ -46,12 +47,11 @@ test.describe('Parent Settings (Per-Child)', () => {
     await loginAsParent(page);
     await navigateToChildSettings(page, 'Junior');
 
-    await expect(page.getByText('Weekly Allowance')).toBeVisible();
-    await expect(page.getByText('Enable weekly allowance')).toBeVisible();
-    await expect(page.locator('.mud-input-control').filter({ hasText: 'Amount per week' })).toBeVisible();
+    await expect(page.getByText('Scheduled Allowance')).toBeVisible();
+    await expect(page.getByText('Enable scheduled allowance')).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Amount' })).toBeVisible();
     await expect(page.locator('.mud-input-control').filter({ hasText: 'Description' })).toBeVisible();
-    await expect(page.locator('.mud-input-control').filter({ hasText: 'Day of week' })).toBeVisible();
-    await expect(page.locator('.mud-input-control').filter({ hasText: 'Time of day' })).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'How often?' })).toBeVisible();
   });
 
   test('should save allowance settings successfully', async ({ page }) => {
@@ -59,10 +59,10 @@ test.describe('Parent Settings (Per-Child)', () => {
     await navigateToChildSettings(page, 'Junior');
 
     // Enable allowance by clicking the switch label
-    await page.getByText('Enable weekly allowance').click();
+    await page.getByText('Enable scheduled allowance').click();
 
     // Set amount
-    await page.locator('.mud-input-control').filter({ hasText: 'Amount per week' }).locator('input').fill('5.00');
+    await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('5.00');
 
     // Set description
     await page.locator('.mud-input-control').filter({ hasText: 'Description' }).locator('input').fill('Pocket Money');
@@ -83,10 +83,10 @@ test.describe('Parent Settings (Per-Child)', () => {
     const isChecked = await switchElement.locator('input').isChecked();
     
     if (!isChecked) {
-      await page.getByText('Enable weekly allowance').click();
+      await page.getByText('Enable scheduled allowance').click();
     }
     
-    const amountInput = page.locator('.mud-input-control').filter({ hasText: 'Amount per week' }).locator('input');
+    const amountInput = page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input');
     await expect(amountInput).toBeEnabled({ timeout: 5000 });
     await amountInput.fill('5.00');
     await page.locator('button:has-text("Save Settings")').click();
@@ -110,11 +110,49 @@ test.describe('Parent Settings (Per-Child)', () => {
     const switchElement = page.locator('.mud-switch');
     const isChecked = await switchElement.locator('input').isChecked();
     if (isChecked) {
-      await page.getByText('Enable weekly allowance').click();
+      await page.getByText('Enable scheduled allowance').click();
       await page.waitForTimeout(300);
     }
 
-    const amountInput = page.locator('.mud-input-control').filter({ hasText: 'Amount per week' }).locator('input');
+    const amountInput = page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input');
     await expect(amountInput).toBeDisabled();
+  });
+
+  test('should show day of week selector for weekly interval', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToChildSettings(page, 'Junior');
+
+    // Enable allowance
+    const switchElement = page.locator('.mud-switch');
+    const isChecked = await switchElement.locator('input').isChecked();
+    if (!isChecked) {
+      await page.getByText('Enable scheduled allowance').click();
+    }
+
+    // Select weekly interval
+    await page.locator('.mud-input-control').filter({ hasText: 'How often?' }).click();
+    await page.getByRole('option', { name: 'Weekly' }).click();
+
+    // Day of week selector should be visible
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Day of week' })).toBeVisible();
+  });
+
+  test('should show day of month selector for monthly interval', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToChildSettings(page, 'Junior');
+
+    // Enable allowance
+    const switchElement = page.locator('.mud-switch');
+    const isChecked = await switchElement.locator('input').isChecked();
+    if (!isChecked) {
+      await page.getByText('Enable scheduled allowance').click();
+    }
+
+    // Select monthly interval
+    await page.locator('.mud-input-control').filter({ hasText: 'How often?' }).click();
+    await page.getByRole('option', { name: 'Monthly' }).click();
+
+    // Day of month selector should be visible
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Day of month' })).toBeVisible();
   });
 });

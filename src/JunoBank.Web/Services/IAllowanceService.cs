@@ -19,14 +19,20 @@ public interface IAllowanceService
     Task<DateTime?> GetNextRunDateAsync();
 
     /// <summary>
-    /// Calculate the next run date based on day of week and time.
+    /// Calculate the next run date based on interval type and time settings.
     /// </summary>
-    DateTime CalculateNextRunDate(DayOfWeek dayOfWeek, TimeOnly timeOfDay, DateTime fromDate);
+    DateTime CalculateNextRunDate(ScheduledAllowance allowance, DateTime fromDate);
 
     /// <summary>
-    /// Update allowance settings and recalculate next run date.
+    /// Calculate the next run date based on interval settings (for preview in UI).
     /// </summary>
-    Task UpdateAllowanceAsync(int parentUserId, decimal amount, DayOfWeek dayOfWeek, TimeOnly timeOfDay, string description, bool isActive);
+    DateTime CalculateNextRunDate(
+        AllowanceInterval interval,
+        DayOfWeek dayOfWeek,
+        int dayOfMonth,
+        int monthOfYear,
+        TimeOnly timeOfDay,
+        DateTime fromDate);
 
     /// <summary>
     /// Get current allowance settings.

@@ -22,11 +22,13 @@ public class AllowanceServiceTests : DatabaseTestBase
     #region CalculateNextRunDate Tests
 
     [Fact]
-    public void CalculateNextRunDate_SameDayBeforeTime_ReturnsTodayAtTime()
+    public void CalculateNextRunDate_Weekly_SameDayBeforeTime_ReturnsTodayAtTime()
     {
         // Thursday 10:00, allowance set for Thursday 14:00
         var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Weekly,
             DayOfWeek.Thursday,
+            1, 1, // dayOfMonth, monthOfYear (not used for weekly)
             new TimeOnly(14, 0),
             Now);
 
@@ -34,11 +36,13 @@ public class AllowanceServiceTests : DatabaseTestBase
     }
 
     [Fact]
-    public void CalculateNextRunDate_SameDayAfterTime_ReturnsNextWeek()
+    public void CalculateNextRunDate_Weekly_SameDayAfterTime_ReturnsNextWeek()
     {
         // Thursday 10:00, allowance set for Thursday 9:00 (already passed)
         var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Weekly,
             DayOfWeek.Thursday,
+            1, 1,
             new TimeOnly(9, 0),
             Now);
 
@@ -47,11 +51,13 @@ public class AllowanceServiceTests : DatabaseTestBase
     }
 
     [Fact]
-    public void CalculateNextRunDate_FutureDay_ReturnsCorrectDate()
+    public void CalculateNextRunDate_Weekly_FutureDay_ReturnsCorrectDate()
     {
         // Thursday 10:00, allowance set for Saturday 9:00
         var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Weekly,
             DayOfWeek.Saturday,
+            1, 1,
             new TimeOnly(9, 0),
             Now);
 
@@ -60,16 +66,109 @@ public class AllowanceServiceTests : DatabaseTestBase
     }
 
     [Fact]
-    public void CalculateNextRunDate_PastDay_ReturnsNextWeek()
+    public void CalculateNextRunDate_Weekly_PastDay_ReturnsNextWeek()
     {
         // Thursday 10:00, allowance set for Monday 9:00 (3 days ago)
         var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Weekly,
             DayOfWeek.Monday,
+            1, 1,
             new TimeOnly(9, 0),
             Now);
 
         // Next Monday is 4 days away (Jan 19)
         Assert.Equal(new DateTime(2026, 1, 19, 9, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Daily_BeforeTime_ReturnsToday()
+    {
+        // Thursday 10:00, daily at 14:00
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Daily,
+            DayOfWeek.Thursday, 1, 1, // not used for daily
+            new TimeOnly(14, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2026, 1, 15, 14, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Daily_AfterTime_ReturnsTomorrow()
+    {
+        // Thursday 10:00, daily at 9:00 (already passed)
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Daily,
+            DayOfWeek.Thursday, 1, 1,
+            new TimeOnly(9, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2026, 1, 16, 9, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Hourly_ReturnsNextHour()
+    {
+        // Thursday 10:00
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Hourly,
+            DayOfWeek.Thursday, 1, 1,
+            new TimeOnly(9, 0), // not used
+            Now);
+
+        Assert.Equal(new DateTime(2026, 1, 15, 11, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Monthly_BeforeDay_ReturnsThisMonth()
+    {
+        // Jan 15, monthly on 20th at 9:00
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Monthly,
+            DayOfWeek.Thursday, 20, 1,
+            new TimeOnly(9, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2026, 1, 20, 9, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Monthly_AfterDay_ReturnsNextMonth()
+    {
+        // Jan 15, monthly on 10th at 9:00 (already passed)
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Monthly,
+            DayOfWeek.Thursday, 10, 1,
+            new TimeOnly(9, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2026, 2, 10, 9, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Yearly_BeforeDate_ReturnsThisYear()
+    {
+        // Jan 15, yearly on March 1st at 9:00
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Yearly,
+            DayOfWeek.Thursday, 1, 3, // March 1
+            new TimeOnly(9, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2026, 3, 1, 9, 0, 0), result);
+    }
+
+    [Fact]
+    public void CalculateNextRunDate_Yearly_AfterDate_ReturnsNextYear()
+    {
+        // Jan 15, yearly on Jan 1st at 9:00 (already passed)
+        var result = _service.CalculateNextRunDate(
+            AllowanceInterval.Yearly,
+            DayOfWeek.Thursday, 1, 1, // January 1
+            new TimeOnly(9, 0),
+            Now);
+
+        Assert.Equal(new DateTime(2027, 1, 1, 9, 0, 0), result);
     }
 
     #endregion
@@ -216,100 +315,6 @@ public class AllowanceServiceTests : DatabaseTestBase
 
         // Next run should be in the future
         Assert.True(allowance.NextRunDate > Now);
-    }
-
-    #endregion
-
-    #region UpdateAllowanceAsync Tests
-
-    [Fact]
-    public async Task UpdateAllowanceAsync_NewAllowance_CreatesRecord()
-    {
-        // Setup: create parent and child
-        var parent = new User { Name = "Dad", Role = UserRole.Parent, Email = "dad@test.com" };
-        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m };
-        Db.Users.AddRange(parent, child);
-        await Db.SaveChangesAsync();
-
-        await _service.UpdateAllowanceAsync(
-            parent.Id,
-            amount: 5m,
-            dayOfWeek: DayOfWeek.Saturday,
-            timeOfDay: new TimeOnly(9, 0),
-            description: "Pocket money",
-            isActive: true);
-
-        var allowance = await _service.GetAllowanceAsync();
-        Assert.NotNull(allowance);
-        Assert.Equal(5m, allowance.Amount);
-        Assert.Equal(DayOfWeek.Saturday, allowance.DayOfWeek);
-        Assert.Equal(new TimeOnly(9, 0), allowance.TimeOfDay);
-        Assert.Equal("Pocket money", allowance.Description);
-        Assert.True(allowance.IsActive);
-        Assert.True(allowance.NextRunDate > Now);
-    }
-
-    [Fact]
-    public async Task UpdateAllowanceAsync_ExistingAllowance_Updates()
-    {
-        // Setup: create parent, child, and existing allowance
-        var parent = new User { Name = "Dad", Role = UserRole.Parent, Email = "dad@test.com" };
-        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m };
-        Db.Users.AddRange(parent, child);
-        await Db.SaveChangesAsync();
-
-        var existing = new ScheduledAllowance
-        {
-            ChildId = child.Id,
-            CreatedByUserId = parent.Id,
-            Amount = 3m,
-            DayOfWeek = DayOfWeek.Monday,
-            TimeOfDay = new TimeOnly(8, 0),
-            Description = "Old description",
-            IsActive = true,
-            NextRunDate = Now.AddDays(5)
-        };
-        Db.ScheduledAllowances.Add(existing);
-        await Db.SaveChangesAsync();
-
-        // Update
-        await _service.UpdateAllowanceAsync(
-            parent.Id,
-            amount: 10m,
-            dayOfWeek: DayOfWeek.Friday,
-            timeOfDay: new TimeOnly(15, 0),
-            description: "New description",
-            isActive: true);
-
-        var allowance = await _service.GetAllowanceAsync();
-        Assert.NotNull(allowance);
-        Assert.Equal(10m, allowance.Amount);
-        Assert.Equal(DayOfWeek.Friday, allowance.DayOfWeek);
-        Assert.Equal(new TimeOnly(15, 0), allowance.TimeOfDay);
-        Assert.Equal("New description", allowance.Description);
-
-        // Only one record should exist
-        Assert.Equal(1, Db.ScheduledAllowances.Count());
-    }
-
-    [Fact]
-    public async Task UpdateAllowanceAsync_Deactivate_StopsProcessing()
-    {
-        // Setup
-        var parent = new User { Name = "Dad", Role = UserRole.Parent, Email = "dad@test.com" };
-        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m };
-        Db.Users.AddRange(parent, child);
-        await Db.SaveChangesAsync();
-
-        // Create and activate
-        await _service.UpdateAllowanceAsync(parent.Id, 5m, DayOfWeek.Saturday, new TimeOnly(9, 0), "Test", true);
-
-        // Deactivate
-        await _service.UpdateAllowanceAsync(parent.Id, 5m, DayOfWeek.Saturday, new TimeOnly(9, 0), "Test", false);
-
-        var allowance = await _service.GetAllowanceAsync();
-        Assert.NotNull(allowance);
-        Assert.False(allowance.IsActive);
     }
 
     #endregion
