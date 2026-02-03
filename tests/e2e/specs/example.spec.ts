@@ -73,17 +73,21 @@ test.describe('Parent Login', () => {
 });
 
 test.describe('Child Picture Login', () => {
-  test('should show picture password grid', async ({ page }) => {
-    await page.goto('/login/child');
+  test('should show child selector on login page', async ({ page }) => {
+    await page.goto('/login');
     await page.waitForLoadState('networkidle');
 
-    // Check for picture grid (9 buttons)
-    const pictureButtons = page.locator('.picture-btn');
-    await expect(pictureButtons).toHaveCount(9);
+    // Check for child selector buttons
+    const childSelector = page.locator('.child-selector');
+    await expect(childSelector).toBeVisible();
   });
 
   test('should login with correct picture sequence', async ({ page }) => {
-    await page.goto('/login/child');
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+
+    // Select Junior from child picker
+    await page.locator('.child-selector button:has-text("Junior")').click();
     await page.waitForLoadState('networkidle');
 
     // The test sequence is: cat→dog→star→moon (🐱→🐶→⭐→🌙)

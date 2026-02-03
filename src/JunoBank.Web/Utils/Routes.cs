@@ -64,6 +64,5 @@ public static class AppRoutes
     {
         public const string Login = "/login";
         public const string ParentLogin = "/login/parent";
-        public const string ChildLogin = "/login/child";
     }
 }

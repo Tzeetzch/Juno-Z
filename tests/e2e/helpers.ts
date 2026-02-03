@@ -55,7 +55,7 @@ export async function loginAsChildByName(
   childName: string, 
   pictureSequence: string[]
 ): Promise<void> {
-  await page.goto('/login/child');
+  await page.goto('/login');
   await page.waitForLoadState('networkidle');
   
   // Step 1: Select child from picker (if visible)

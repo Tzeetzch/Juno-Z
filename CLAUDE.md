@@ -10,7 +10,10 @@ Before responding, read these files for full context:
 - `docs/STATUS.md` - Current phase and open tickets
 - `docs/CONVENTIONS.md` - Coding standards
 - `docs/COMPONENTS.md` - Reusable components and page patterns
-- `docs/SERVICES.md` - Services, utilities, and entities reference
+- `docs/API.md` - Services, utilities, and entities reference
+- `docs/ROUTES.md` - URL → Page mapping with auth requirements
+- `docs/DECISIONS.md` - Why choices were made (read before "improving" anything)
+- `docs/TESTING.md` - Unit and E2E test patterns
 - `docs/DEPLOYMENT.md` - Docker deployment
 
 ## Project Status
