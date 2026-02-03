@@ -32,13 +32,13 @@ Before responding, read these files for full context:
 | Command | Purpose |
 |---------|---------|
 | `/spec` | Clarify requirements |
+| `/ba-review` | BA validates requirements |
 | `/plan` | Break into work cycles |
-| `/ba-review` | BA validates the plan |
+| `/architect` | Review plan, identify reusable components/services |
 | `/backend` | Build services, EF Core |
 | `/ui` | Build components, pages |
 | `/unit-test` | Write xUnit tests |
 | `/e2e-test` | Write Playwright tests |
-| `/architect` | Structure review |
 | `/ux-review` | Design review |
 | `/tech-writer` | Update documentation |
 | `/save` | Commit and push |
@@ -51,7 +51,7 @@ Before responding, read these files for full context:
 1. **Review failures go back to previous step** - don't fix directly
 2. **Every cycle includes tests** - not a separate step
 3. **Don't re-explore** - docs provide full context
-4. **Keep it simple** - this is a 3-user family app
+4. **Reuse existing components** - check docs/COMPONENTS.md and docs/API.md first
 
 ## E2E Testing
 
