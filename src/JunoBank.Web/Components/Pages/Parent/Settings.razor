@@ -1,6 +1,9 @@
 @page "/parent/settings"
 @attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Services
+@inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
 
@@ -38,16 +41,298 @@
                 </MudButton>
             }
         </div>
+
+        @* Admin-only User Management section *@
+        @if (_isAdmin)
+        {
+            <MudDivider Class="my-6" />
+
+            <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+                👥 User Management
+            </MudText>
+
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                As an admin, you can manage parents and children.
+            </MudAlert>
+
+            @* Parents list *@
+            <MudText Typo="Typo.h6" Class="mb-2">Parents</MudText>
+            <div class="neu-card" style="padding: 1rem; margin-bottom: 1rem;">
+                @foreach (var parent in _parents)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(128,128,128,0.2);">
+                        <div>
+                            <MudText Typo="Typo.body1">@parent.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@parent.Email</MudText>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            @if (parent.IsAdmin)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small">Admin</MudChip>
+                            }
+                            @if (parent.Id != _currentUserId)
+                            {
+                                <MudSwitch T="bool" 
+                                           Value="parent.IsAdmin" 
+                                           ValueChanged="@(async (bool v) => await ToggleAdminStatus(parent.Id, v))"
+                                           Color="Color.Primary"
+                                           Label="Admin" />
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* Add parent form *@
+            <MudExpansionPanels Class="mb-4">
+                <MudExpansionPanel Text="➕ Add Parent">
+                    <MudForm @ref="_addParentForm" Model="_newParent">
+                        <MudTextField @bind-Value="_newParent.Name"
+                                      Label="Name"
+                                      Required="true"
+                                      RequiredError="Name is required"
+                                      Class="mb-3" />
+                        <MudTextField @bind-Value="_newParent.Email"
+                                      Label="Email"
+                                      InputType="InputType.Email"
+                                      Required="true"
+                                      RequiredError="Email is required"
+                                      Class="mb-3" />
+                        <MudTextField @bind-Value="_newParent.Password"
+                                      Label="Password"
+                                      InputType="InputType.Password"
+                                      Required="true"
+                                      RequiredError="Password is required"
+                                      Class="mb-3" />
+                        <MudCheckBox @bind-Value="_newParent.IsAdmin" Label="Make Admin" Class="mb-3" />
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="AddParent"
+                                   Disabled="_isSaving">
+                            @if (_isSaving)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Add Parent
+                        </MudButton>
+                    </MudForm>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            @* Children list *@
+            <MudText Typo="Typo.h6" Class="mb-2">Children</MudText>
+            <div class="neu-card" style="padding: 1rem; margin-bottom: 1rem;">
+                @if (_children.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No children added yet.</MudText>
+                }
+                else
+                {
+                    @foreach (var child in _children)
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(128,128,128,0.2);">
+                            <MudText Typo="Typo.body1">@child.Name</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Balance: @child.Balance.ToString("C")</MudText>
+                        </div>
+                    }
+                }
+            </div>
+
+            @* Add child form *@
+            <MudExpansionPanels>
+                <MudExpansionPanel Text="➕ Add Child">
+                    <MudForm @ref="_addChildForm" Model="_newChild">
+                        <MudTextField @bind-Value="_newChild.Name"
+                                      Label="Name"
+                                      Required="true"
+                                      RequiredError="Name is required"
+                                      Class="mb-3" />
+                        <MudDatePicker @bind-Date="_newChild.Birthday"
+                                       Label="Birthday"
+                                       MaxDate="DateTime.Today"
+                                       Required="true"
+                                       Class="mb-3" />
+                        <MudNumericField @bind-Value="_newChild.StartingBalance"
+                                         Label="Starting Balance"
+                                         Min="0"
+                                         Adornment="Adornment.Start"
+                                         AdornmentText="$"
+                                         Class="mb-3" />
+                        
+                        <MudText Typo="Typo.body2" Class="mb-2">Picture Password (select 4 in order)</MudText>
+                        <PictureGridSetup SelectedPictures="_newChild.PictureSequence" />
+                        
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="AddChild"
+                                   Disabled="_isSaving || _newChild.PictureSequence.Count != 4"
+                                   Class="mt-3">
+                            @if (_isSaving)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Add Child
+                        </MudButton>
+                    </MudForm>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
     }
 </div>
 
+@if (!string.IsNullOrEmpty(_successMessage))
+{
+    <MudAlert Severity="Severity.Success" Class="mt-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _successMessage = string.Empty)">
+        @_successMessage
+    </MudAlert>
+}
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
+        @_errorMessage
+    </MudAlert>
+}
+
 @code {
     private bool _isLoading = true;
+    private bool _isAdmin;
+    private bool _isSaving;
+    private int _currentUserId;
+    private string _successMessage = "";
+    private string _errorMessage = "";
+    
     private List<ChildSummary> _children = new();
+    private List<ParentSummary> _parents = new();
+    
+    private MudForm? _addParentForm;
+    private MudForm? _addChildForm;
+    
+    private NewParentModel _newParent = new();
+    private NewChildModel _newChild = new();
 
     protected override async Task OnInitializedAsync()
     {
+        var user = await AuthProvider.GetCurrentUserAsync();
+        if (user != null)
+        {
+            _currentUserId = user.UserId;
+            _isAdmin = await UserService.IsAdminAsync(user.UserId);
+        }
+        
         _children = await UserService.GetAllChildrenSummaryAsync();
+        
+        if (_isAdmin)
+        {
+            _parents = await UserService.GetAllParentsAsync();
+        }
+        
         _isLoading = false;
+    }
+
+    private async Task ToggleAdminStatus(int userId, bool isAdmin)
+    {
+        _isSaving = true;
+        try
+        {
+            await UserService.SetAdminStatusAsync(userId, isAdmin);
+            _parents = await UserService.GetAllParentsAsync();
+            _successMessage = "Admin status updated!";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task AddParent()
+    {
+        if (_addParentForm == null) return;
+        
+        await _addParentForm.Validate();
+        if (!_addParentForm.IsValid) return;
+        
+        _isSaving = true;
+        _errorMessage = "";
+        
+        try
+        {
+            await UserService.CreateParentAsync(
+                _newParent.Name, 
+                _newParent.Email, 
+                _newParent.Password, 
+                _newParent.IsAdmin);
+            
+            _parents = await UserService.GetAllParentsAsync();
+            _newParent = new NewParentModel();
+            _successMessage = "Parent added successfully!";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error adding parent: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task AddChild()
+    {
+        if (_addChildForm == null) return;
+        
+        if (_newChild.PictureSequence.Count != 4)
+        {
+            _errorMessage = "Please select exactly 4 pictures for the password";
+            return;
+        }
+        
+        await _addChildForm.Validate();
+        if (!_addChildForm.IsValid) return;
+        
+        _isSaving = true;
+        _errorMessage = "";
+        
+        try
+        {
+            await UserService.CreateChildAsync(
+                _newChild.Name,
+                _newChild.Birthday ?? DateTime.Today,
+                _newChild.StartingBalance,
+                _newChild.PictureSequence.ToArray(),
+                _currentUserId);
+            
+            _children = await UserService.GetAllChildrenSummaryAsync();
+            _newChild = new NewChildModel();
+            _successMessage = "Child added successfully!";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error adding child: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private class NewParentModel
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public bool IsAdmin { get; set; }
+    }
+
+    private class NewChildModel
+    {
+        public string Name { get; set; } = "";
+        public DateTime? Birthday { get; set; }
+        public decimal StartingBalance { get; set; }
+        public List<string> PictureSequence { get; set; } = new();
     }
 }

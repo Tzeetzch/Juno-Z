@@ -1,0 +1,150 @@
+@using static JunoBank.Web.Components.Pages.Setup.SetupWizard
+
+<MudText Typo="Typo.h4" Class="mb-2">Add a partner?</MudText>
+<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    They'll be able to manage the bank too
+</MudText>
+
+@if (Model == null)
+{
+    <div style="text-align: center; padding: 2rem 0;">
+        <MudText Typo="Typo.body1" Class="mb-6">
+            You can add a partner now, or do it later in Settings.
+        </MudText>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <button type="button" class="neu-btn neu-btn-primary neu-btn-large" @onclick="StartAddingPartner">
+                Add Partner
+            </button>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleSkip">
+                Skip for now
+            </MudButton>
+        </div>
+    </div>
+}
+else
+{
+    <EditForm Model="Model" OnValidSubmit="HandleNext">
+        <DataAnnotationsValidator />
+
+        <MudTextField @bind-Value="Model.Name"
+                      Label="Partner's Name"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      MaxLength="50"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="Model.Email"
+                      Label="Email"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Email"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="Model.Password"
+                      Label="Password"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Required="true"
+                      HelperText="At least 8 characters"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="Model.ConfirmPassword"
+                      Label="Confirm Password"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Class="mb-6" />
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+        }
+
+        <div style="display: flex; justify-content: space-between;">
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">
+                ← Back
+            </MudButton>
+            <button type="submit" class="neu-btn neu-btn-primary neu-btn-large">
+                Next →
+            </button>
+        </div>
+    </EditForm>
+}
+
+<div style="margin-top: 1rem;">
+    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">
+        ← Back
+    </MudButton>
+</div>
+
+@code {
+    [Parameter] public PartnerFormModel? Model { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback OnSkip { get; set; }
+
+    private string? _error;
+
+    private void StartAddingPartner()
+    {
+        Model = new PartnerFormModel();
+        StateHasChanged();
+    }
+
+    private async Task HandleSkip()
+    {
+        await OnSkip.InvokeAsync();
+    }
+
+    private async Task HandleBack()
+    {
+        await OnBack.InvokeAsync();
+    }
+
+    private async Task HandleNext()
+    {
+        _error = null;
+
+        if (Model == null) return;
+
+        // Validate
+        if (string.IsNullOrWhiteSpace(Model.Name))
+        {
+            _error = "Name is required";
+            return;
+        }
+
+        if (Model.Name.Trim().Length > 50)
+        {
+            _error = "Name must be 50 characters or less";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Model.Email) || !Model.Email.Contains('@'))
+        {
+            _error = "Please enter a valid email";
+            return;
+        }
+
+        if (Model.Email.Length > 254)
+        {
+            _error = "Email is too long";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Model.Password) || Model.Password.Length < 8)
+        {
+            _error = "Password must be at least 8 characters";
+            return;
+        }
+
+        if (Model.Password != Model.ConfirmPassword)
+        {
+            _error = "Passwords don't match";
+            return;
+        }
+
+        await OnNext.InvokeAsync();
+    }
+}

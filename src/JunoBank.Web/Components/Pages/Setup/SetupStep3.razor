@@ -1,0 +1,189 @@
+@using JunoBank.Web.Components.Shared
+@using static JunoBank.Web.Components.Pages.Setup.SetupWizard
+
+<MudText Typo="Typo.h4" Class="mb-2">Add your kids</MudText>
+<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    You can add more later in Settings
+</MudText>
+
+@if (Children.Count > 0)
+{
+    <div class="children-list mb-6">
+        @foreach (var child in Children)
+        {
+            var index = Children.IndexOf(child);
+            <div class="child-item neu-card" style="padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <MudText Typo="Typo.h6">@child.Name</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                            @GetAgeDisplay(child.Birthday) · €@child.StartingBalance.ToString("F2")
+                        </MudText>
+                    </div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                   Color="Color.Error" 
+                                   OnClick="@(() => RemoveChild(index))" />
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (!_isAdding)
+{
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <button type="button" class="neu-btn neu-btn-secondary" @onclick="StartAddingChild">
+            + Add @(Children.Count > 0 ? "another" : "a") child
+        </button>
+    </div>
+}
+else
+{
+    <div class="add-child-form neu-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <MudText Typo="Typo.h6" Class="mb-4">New Child</MudText>
+
+        <MudTextField @bind-Value="_newChild.Name"
+                      Label="Child's Name"
+                      Variant="Variant.Outlined"
+                      MaxLength="50"
+                      Class="mb-4" />
+
+        <MudDatePicker @bind-Date="_birthdayDate"
+                       Label="Birthday"
+                       Variant="Variant.Outlined"
+                       MaxDate="DateTime.Today.AddDays(-1)"
+                       Class="mb-4" />
+
+        <MudNumericField @bind-Value="_newChild.StartingBalance"
+                         Label="Starting Balance (€)"
+                         Variant="Variant.Outlined"
+                         Min="0" Max="10000"
+                         Format="F2"
+                         Class="mb-4" />
+
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Picture Password</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">
+            Choose 4 pictures in order (they can repeat)
+        </MudText>
+
+        <PictureGridSetup @bind-SelectedImages="_newChild.PictureSequence" RequiredLength="4" />
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+        }
+
+        <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="CancelAddingChild">
+                Cancel
+            </MudButton>
+            <button type="button" class="neu-btn neu-btn-primary" @onclick="SaveChild">
+                Add Child
+            </button>
+        </div>
+    </div>
+}
+
+<div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">
+        ← Back
+    </MudButton>
+    <button type="button" class="neu-btn neu-btn-primary neu-btn-large" @onclick="HandleNext">
+        Next →
+    </button>
+</div>
+
+@code {
+    [Parameter] public List<ChildFormModel> Children { get; set; } = new();
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private bool _isAdding;
+    private ChildFormModel _newChild = new();
+    private DateTime? _birthdayDate;
+    private string? _error;
+
+    private void StartAddingChild()
+    {
+        _newChild = new ChildFormModel { Birthday = DateTime.Today.AddYears(-5) };
+        _birthdayDate = _newChild.Birthday;
+        _isAdding = true;
+        _error = null;
+    }
+
+    private void CancelAddingChild()
+    {
+        _isAdding = false;
+        _error = null;
+    }
+
+    private void SaveChild()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_newChild.Name))
+        {
+            _error = "Name is required";
+            return;
+        }
+
+        if (_birthdayDate == null || _birthdayDate >= DateTime.Today)
+        {
+            _error = "Birthday must be before today";
+            return;
+        }
+
+        if (_newChild.StartingBalance < 0 || _newChild.StartingBalance > 10000)
+        {
+            _error = "Balance must be between €0 and €10,000";
+            return;
+        }
+
+        if (_newChild.PictureSequence.Count != 4)
+        {
+            _error = "Please select 4 pictures for the password";
+            return;
+        }
+
+        _newChild.Birthday = _birthdayDate.Value;
+        Children.Add(_newChild);
+        _isAdding = false;
+    }
+
+    private void RemoveChild(int index)
+    {
+        if (index >= 0 && index < Children.Count)
+        {
+            Children.RemoveAt(index);
+        }
+    }
+
+    private async Task HandleBack()
+    {
+        await OnBack.InvokeAsync();
+    }
+
+    private async Task HandleNext()
+    {
+        // Children are optional, can proceed with 0
+        await OnNext.InvokeAsync();
+    }
+
+    private string GetAgeDisplay(DateTime birthday)
+    {
+        var age = DateTime.Today.Year - birthday.Year;
+        if (DateTime.Today < birthday.AddYears(age)) age--;
+
+        var nextBirthday = birthday.AddYears(age + 1);
+        var daysUntil = (nextBirthday - DateTime.Today).Days;
+
+        if (daysUntil == 0)
+            return $"Age {age} · 🎂 Happy Birthday!";
+        else if (daysUntil == 1)
+            return $"Age {age} · 🎉 Birthday tomorrow!";
+        else if (daysUntil <= 30)
+            return $"Age {age} · 🎂 {daysUntil} days until birthday!";
+        else
+            return $"Age {age}";
+    }
+}

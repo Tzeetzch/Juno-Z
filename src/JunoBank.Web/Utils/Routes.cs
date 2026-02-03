@@ -65,4 +65,9 @@ public static class AppRoutes
         public const string Login = "/login";
         public const string ParentLogin = "/login/parent";
     }
+
+    public static class Setup
+    {
+        public const string Wizard = "/setup";
+    }
 }

@@ -5,6 +5,9 @@ public class User
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public UserRole Role { get; set; }
+    
+    // Admin flag (system-level privilege, separate from family role)
+    public bool IsAdmin { get; set; }
 
     // Parent authentication
     public string? Email { get; set; }
@@ -12,6 +15,9 @@ public class User
 
     // Child authentication
     public PicturePassword? PicturePassword { get; set; }
+
+    // Child info
+    public DateTime? Birthday { get; set; }
 
     // Balance
     public decimal Balance { get; set; }

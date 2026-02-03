@@ -47,6 +47,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAllowanceService, AllowanceService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<ISetupService, SetupService>();
 
 // Email service - use SMTP if configured, otherwise console fallback
 var emailHost = builder.Configuration.GetValue<string>("Email:Host");

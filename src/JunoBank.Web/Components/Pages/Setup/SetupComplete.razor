@@ -1,0 +1,67 @@
+@using JunoBank.Web.Utils
+
+<div style="text-align: center; padding: 2rem 0;">
+    <MudText Typo="Typo.h3" Class="mb-4">Welcome to Juno Bank! 🎉</MudText>
+    <MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+        Your family bank is ready to go
+    </MudText>
+
+    <div class="neu-card" style="padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
+        <MudText Typo="Typo.h6" Class="mb-4">📋 Next steps</MudText>
+        
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            @if (ChildNames.Count > 0)
+            {
+                <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--mud-palette-lines-default);">
+                    <MudText Typo="Typo.body1">
+                        💰 Set up standing orders for allowances
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        Go to Settings → Select a child → Standing Orders
+                    </MudText>
+                </li>
+                <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--mud-palette-lines-default);">
+                    <MudText Typo="Typo.body1">
+                        🖼️ Show @(ChildNames.Count == 1 ? ChildNames[0] : "the kids") how to log in
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        They tap their name, then their 4 secret pictures
+                    </MudText>
+                </li>
+            }
+            else
+            {
+                <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--mud-palette-lines-default);">
+                    <MudText Typo="Typo.body1">
+                        👶 Add your children
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        Go to Settings → User Management
+                    </MudText>
+                </li>
+            }
+            <li style="padding: 0.75rem 0;">
+                <MudText Typo="Typo.body1">
+                    📱 Works on any device
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    Phone, tablet, or computer - bookmark the URL!
+                </MudText>
+            </li>
+        </ul>
+    </div>
+
+    <button class="neu-btn neu-btn-primary neu-btn-large" @onclick="GoToDashboard">
+        Go to Dashboard →
+    </button>
+</div>
+
+@code {
+    [Parameter] public List<string> ChildNames { get; set; } = new();
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void GoToDashboard()
+    {
+        Navigation.NavigateTo(AppRoutes.Parent.Dashboard);
+    }
+}

@@ -1,0 +1,159 @@
+@using JunoBank.Web.Constants
+
+<div class="picture-grid-setup">
+    @foreach (var image in _displayImages)
+    {
+        var selectionIndex = GetSelectionIndex(image);
+        <button class="picture-btn @(selectionIndex >= 0 ? "selected" : "")"
+                @onclick="() => SelectImage(image)"
+                type="button">
+            <span style="font-size: 2.5rem;">@GetEmoji(image)</span>
+            @if (selectionIndex >= 0)
+            {
+                <span class="selection-number">@(selectionIndex + 1)</span>
+            }
+        </button>
+    }
+</div>
+
+<div class="sequence-dots">
+    @for (int i = 0; i < RequiredLength; i++)
+    {
+        var index = i;
+        <div class="sequence-dot @(index < _selectedImages.Count ? "filled" : "")">
+            @if (index < _selectedImages.Count)
+            {
+                <span style="font-size: 1rem;">@GetEmoji(_selectedImages[index])</span>
+            }
+        </div>
+    }
+</div>
+
+<MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="ClearSelection" Class="mt-2"
+           Disabled="@(_selectedImages.Count == 0)">
+    Clear
+</MudButton>
+
+<style>
+    .picture-grid-setup {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    .picture-btn {
+        aspect-ratio: 1;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        background: var(--bg-color, #1a1a2e);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        box-shadow:
+            4px 4px 8px var(--shadow-dark, #0d0d17),
+            -4px -4px 8px var(--shadow-light, #272745);
+    }
+
+    .picture-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .picture-btn.selected {
+        border-color: var(--primary, #FF6B35);
+        box-shadow:
+            inset 3px 3px 6px var(--shadow-dark, #0d0d17),
+            inset -3px -3px 6px var(--shadow-light, #272745);
+    }
+
+    .selection-number {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--primary, #FF6B35);
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sequence-dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .sequence-dot {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg-color, #1a1a2e);
+        box-shadow:
+            inset 2px 2px 4px var(--shadow-dark, #0d0d17),
+            inset -2px -2px 4px var(--shadow-light, #272745);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sequence-dot.filled {
+        background: linear-gradient(145deg, #ff8555 0%, #ff6b35 100%);
+    }
+</style>
+
+@code {
+    [Parameter] public int RequiredLength { get; set; } = 4;
+    [Parameter] public List<string> SelectedImages { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SelectedImagesChanged { get; set; }
+
+    private List<string> _displayImages = new();
+    private List<string> _selectedImages => SelectedImages;
+
+    protected override void OnInitialized()
+    {
+        ShuffleImages();
+    }
+
+    private void ShuffleImages()
+    {
+        var random = new Random();
+        _displayImages = PicturePasswordImages.AllImages
+            .Take(PicturePasswordImages.GridDisplayCount)
+            .OrderBy(_ => random.Next())
+            .ToList();
+    }
+
+    private int GetSelectionIndex(string image)
+    {
+        for (int i = 0; i < _selectedImages.Count; i++)
+        {
+            if (_selectedImages[i] == image)
+                return i;
+        }
+        return -1;
+    }
+
+    private async Task SelectImage(string image)
+    {
+        if (_selectedImages.Count >= RequiredLength)
+            return;
+
+        var newList = new List<string>(_selectedImages) { image };
+        await SelectedImagesChanged.InvokeAsync(newList);
+    }
+
+    private async Task ClearSelection()
+    {
+        ShuffleImages();
+        await SelectedImagesChanged.InvokeAsync(new List<string>());
+    }
+
+    private static string GetEmoji(string image) => PicturePasswordImages.GetEmoji(image);
+}

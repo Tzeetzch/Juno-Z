@@ -7,15 +7,21 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(AppDbContext context)
     {
+        // Only seed demo data if JUNO_SEED_DEMO is set
+        var seedDemo = Environment.GetEnvironmentVariable("JUNO_SEED_DEMO");
+        if (!string.Equals(seedDemo, "true", StringComparison.OrdinalIgnoreCase))
+            return;
+
         // Skip if already seeded
         if (context.Users.Any())
             return;
 
-        // Create parents
+        // Create parents (first parent is admin)
         var parent1 = new User
         {
             Name = "Dad",
             Role = UserRole.Parent,
+            IsAdmin = true,
             Email = "dad@junobank.local",
             PasswordHash = HashPassword("parent123"),
             Balance = 0
@@ -25,6 +31,7 @@ public static class DbInitializer
         {
             Name = "Mom",
             Role = UserRole.Parent,
+            IsAdmin = false,
             Email = "mom@junobank.local",
             PasswordHash = HashPassword("parent123"),
             Balance = 0
@@ -35,14 +42,16 @@ public static class DbInitializer
         {
             Name = "Junior",
             Role = UserRole.Child,
-            Balance = 10.00m // Starting balance of €10
+            Birthday = new DateTime(2020, 6, 15),
+            Balance = 10.00m
         };
 
         var child2 = new User
         {
             Name = "Sophie",
             Role = UserRole.Child,
-            Balance = 5.00m // Starting balance of €5
+            Birthday = new DateTime(2022, 3, 22),
+            Balance = 5.00m
         };
 
         context.Users.AddRange(parent1, parent2, child1, child2);

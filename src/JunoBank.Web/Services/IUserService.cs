@@ -38,6 +38,33 @@ public interface IUserService
     /// Gets transactions for a specific child.
     /// </summary>
     Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100);
+
+    // User Management (Admin only)
+    
+    /// <summary>
+    /// Gets all parents for user management.
+    /// </summary>
+    Task<List<ParentSummary>> GetAllParentsAsync();
+
+    /// <summary>
+    /// Creates a new parent user.
+    /// </summary>
+    Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false);
+
+    /// <summary>
+    /// Creates a new child user.
+    /// </summary>
+    Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId);
+
+    /// <summary>
+    /// Updates a user's admin status.
+    /// </summary>
+    Task SetAdminStatusAsync(int userId, bool isAdmin);
+
+    /// <summary>
+    /// Checks if a user is an admin.
+    /// </summary>
+    Task<bool> IsAdminAsync(int userId);
 }
 
 public class ParentDashboardData
@@ -64,4 +91,15 @@ public class ChildSummary
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
     public int PendingRequestCount { get; set; }
+}
+
+/// <summary>
+/// Summary DTO for displaying parents in user management.
+/// </summary>
+public class ParentSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public bool IsAdmin { get; set; }
 }

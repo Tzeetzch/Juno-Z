@@ -1,0 +1,105 @@
+@using static JunoBank.Web.Components.Pages.Setup.SetupWizard
+
+<MudText Typo="Typo.h4" Class="mb-2">Let's set up Juno Bank!</MudText>
+<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    First, create your account
+</MudText>
+
+<EditForm Model="Model" OnValidSubmit="HandleNext">
+    <DataAnnotationsValidator />
+
+    <MudTextField @bind-Value="Model.Name"
+                  Label="Your Name"
+                  Variant="Variant.Outlined"
+                  Required="true"
+                  RequiredError="Name is required"
+                  MaxLength="50"
+                  Class="mb-4" />
+
+    <MudTextField @bind-Value="Model.Email"
+                  Label="Email"
+                  Variant="Variant.Outlined"
+                  InputType="InputType.Email"
+                  Required="true"
+                  RequiredError="Email is required"
+                  Class="mb-4" />
+
+    <MudTextField @bind-Value="Model.Password"
+                  Label="Password"
+                  Variant="Variant.Outlined"
+                  InputType="InputType.Password"
+                  Required="true"
+                  RequiredError="Password is required"
+                  HelperText="At least 8 characters"
+                  Class="mb-4" />
+
+    <MudTextField @bind-Value="Model.ConfirmPassword"
+                  Label="Confirm Password"
+                  Variant="Variant.Outlined"
+                  InputType="InputType.Password"
+                  Required="true"
+                  RequiredError="Please confirm your password"
+                  Class="mb-6" />
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+    }
+
+    <div style="display: flex; justify-content: flex-end;">
+        <button type="submit" class="neu-btn neu-btn-primary neu-btn-large">
+            Next →
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public AdminFormModel Model { get; set; } = default!;
+    [Parameter] public EventCallback OnNext { get; set; }
+
+    private string? _error;
+
+    private async Task HandleNext()
+    {
+        _error = null;
+
+        // Validate
+        if (string.IsNullOrWhiteSpace(Model.Name))
+        {
+            _error = "Name is required";
+            return;
+        }
+
+        if (Model.Name.Trim().Length > 50)
+        {
+            _error = "Name must be 50 characters or less";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Model.Email) || !Model.Email.Contains('@'))
+        {
+            _error = "Please enter a valid email";
+            return;
+        }
+
+        if (Model.Email.Length > 254)
+        {
+            _error = "Email is too long";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Model.Password) || Model.Password.Length < 8)
+        {
+            _error = "Password must be at least 8 characters";
+            return;
+        }
+
+        if (Model.Password != Model.ConfirmPassword)
+        {
+            _error = "Passwords don't match";
+            return;
+        }
+
+        await OnNext.InvokeAsync();
+    }
+}

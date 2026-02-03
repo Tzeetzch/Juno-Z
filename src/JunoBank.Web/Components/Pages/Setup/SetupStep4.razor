@@ -1,0 +1,118 @@
+@using static JunoBank.Web.Components.Pages.Setup.SetupWizard
+
+<MudText Typo="Typo.h4" Class="mb-2">All set! 🎉</MudText>
+<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Review your Juno Bank setup
+</MudText>
+
+@* Admin Section *@
+<div class="summary-section neu-card" style="padding: 1rem; margin-bottom: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <MudText Typo="Typo.subtitle2" Style="color: var(--mud-palette-text-secondary);">You (Admin)</MudText>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => HandleEdit(1))">Edit</MudButton>
+    </div>
+    <MudText Typo="Typo.h6">@Admin.Name</MudText>
+    <MudText Typo="Typo.body2">@Admin.Email</MudText>
+</div>
+
+@* Partner Section *@
+@if (Partner != null)
+{
+    <div class="summary-section neu-card" style="padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <MudText Typo="Typo.subtitle2" Style="color: var(--mud-palette-text-secondary);">Partner</MudText>
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => HandleEdit(2))">Edit</MudButton>
+        </div>
+        <MudText Typo="Typo.h6">@Partner.Name</MudText>
+        <MudText Typo="Typo.body2">@Partner.Email</MudText>
+    </div>
+}
+else
+{
+    <div class="summary-section" style="padding: 1rem; margin-bottom: 1rem; opacity: 0.6;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">No partner added</MudText>
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => HandleEdit(2))">Add</MudButton>
+        </div>
+    </div>
+}
+
+@* Children Section *@
+<div class="summary-section neu-card" style="padding: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <MudText Typo="Typo.subtitle2" Style="color: var(--mud-palette-text-secondary);">Children</MudText>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => HandleEdit(3))">Edit</MudButton>
+    </div>
+    @if (Children.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+            No children added yet
+        </MudText>
+    }
+    else
+    {
+        @foreach (var child in Children)
+        {
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--mud-palette-lines-default);">
+                <div>
+                    <MudText Typo="Typo.body1">@child.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                        @GetAgeDisplay(child.Birthday)
+                    </MudText>
+                </div>
+                <MudText Typo="Typo.body1" Style="color: var(--primary, #FF6B35);">
+                    €@child.StartingBalance.ToString("F2")
+                </MudText>
+            </div>
+        }
+    }
+</div>
+
+<div style="display: flex; justify-content: space-between;">
+    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack" Disabled="@IsSubmitting">
+        ← Back
+    </MudButton>
+    <button type="button" class="neu-btn neu-btn-primary neu-btn-large" @onclick="HandleSubmit" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
+            <span>Creating...</span>
+        }
+        else
+        {
+            <span>Create Juno Bank</span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AdminFormModel Admin { get; set; } = default!;
+    [Parameter] public PartnerFormModel? Partner { get; set; }
+    [Parameter] public List<ChildFormModel> Children { get; set; } = new();
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback<int> OnEdit { get; set; }
+    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+
+    private async Task HandleBack()
+    {
+        await OnBack.InvokeAsync();
+    }
+
+    private async Task HandleEdit(int step)
+    {
+        await OnEdit.InvokeAsync(step);
+    }
+
+    private async Task HandleSubmit()
+    {
+        await OnSubmit.InvokeAsync();
+    }
+
+    private string GetAgeDisplay(DateTime birthday)
+    {
+        var age = DateTime.Today.Year - birthday.Year;
+        if (DateTime.Today < birthday.AddYears(age)) age--;
+        return $"Age {age}";
+    }
+}

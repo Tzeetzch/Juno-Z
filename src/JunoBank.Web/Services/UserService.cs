@@ -1,5 +1,6 @@
 using JunoBank.Web.Data;
 using JunoBank.Web.Data.Entities;
+using JunoBank.Web.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace JunoBank.Web.Services;
@@ -328,5 +329,104 @@ public class UserService : IUserService
     {
         return await _db.MoneyRequests
             .CountAsync(r => r.ChildId == childId && r.Status == RequestStatus.Pending);
+    }
+
+    // ========== User Management Methods (Admin) ==========
+
+    public async Task<List<ParentSummary>> GetAllParentsAsync()
+    {
+        return await _db.Users
+            .Where(u => u.Role == UserRole.Parent)
+            .Select(u => new ParentSummary
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email ?? "",
+                IsAdmin = u.IsAdmin
+            })
+            .ToListAsync();
+    }
+
+    public async Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false)
+    {
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        
+        var parent = new User
+        {
+            Name = name,
+            Email = email,
+            PasswordHash = passwordHash,
+            Role = UserRole.Parent,
+            IsAdmin = isAdmin,
+            Balance = 0,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.Users.Add(parent);
+        await _db.SaveChangesAsync();
+
+        return parent;
+    }
+
+    public async Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId)
+    {
+        var child = new User
+        {
+            Name = name,
+            Birthday = birthday,
+            Role = UserRole.Child,
+            Balance = startingBalance,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.Users.Add(child);
+        await _db.SaveChangesAsync();
+
+        // Create picture password
+        var picturePassword = new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = SecurityUtils.HashPictureSequence(string.Join(",", pictureSequence)),
+            GridSize = 9,
+            SequenceLength = 4
+        };
+
+        _db.PicturePasswords.Add(picturePassword);
+
+        // Create opening balance transaction if balance > 0
+        if (startingBalance > 0)
+        {
+            var transaction = new Transaction
+            {
+                UserId = child.Id,
+                Amount = startingBalance,
+                Type = TransactionType.Deposit,
+                Description = "Opening balance",
+                IsApproved = true,
+                ApprovedByUserId = createdByUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.Transactions.Add(transaction);
+        }
+
+        await _db.SaveChangesAsync();
+
+        return child;
+    }
+
+    public async Task SetAdminStatusAsync(int userId, bool isAdmin)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user != null && user.Role == UserRole.Parent)
+        {
+            user.IsAdmin = isAdmin;
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    public async Task<bool> IsAdminAsync(int userId)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        return user?.IsAdmin ?? false;
     }
 }
