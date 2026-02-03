@@ -9,6 +9,8 @@ Before responding, read these files for full context:
 - `docs/ARCHITECTURE.md` - Tech decisions, entities, structure
 - `docs/STATUS.md` - Current phase and open tickets
 - `docs/CONVENTIONS.md` - Coding standards
+- `docs/COMPONENTS.md` - Reusable components and page patterns
+- `docs/SERVICES.md` - Services, utilities, and entities reference
 - `docs/DEPLOYMENT.md` - Docker deployment
 
 ## Project Status
