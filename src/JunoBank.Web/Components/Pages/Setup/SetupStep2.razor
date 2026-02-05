@@ -19,7 +19,13 @@
                 Add Partner
             </button>
             <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleSkip">
-                Skip for now
+                Skip for now →
+            </MudButton>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">
+                ← Back
             </MudButton>
         </div>
     </div>
@@ -75,12 +81,6 @@ else
     </EditForm>
     </div>
 }
-
-<div style="margin-top: 1rem;">
-    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">
-        ← Back
-    </MudButton>
-</div>
 
 @code {
     [Parameter] public PartnerFormModel? Model { get; set; }
