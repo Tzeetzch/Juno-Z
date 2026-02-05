@@ -34,35 +34,39 @@ else
 {
     <EditForm Model="Model" OnValidSubmit="HandleNext">
         <DataAnnotationsValidator />
-        <div class="neu-card" style="padding: 1.5rem;">
+        <div class="neu-card">
             <MudTextField @bind-Value="Model.Name"
-                      Label="Partner's Name"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      MaxLength="50"
-                      Class="mb-4" />
+                          Label="Partner's Name"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="50"
+                          Class="mb-4"
+                          FullWidth="true" />
 
-        <MudTextField @bind-Value="Model.Email"
-                      Label="Email"
-                      Variant="Variant.Outlined"
-                      InputType="InputType.Email"
-                      Required="true"
-                      Class="mb-4" />
+            <MudTextField @bind-Value="Model.Email"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Email"
+                          Required="true"
+                          Class="mb-4"
+                          FullWidth="true" />
 
-        <MudTextField @bind-Value="Model.Password"
-                      Label="Password"
-                      Variant="Variant.Outlined"
-                      InputType="InputType.Password"
-                      Required="true"
-                      HelperText="At least 8 characters"
-                      Class="mb-4" />
+            <MudTextField @bind-Value="Model.Password"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          HelperText="At least 8 characters"
+                          Class="mb-4"
+                          FullWidth="true" />
 
-        <MudTextField @bind-Value="Model.ConfirmPassword"
-                      Label="Confirm Password"
-                      Variant="Variant.Outlined"
-                      InputType="InputType.Password"
-                      Required="true"
-                      Class="mb-6" />
+            <MudTextField @bind-Value="Model.ConfirmPassword"
+                          Label="Confirm Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-6"
+                          FullWidth="true" />
 
             @if (!string.IsNullOrEmpty(_error))
             {
