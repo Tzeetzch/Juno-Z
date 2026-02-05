@@ -7,7 +7,8 @@
     </MudText>
 </div>
 
-<EditForm Model="Model" OnValidSubmit="HandleNext" class="neu-form">
+<div class="neu-form">
+<EditForm Model="Model" OnValidSubmit="HandleNext">
     <DataAnnotationsValidator />
 
     <MudTextField @bind-Value="Model.Name"
@@ -54,6 +55,7 @@
         </button>
     </div>
 </EditForm>
+</div>
 
 @code {
     [Parameter, EditorRequired] public AdminFormModel Model { get; set; } = default!;

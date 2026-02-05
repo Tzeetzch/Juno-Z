@@ -26,7 +26,8 @@
 }
 else
 {
-    <EditForm Model="Model" OnValidSubmit="HandleNext" class="neu-form">
+    <div class="neu-form">
+    <EditForm Model="Model" OnValidSubmit="HandleNext">
         <DataAnnotationsValidator />
 
         <MudTextField @bind-Value="Model.Name"
@@ -72,6 +73,7 @@ else
             </button>
         </div>
     </EditForm>
+    </div>
 }
 
 <div style="margin-top: 1rem;">
