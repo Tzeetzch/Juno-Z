@@ -7,11 +7,10 @@
     </MudText>
 </div>
 
-<div class="neu-form">
 <EditForm Model="Model" OnValidSubmit="HandleNext">
     <DataAnnotationsValidator />
-
-    <MudTextField @bind-Value="Model.Name"
+    <div class="neu-card" style="padding: 1.5rem;">
+        <MudTextField @bind-Value="Model.Name"
                   Label="Your Name"
                   Variant="Variant.Outlined"
                   Required="true"
@@ -44,18 +43,18 @@
                   RequiredError="Please confirm your password"
                   Class="mb-6" />
 
-    @if (!string.IsNullOrEmpty(_error))
-    {
-        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
-    }
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+        }
 
-    <div style="display: flex; justify-content: flex-end;">
-        <button type="submit" class="neu-btn neu-btn-primary neu-btn-large">
-            Next →
-        </button>
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="neu-btn neu-btn-primary neu-btn-large">
+                Next →
+            </button>
+        </div>
     </div>
 </EditForm>
-</div>
 
 @code {
     [Parameter, EditorRequired] public AdminFormModel Model { get; set; } = default!;
