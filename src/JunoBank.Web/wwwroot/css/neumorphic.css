@@ -252,36 +252,43 @@
     margin-bottom: 1rem;
 }
 
-/* Neumorphic style for MudBlazor outlined inputs */
-.neu-form .mud-input-outlined-border {
-    border: none !important;
+/* Remove default MudBlazor borders and add neumorphic inset */
+.neu-form .mud-input-control-input-container {
+    background: var(--bg-color) !important;
     border-radius: 15px !important;
-    background: var(--bg-color);
     box-shadow:
         inset 3px 3px 6px var(--shadow-dark),
-        inset -3px -3px 6px var(--shadow-light);
+        inset -3px -3px 6px var(--shadow-light) !important;
+    border: none !important;
 }
 
-.neu-form .mud-input {
-    color: var(--text-primary) !important;
-    padding: 0.75rem 1rem !important;
+.neu-form .mud-input-outlined .mud-input-outlined-border {
+    border: none !important;
+    border-color: transparent !important;
+    background: transparent !important;
 }
 
+.neu-form .mud-input,
 .neu-form .mud-input-slot {
-    padding: 0.75rem 1rem !important;
+    color: var(--text-primary) !important;
+    padding: 1rem 1.25rem !important;
 }
 
-.neu-form .mud-input-label {
+.neu-form .mud-input-label,
+.neu-form .mud-input-label-outlined,
+.neu-form .mud-input-label-inputcontrol {
     color: var(--text-secondary) !important;
 }
 
-.neu-form .mud-input-label-outlined {
+/* Label background when floating */
+.neu-form .mud-input-label-outlined.mud-input-label-inputcontrol,
+.neu-form .mud-input-label-filled {
     background: var(--bg-color) !important;
     padding: 0 0.5rem !important;
 }
 
-/* Focus state */
-.neu-form .mud-input-control:focus-within .mud-input-outlined-border {
+/* Focus state - orange glow */
+.neu-form .mud-input-control:focus-within .mud-input-control-input-container {
     box-shadow:
         inset 3px 3px 6px var(--shadow-dark),
         inset -3px -3px 6px var(--shadow-light),
@@ -291,15 +298,31 @@
 /* Helper text */
 .neu-form .mud-input-helper-text {
     color: var(--text-secondary) !important;
+    padding-left: 1rem !important;
+}
+
+/* Error state */
+.neu-form .mud-input-error .mud-input-control-input-container {
+    box-shadow:
+        inset 3px 3px 6px var(--shadow-dark),
+        inset -3px -3px 6px var(--shadow-light),
+        0 0 0 2px #f44336 !important;
 }
 
 /* Date picker */
+.neu-form .mud-picker .mud-input-control-input-container {
+    background: var(--bg-color) !important;
+    border-radius: 15px !important;
+    box-shadow:
+        inset 3px 3px 6px var(--shadow-dark),
+        inset -3px -3px 6px var(--shadow-light) !important;
+}
+
 .neu-form .mud-picker-input-text {
     color: var(--text-primary) !important;
 }
 
-/* Numeric field */
-.neu-form .mud-input-adorned-start,
-.neu-form .mud-input-adorned-end {
+/* Numeric field adornments */
+.neu-form .mud-input-adornment {
     color: var(--text-secondary) !important;
 }
