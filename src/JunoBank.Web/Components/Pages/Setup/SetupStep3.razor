@@ -1,10 +1,12 @@
 @using JunoBank.Web.Components.Shared
 @using static JunoBank.Web.Components.Pages.Setup.SetupWizard
 
-<MudText Typo="Typo.h4" Class="mb-2">Add your kids</MudText>
-<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
-    You can add more later in Settings
-</MudText>
+<div style="text-align: center; margin-bottom: 2rem;">
+    <MudText Typo="Typo.h4" Class="mb-2" Style="color: var(--primary);">👧👦 Add your kids</MudText>
+    <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary);">
+        You can add more later in Settings
+    </MudText>
+</div>
 
 @if (Children.Count > 0)
 {
@@ -39,7 +41,7 @@
 }
 else
 {
-    <div class="add-child-form neu-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+    <div class="add-child-form neu-card neu-form" style="padding: 1.5rem; margin-bottom: 1.5rem;">
         <MudText Typo="Typo.h6" Class="mb-4">New Child</MudText>
 
         <MudTextField @bind-Value="_newChild.Name"

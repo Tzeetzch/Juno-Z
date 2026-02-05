@@ -1,13 +1,14 @@
 @using JunoBank.Web.Utils
 
-<div style="text-align: center; padding: 2rem 0;">
-    <MudText Typo="Typo.h3" Class="mb-4">Welcome to Juno Bank! 🎉</MudText>
+<div style="text-align: center; padding: 1rem 0;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+    <MudText Typo="Typo.h4" Class="mb-2" Style="color: var(--primary);">Welcome to Juno Bank!</MudText>
     <MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
         Your family bank is ready to go
     </MudText>
 
     <div class="neu-card" style="padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
-        <MudText Typo="Typo.h6" Class="mb-4">📋 Next steps</MudText>
+        <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--primary);">📋 Next steps</MudText>
         
         <ul style="list-style: none; padding: 0; margin: 0;">
             @if (ChildNames.Count > 0)

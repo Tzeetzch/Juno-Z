@@ -9,12 +9,27 @@
 <div class="setup-container">
     <div class="setup-card neu-card">
         @* Progress indicator *@
-        <div class="setup-progress">
-            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                Step @_currentStep of 4
-            </MudText>
-            <MudProgressLinear Value="@(_currentStep * 25)" Color="Color.Primary" Rounded="true" Size="Size.Small" />
-        </div>
+        @if (_currentStep <= 4)
+        {
+            <div class="setup-progress">
+                <div class="progress-steps">
+                    @for (int i = 1; i <= 4; i++)
+                    {
+                        var step = i;
+                        <div class="progress-step @(step < _currentStep ? "completed" : step == _currentStep ? "active" : "")">
+                            <div class="step-number">@step</div>
+                        </div>
+                        @if (i < 4)
+                        {
+                            <div class="step-line @(step < _currentStep ? "completed" : "")"></div>
+                        }
+                    }
+                </div>
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); text-align: center; margin-top: 0.5rem;">
+                    @GetStepName(_currentStep)
+                </MudText>
+            </div>
+        }
 
         @switch (_currentStep)
         {
@@ -51,7 +66,7 @@
 
     .setup-card {
         width: 100%;
-        max-width: 600px;
+        max-width: 500px;
         padding: 2rem;
     }
 
@@ -59,9 +74,87 @@
         margin-bottom: 2rem;
     }
 
+    .progress-steps {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .progress-step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .step-number {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        background: var(--bg-color);
+        color: var(--text-secondary, rgba(255,255,255,0.5));
+        box-shadow:
+            inset 2px 2px 4px var(--shadow-dark, #0d0d17),
+            inset -2px -2px 4px var(--shadow-light, #272745);
+        transition: all 0.3s ease;
+    }
+
+    .progress-step.active .step-number {
+        background: linear-gradient(145deg, #ff8555, #ff6b35);
+        color: white;
+        box-shadow:
+            3px 3px 6px var(--shadow-dark, #0d0d17),
+            -3px -3px 6px var(--shadow-light, #272745);
+    }
+
+    .progress-step.completed .step-number {
+        background: var(--primary, #FF6B35);
+        color: white;
+        box-shadow:
+            2px 2px 4px var(--shadow-dark, #0d0d17),
+            -2px -2px 4px var(--shadow-light, #272745);
+    }
+
+    .step-line {
+        width: 40px;
+        height: 3px;
+        background: var(--bg-color);
+        box-shadow:
+            inset 1px 1px 2px var(--shadow-dark, #0d0d17),
+            inset -1px -1px 2px var(--shadow-light, #272745);
+        transition: all 0.3s ease;
+    }
+
+    .step-line.completed {
+        background: var(--primary, #FF6B35);
+        box-shadow: 0 0 8px var(--primary, #FF6B35);
+    }
+
+    @@media (min-width: 768px) {
+        .setup-card {
+            max-width: 550px;
+            padding: 2.5rem;
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            font-size: 1rem;
+        }
+
+        .step-line {
+            width: 60px;
+        }
+    }
+
     @@media (min-width: 1200px) {
         .setup-card {
-            max-width: 700px;
+            max-width: 600px;
         }
     }
 </style>
@@ -156,6 +249,15 @@
 
         _isSubmitting = false;
     }
+
+    private string GetStepName(int step) => step switch
+    {
+        1 => "Your Account",
+        2 => "Partner",
+        3 => "Children",
+        4 => "Review",
+        _ => ""
+    };
 
     // Form models for wizard state
     public class AdminFormModel

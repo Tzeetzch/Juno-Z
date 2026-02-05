@@ -1,9 +1,11 @@
 @using static JunoBank.Web.Components.Pages.Setup.SetupWizard
 
-<MudText Typo="Typo.h4" Class="mb-2">Add a partner?</MudText>
-<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
-    They'll be able to manage the bank too
-</MudText>
+<div style="text-align: center; margin-bottom: 2rem;">
+    <MudText Typo="Typo.h4" Class="mb-2" Style="color: var(--primary);">👫 Add a partner?</MudText>
+    <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary);">
+        They'll be able to manage the bank too
+    </MudText>
+</div>
 
 @if (Model == null)
 {
@@ -24,7 +26,7 @@
 }
 else
 {
-    <EditForm Model="Model" OnValidSubmit="HandleNext">
+    <EditForm Model="Model" OnValidSubmit="HandleNext" class="neu-form">
         <DataAnnotationsValidator />
 
         <MudTextField @bind-Value="Model.Name"
