@@ -5,23 +5,23 @@
 ## Shared Components (`Components/Shared/`)
 
 ### ChildCard.razor
-Displays a child summary card on the parent dashboard. Shows avatar, name, balance, and pending request count.
+Displays a child summary card on the parent dashboard. Shows avatar (first letter), name, balance, and pending request badge.
 
 **Parameters:**
 ```csharp
-[Parameter] public ChildSummary Child { get; set; }  // Required
-[Parameter] public EventCallback OnClick { get; set; }
+[Parameter, EditorRequired] public ChildSummary Child { get; set; }
+[Parameter] public EventCallback<ChildSummary> OnClick { get; set; }
 ```
 
 **Usage:**
 ```razor
-<ChildCard Child="@childSummary" OnClick="@(() => NavigateToChild(child.Id))" />
+<ChildCard Child="@childSummary" OnClick="@HandleChildClick" />
 ```
 
 ---
 
 ### ChildContextHeader.razor
-Header component for child-specific pages. Shows "Managing: [ChildName]" with back button.
+Header component for child-specific pages. Shows avatar, "Managing: [ChildName]" with back button.
 
 **Parameters:**
 ```csharp
@@ -53,7 +53,7 @@ Displays a list of children as buttons for selection (used on login page).
 ---
 
 ### PictureGrid.razor
-Picture password input grid. Shuffles 9 images from the pool of 12. Child taps 4 to authenticate.
+Picture password input grid for authentication. Shuffles 9 images from the pool of 12. Child taps 4 to authenticate.
 
 **Parameters:**
 ```csharp
@@ -74,7 +74,7 @@ void ShowError(string message)  // Display error and clear selection
 
 @code {
     private PictureGrid? _pictureGrid;
-    
+
     private async Task HandleSequenceComplete(string[] sequence)
     {
         var result = await AuthService.AuthenticateChildByIdAsync(childId, sequence);
@@ -86,8 +86,30 @@ void ShowError(string message)  // Display error and clear selection
 
 ---
 
+### PictureGridSetup.razor
+Picture password setup/configuration component. Used in the setup wizard to let parents create a child's picture password. Displays shuffled grid with selection numbers.
+
+**Parameters:**
+```csharp
+[Parameter] public int RequiredLength { get; set; } = 4;
+[Parameter] public List<string> SelectedImages { get; set; }
+[Parameter] public EventCallback<List<string>> SelectedImagesChanged { get; set; }
+```
+
+**Public Methods:**
+```csharp
+void ClearSelection()  // Clear all selections and reshuffle grid
+```
+
+**Usage:**
+```razor
+<PictureGridSetup @bind-SelectedImages="_selectedImages" RequiredLength="4" />
+```
+
+---
+
 ### TransactionList.razor
-Displays a list of transactions with icons, descriptions, dates, and color-coded amounts.
+Displays a list of transactions with type-based icons, descriptions, dates, and color-coded amounts (green for deposits/allowance, red for withdrawals).
 
 **Parameters:**
 ```csharp
@@ -98,6 +120,26 @@ Displays a list of transactions with icons, descriptions, dates, and color-coded
 ```razor
 <TransactionList Transactions="@_transactions" />
 ```
+
+---
+
+## Layout Components (`Components/Layout/`)
+
+### MainLayout.razor
+Primary application layout. Provides MudBlazor dark theme (primary orange #FF6B35, secondary purple #9B59B6), app bar with greeting and logout button, and main content area.
+
+### EmptyLayout.razor
+Minimal layout with MudBlazor theme but no navigation or app bar. Used for the setup wizard and auth pages that need full-width presentation.
+
+### NavMenu.razor
+Legacy navigation menu (template component, not actively used).
+
+---
+
+## Utility Components
+
+### RedirectToLogin.razor
+Authentication redirect component. Used by the auth system to redirect unauthenticated users to the login page.
 
 ---
 
@@ -134,7 +176,7 @@ else
 @code {
     [Parameter] public int ChildId { get; set; }
     [Inject] private IUserService UserService { get; set; } = default!;
-    
+
     private User? _child;
     private bool _isLoading = true;
 

@@ -15,18 +15,18 @@ Physical money is becoming rare, but parents want to teach their 5-year-old abou
 ### Core Features (MVP)
 
 **Child Features:**
-- [ ] Picture password login (tap images in sequence)
-- [ ] View current balance (prominent, visual)
-- [ ] Transaction history (simple, visual)
-- [ ] Request withdrawal ("I want €X for Y")
-- [ ] Request deposit ("I got €X from grandma")
+- [x] Picture password login (tap images in sequence)
+- [x] View current balance (prominent, visual)
+- [x] Transaction history (simple, visual)
+- [x] Request withdrawal ("I want €X for Y")
+- [x] Request deposit ("I got €X from grandma")
 
 **Parent Features:**
-- [ ] Standard authentication (email/password)
-- [ ] Manual transactions (add/subtract with notes)
-- [ ] Scheduled weekly allowance (automatic)
-- [ ] Approve/deny pending requests
-- [ ] Email notifications for new requests
+- [x] Standard authentication (email/password)
+- [x] Manual transactions (add/subtract with notes)
+- [x] Scheduled allowance (automatic, flexible intervals)
+- [x] Approve/deny pending requests
+- [x] Email notifications for new requests
 - [ ] In-app notification center
 
 ### Phase 2 Features (Post-MVP)
@@ -71,27 +71,34 @@ JunoBank/
 ├── src/
 │   └── JunoBank.Web/                # Single Blazor Server project
 │       ├── Components/
-│       │   ├── Layout/              # MainLayout, NavMenu
+│       │   ├── Layout/              # MainLayout, EmptyLayout, NavMenu
 │       │   ├── Pages/
-│       │   │   ├── Child/           # Dashboard, History, RequestMoney
-│       │   │   ├── Parent/          # Dashboard, Requests, Transactions, Settings
-│       │   │   └── Auth/            # Login, PictureLogin
-│       │   └── Shared/              # BalanceCard, TransactionList, PictureGrid
+│       │   │   ├── Auth/            # Login, ParentLogin, ForgotPassword, ResetPassword
+│       │   │   ├── Child/           # Dashboard, RequestDeposit, RequestWithdrawal
+│       │   │   ├── Parent/          # Dashboard, PendingRequests, ManualTransaction, Settings
+│       │   │   ├── Parent/Child/    # ChildDetail, ChildManualTransaction, ChildOrderEditor, etc.
+│       │   │   └── Setup/           # SetupWizard, SetupStep1-4, SetupComplete
+│       │   └── Shared/              # ChildCard, ChildSelector, ChildContextHeader,
+│       │                            # PictureGrid, PictureGridSetup, TransactionList
 │       ├── Data/
 │       │   ├── AppDbContext.cs
-│       │   ├── Entities/            # User, Transaction, MoneyRequest, etc.
+│       │   ├── DbInitializer.cs     # Demo data seeding (JUNO_SEED_DEMO=true)
+│       │   ├── Entities/            # User, Transaction, MoneyRequest, ScheduledAllowance, etc.
 │       │   └── Migrations/
-│       ├── Services/                # IAllowanceService, IUserService, IDateTimeProvider
+│       ├── Services/                # IAuthService, IUserService, IAllowanceService, ISetupService, etc.
 │       ├── BackgroundServices/      # AllowanceBackgroundService (scheduled tasks)
-│       ├── Auth/                    # CustomAuthStateProvider
-│       └── wwwroot/css/             # app.css, neumorphic.css
+│       ├── Auth/                    # CustomAuthStateProvider, UserSession
+│       ├── Constants/               # PicturePasswordImages
+│       ├── Utils/                   # AppRoutes, CurrencyFormatter, SecurityUtils, StatusDisplayHelper
+│       └── wwwroot/                 # app.css, css/neumorphic.css
 ├── docker/
 │   ├── Dockerfile
-│   └── docker-compose.yml
+│   ├── docker-compose.yml
+│   └── nginx-example.conf
 ├── docs/                            # This folder
 └── tests/
-    ├── e2e/                         # Playwright E2E tests (53 specs)
-    └── JunoBank.Tests/              # xUnit unit tests (18 tests)
+    ├── e2e/                         # Playwright E2E tests (64 specs, 13 files)
+    └── JunoBank.Tests/              # xUnit unit tests (96 tests, 8 files)
 ```
 
 ### Database Entities
@@ -99,60 +106,82 @@ JunoBank/
 ```
 User
 ├── Id, Name, Role (Parent/Child)
+├── IsAdmin (system admin flag)
 ├── Email, PasswordHash (parents only)
-├── PicturePassword (child only)
-└── Balance
+├── FailedLoginAttempts, LockoutUntil (parent rate limiting)
+├── PicturePassword (child only, navigation)
+├── Birthday (optional, for children)
+├── Balance
+└── CreatedAt
+
+PicturePassword
+├── Id, UserId
+├── ImageSequenceHash (SHA256, Base64)
+├── GridSize (default 9), SequenceLength (default 4)
+├── FailedAttempts, LockedUntil
+└── User (navigation)
 
 Transaction
-├── UserId, Amount, Type (Deposit/Withdrawal/Allowance)
+├── Id, UserId, Amount
+├── Type (Deposit/Withdrawal/Allowance)
 ├── Description, CreatedAt, IsApproved
-└── ApprovedByParentId
+└── ApprovedByUserId
 
 MoneyRequest
-├── ChildId, Amount, Type, Description
+├── Id, ChildId, Amount, Type, Description
 ├── Status (Pending/Approved/Denied)
-└── ResolvedByParentId, ParentNote
+├── ResolvedByUserId, ParentNote, ResolvedAt
+└── CreatedAt
 
 ScheduledAllowance
-├── ChildId, CreatedByParentId
-├── Amount, DayOfWeek, TimeOfDay
+├── Id, ChildId, CreatedByUserId
+├── Amount, Interval (Hourly/Daily/Weekly/Monthly/Yearly)
+├── DayOfWeek, DayOfMonth, MonthOfYear, TimeOfDay
 ├── Description (custom text for transactions)
 ├── NextRunDate, LastRunDate, IsActive
 └── CreatedAt
+
+PasswordResetToken
+├── Id, UserId
+├── Token (unique), ExpiresAt (15 min)
+├── UsedAt, CreatedAt
+└── User (navigation)
+```
 
 ### Services
 
 | Service | Purpose |
 |---------|---------|
-| `IUserService` | User lookup, authentication, balance updates |
-| `IAllowanceService` | Allowance CRUD, processing, catch-up logic |
-| `IAuthService` | Parent/child authentication logic |
+| `IAuthService` | Parent/child authentication, session management, rate limiting |
+| `IUserService` | User CRUD, balances, transactions, requests, multi-child support |
+| `IAllowanceService` | Standing order CRUD, processing, schedule calculation |
+| `ISetupService` | First-run setup wizard (check/complete) |
 | `IPasswordService` | BCrypt password hashing abstraction |
+| `IPasswordResetService` | Token generation, validation, password reset |
 | `IEmailService` | Email sending (SMTP or console fallback) |
-| `IPasswordResetService` | Token management for password reset |
 
 ### Background Services
 
 | Service | Schedule | Purpose |
 |---------|----------|---------|
 | `AllowanceBackgroundService` | Every 60 sec | Check for due allowances, process catch-up |
-```
 
 ### Key NuGet Packages
 
 ```xml
 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.*" />
-<PackageReference Include="BCrypt.Net-Next" Version="4.0.*" />
-<PackageReference Include="MailKit" Version="4.3.*" />
-<PackageReference Include="MudBlazor" Version="6.11.*" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.*" />
+<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+<PackageReference Include="MailKit" Version="4.14.1" />
+<PackageReference Include="MudBlazor" Version="8.15.0" />
 ```
 
 ### Picture Password Flow
 
-1. Display 3×3 grid of colorful images (animals, objects)
+1. Display 3×3 grid of images (shuffled from pool of 12)
 2. Child taps 4 images in their secret sequence
 3. Sequence is SHA256 hashed and compared to stored hash
-4. Lock out after 5 failed attempts (parent resets)
+4. Lock out after 5 failed attempts for 5 minutes (auto-unlock)
 
 ### Docker Deployment
 
@@ -161,8 +190,9 @@ services:
   junobank:
     build: .
     ports:
-      - "8080:8080"
+      - "5050:5050"
     volumes:
-      - junobank-data:/app/data  # SQLite persistence
+      - junobank-data:/app/data   # SQLite persistence
+      - junobank-keys:/app/keys   # Data Protection keys
     restart: unless-stopped
 ```

@@ -2,27 +2,35 @@
 
 ## Current Phase: K (First-Run Setup Wizard)
 
-**Completed:** Phases A through J  
+**Completed:** Phases A through J
 
-| Phase | Topic |
-|-------|-------|
-| A | Project Setup (Blazor, MudBlazor, SQLite) |
-| B | Database (entities, migrations, seed data) |
-| C | Authentication (parent login, picture password) |
-| D | Child Features (dashboard, requests) |
-| E | Parent Features (approve/deny, transactions) |
-| F | Scheduled Allowance (BackgroundService) |
-| G | Email Infrastructure (password reset) |
-| H | Docker & Deployment |
-| I | Polish (responsive, UX refinements) |
-| J | Multi-Child Support |
+| Phase | Topic | Status |
+|-------|-------|--------|
+| A | Project Setup (Blazor, MudBlazor, SQLite) | Done |
+| B | Database (entities, migrations, seed data) | Done |
+| C | Authentication (parent login, picture password) | Done |
+| D | Child Features (dashboard, requests) | Done |
+| E | Parent Features (approve/deny, transactions) | Done |
+| F | Scheduled Allowance (BackgroundService) | Done |
+| G | Email Infrastructure (password reset) | Done |
+| H | Docker & Deployment | Done |
+| I | Polish (responsive, UX refinements) | Done |
+| J | Multi-Child Support | Done |
 
 ---
 
-## Future Phases
+## Phase K: First-Run Setup Wizard
 
-### Phase K: First-Run Setup Wizard
-Replace demo credentials with user-created accounts.  
+**Status:** In progress - UI and service layer implemented, needs testing and polish.
+
+**What's done:**
+- `ISetupService` with `IsSetupRequiredAsync()`, `HasAdminAsync()`, `CompleteSetupAsync()`
+- 4-step wizard UI: Admin → Partner (optional) → Children → Confirmation
+- `SetupComplete.razor` success page
+- `Home.razor` redirects to `/setup` when no admin exists
+- `EmptyLayout.razor` for setup wizard (no nav bar)
+- `PictureGridSetup.razor` component for child picture password creation
+- `DbInitializer` only seeds demo data when `JUNO_SEED_DEMO=true`
 
 **Spec Summary:**
 - 4-step wizard: Parent 1 → Parent 2 (optional) → Children → Confirmation
@@ -49,9 +57,24 @@ Replace demo credentials with user-created accounts.
 
 ---
 
+## Parent Login Rate Limiting
+
+**Status:** Implemented (uncommitted) — code exists but changes are not yet committed.
+
+**What's done:**
+- `User` entity: `FailedLoginAttempts`, `LockoutUntil` fields
+- `AuthService`: 5 failed attempts → 5-minute lockout for parents
+- `ParentLogin.razor`: countdown timer, lockout alert display
+- Migration: `AddParentLoginRateLimiting`
+- Unit tests: `AuthServiceTests` covers rate limiting scenarios
+- E2E spec: `parent-login-ratelimit.spec.ts`
+
+---
+
 ## Test Credentials
 
 - **Parent:** dad@junobank.local / parent123
+- **Parent 2:** mom@junobank.local / parent123
 - **Child (Junior):** Tap cat → dog → star → moon
 - **Child (Sophie):** Tap star → moon → cat → dog
 
@@ -59,29 +82,32 @@ Replace demo credentials with user-created accounts.
 
 ## Open Tickets
 
-### HIGH
-
-**TICKET-005: Parent login rate limiting** (2-3 hours)  
-Lock account for 5 min after 5 failed attempts.
-
 ### MEDIUM
 
-**TICKET-017: Paginate all list pages** (3-4 hours)  
+**TICKET-017: Paginate all list pages** (3-4 hours)
 Add pagination to transaction history, request history, and standing orders lists.
 - Use MudBlazor's built-in pagination component
 - Default page size: 20 items
 - "Load more" or page numbers approach TBD
 
-**TICKET-015: Extract Settings.razor sub-components** (2-3 hours)  
+**TICKET-015: Extract Settings.razor sub-components** (2-3 hours)
 Split into AllowanceSettings.razor and ChangePassword.razor.
 
-**TICKET-016: Create common CSS classes** (2 hours)  
+**TICKET-016: Create common CSS classes** (2 hours)
 Add .page-container, .card-section to reduce inline styles.
 
 ### LOW
 
-**TICKET-018: Replace emoji icons with proper icons** (1-2 hours)  
-Current emoji icons (💰, 📋, ⚙️, etc.) look too "AI-generated". Replace with MudBlazor Material icons or a consistent icon set.
+**TICKET-018: Replace emoji icons with proper icons** (1-2 hours)
+Current emoji icons look too "AI-generated". Replace with MudBlazor Material icons or a consistent icon set.
+
+### CODE ISSUES
+
+**AppRoutes.Child.Dashboard mismatch**
+`AppRoutes.Child.Dashboard` = `"/child/dashboard"` but `Dashboard.razor` has `@page "/child"`. These don't match — navigation via AppRoutes may break.
+
+**AppRoutes.Parent.TransactionHistory unused**
+`AppRoutes.Parent.TransactionHistory` = `"/parent/history"` but no page exists at that route. Transaction history is per-child only.
 
 ---
 

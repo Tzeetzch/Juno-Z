@@ -5,13 +5,16 @@
 ## Services (`Services/`)
 
 ### IAuthService
-Handles authentication for parents (email/password) and children (picture password).
+Handles authentication for parents (email/password) and children (picture password). Includes rate limiting (5 attempts → 5-minute lockout for both).
 
 ```csharp
 // Parent login
 Task<AuthResult> AuthenticateParentAsync(string email, string password);
 
-// Child login
+// Child login (first child found)
+Task<AuthResult> AuthenticateChildAsync(string[] pictureSequence);
+
+// Child login (specific child)
 Task<AuthResult> AuthenticateChildByIdAsync(int childId, string[] pictureSequence);
 
 // Get children for login picker
@@ -27,18 +30,23 @@ Task<UserSession?> GetCurrentUserAsync();
 - `UserSession? Session` - User session if successful
 - `string? Error` - Error message if failed
 - `bool IsLockedOut` - Rate limiting active
+- `int? LockoutMinutesRemaining` - Minutes until unlock
+- `DateTime? LockoutUntil` - Exact lockout expiration
 - `int? AttemptsRemaining` - Tries left before lockout
+
+**Static factories:** `Succeeded()`, `Failed()`, `LockedOut()`, `FailedWithAttemptsRemaining()`
 
 ---
 
 ### IUserService
-Core service for user data, balances, transactions, and requests.
+Core service for user data, balances, transactions, requests, and user management.
 
 ```csharp
 // Balance & Transactions
 Task<decimal> GetBalanceAsync(int userId);
 Task<List<Transaction>> GetRecentTransactionsAsync(int userId, int limit = 50);
 Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100);
+Task<List<Transaction>> GetAllTransactionsAsync(int limit = 100);
 
 // Dashboard data
 Task<ChildDashboardData> GetChildDashboardDataAsync(int userId);
@@ -56,14 +64,23 @@ Task<List<MoneyRequest>> GetPendingRequestsForChildAsync(int childId);
 Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int limit = 50);
 Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null);
 
-// Manual transactions (parent-initiated)
+// Manual transactions
+Task<Transaction> CreateManualTransactionAsync(int parentUserId, decimal amount, TransactionType type, string description);
 Task<Transaction> CreateManualTransactionForChildAsync(int parentUserId, int childId, decimal amount, TransactionType type, string description);
+
+// User management (admin)
+Task<List<ParentSummary>> GetAllParentsAsync();
+Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false);
+Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId);
+Task SetAdminStatusAsync(int userId, bool isAdmin);
+Task<bool> IsAdminAsync(int userId);
 ```
 
 **Key DTOs:**
 - `ChildSummary` - Id, Name, Balance, PendingRequestCount (for parent dashboard cards)
 - `ChildDashboardData` - Name, Balance, RecentTransactions, RecentRequests
 - `ParentDashboardData` - ChildName, ChildBalance, PendingRequestCount
+- `ParentSummary` - Id, Name, Email, IsAdmin
 
 ---
 
@@ -83,7 +100,7 @@ Task<int> ProcessDueAllowancesAsync();
 
 // Schedule calculation
 DateTime CalculateNextRunDate(ScheduledAllowance allowance, DateTime fromDate);
-DateTime CalculateNextRunDate(AllowanceInterval interval, DayOfWeek dayOfWeek, 
+DateTime CalculateNextRunDate(AllowanceInterval interval, DayOfWeek dayOfWeek,
     int dayOfMonth, int monthOfYear, TimeOnly timeOfDay, DateTime fromDate);
 ```
 
@@ -91,13 +108,42 @@ DateTime CalculateNextRunDate(AllowanceInterval interval, DayOfWeek dayOfWeek,
 
 ---
 
+### ISetupService
+First-run setup wizard — checks if app needs initial configuration and creates accounts.
+
+```csharp
+Task<bool> IsSetupRequiredAsync();
+Task<bool> HasAdminAsync();
+Task<SetupResult> CompleteSetupAsync(SetupData data);
+```
+
+**Setup DTOs:**
+- `SetupData` - Admin (required), Partner (optional), Children (list)
+- `AdminData` - Name, Email, Password
+- `PartnerData` - Name, Email, Password
+- `ChildData` - Name, Birthday, StartingBalance, PictureSequence
+- `SetupResult` - Success, Error, AdminUserId
+
+---
+
 ### IPasswordResetService
 Password reset flow for parents.
 
 ```csharp
-Task<string> GenerateResetTokenAsync(string email);
-Task<bool> ValidateTokenAsync(string token);
-Task<bool> ResetPasswordAsync(string token, string newPassword);
+Task<string?> CreateResetTokenAsync(string email);
+Task<int?> ValidateTokenAsync(string token);         // Returns userId if valid
+Task<bool> ResetPasswordAsync(string token, string newPasswordHash);
+bool IsDemoAccount(string email);
+```
+
+---
+
+### IPasswordService
+BCrypt password hashing abstraction.
+
+```csharp
+string HashPassword(string password);
+bool VerifyPassword(string password, string hash);
 ```
 
 ---
@@ -106,7 +152,18 @@ Task<bool> ResetPasswordAsync(string token, string newPassword);
 Email sending (Console in dev, SMTP in prod).
 
 ```csharp
-Task SendEmailAsync(string to, string subject, string body);
+Task<bool> SendEmailAsync(string to, string subject, string htmlBody);
+```
+
+---
+
+### IAuthStateProvider
+Authentication state management (implemented by CustomAuthStateProvider).
+
+```csharp
+Task LoginAsync(UserSession session);
+Task LogoutAsync();
+Task<UserSession?> GetCurrentUserAsync();
 ```
 
 ---
@@ -125,21 +182,25 @@ AppRoutes.Child.RequestWithdrawal   // "/child/request-withdrawal"
 // Parent routes
 AppRoutes.Parent.Dashboard          // "/parent"
 AppRoutes.Parent.PendingRequests    // "/parent/requests"
+AppRoutes.Parent.TransactionHistory // "/parent/history"
 AppRoutes.Parent.Settings           // "/parent/settings"
 
 // Parent child-context routes (methods)
-AppRoutes.Parent.ChildDetail(childId)           // "/parent/child/{id}"
-AppRoutes.Parent.ChildSettings(childId)         // "/parent/child/{id}/settings"
-AppRoutes.Parent.ChildOrderNew(childId)         // "/parent/child/{id}/order/new"
-AppRoutes.Parent.ChildOrderEdit(childId, orderId) // "/parent/child/{id}/order/{orderId}"
-AppRoutes.Parent.ChildTransactionHistory(childId) // "/parent/child/{id}/transactions"
-AppRoutes.Parent.ChildRequestHistory(childId)   // "/parent/child/{id}/request-history"
-AppRoutes.Parent.ChildTransaction(childId)      // "/parent/child/{id}/transaction"
-AppRoutes.Parent.ChildRequests(childId)         // "/parent/child/{id}/requests"
+AppRoutes.Parent.ChildDetail(childId)             // "/parent/child/{id}"
+AppRoutes.Parent.ChildRequests(childId)            // "/parent/child/{id}/requests"
+AppRoutes.Parent.ChildRequestHistory(childId)      // "/parent/child/{id}/request-history"
+AppRoutes.Parent.ChildTransactionHistory(childId)  // "/parent/child/{id}/transactions"
+AppRoutes.Parent.ChildTransaction(childId)         // "/parent/child/{id}/transaction"
+AppRoutes.Parent.ChildSettings(childId)            // "/parent/child/{id}/settings"
+AppRoutes.Parent.ChildOrderNew(childId)            // "/parent/child/{id}/order/new"
+AppRoutes.Parent.ChildOrderEdit(childId, orderId)  // "/parent/child/{id}/order/{orderId}"
 
 // Auth routes
 AppRoutes.Auth.Login                // "/login"
 AppRoutes.Auth.ParentLogin          // "/login/parent"
+
+// Setup routes
+AppRoutes.Setup.Wizard              // "/setup"
 ```
 
 ---
@@ -151,6 +212,7 @@ Consistent Euro formatting.
 CurrencyFormatter.Format(10.5m)              // "€10.50"
 CurrencyFormatter.FormatWithSign(5m, false)  // "+€5.00" (deposit)
 CurrencyFormatter.FormatWithSign(5m, true)   // "-€5.00" (withdrawal)
+CurrencyFormatter.FormatInvariant(10.5m)     // Invariant culture format
 ```
 
 ---
@@ -183,12 +245,14 @@ SecurityUtils.HashPictureSequence("cat,dog,star,moon")  // SHA256 hash (Base64)
 Picture password configuration.
 
 ```csharp
-PicturePasswordImages.AllImages           // string[] of 12 image identifiers
-PicturePasswordImages.GridDisplayCount    // 9 (3x3 grid)
-PicturePasswordImages.DefaultSequenceLength  // 4
+PicturePasswordImages.AllImages               // string[] of 12 image identifiers
+PicturePasswordImages.GridDisplayCount        // 9 (3x3 grid)
+PicturePasswordImages.DefaultSequenceLength   // 4
 
-PicturePasswordImages.GetEmoji("cat")     // "🐱"
+PicturePasswordImages.GetEmoji("cat")         // "🐱"
 ```
+
+**All images:** cat, dog, star, moon, sun, tree, fish, bird, car, flower, heart, apple
 
 ---
 
@@ -199,11 +263,26 @@ PicturePasswordImages.GetEmoji("cat")     // "🐱"
 int Id
 string Name
 UserRole Role              // Parent, Child
+bool IsAdmin               // System admin privilege
 string? Email              // Parent only
 string? PasswordHash       // Parent only
-PicturePassword? PicturePassword  // Child only
+int? FailedLoginAttempts   // Parent rate limiting
+DateTime? LockoutUntil     // Parent lockout expiration
+PicturePassword? PicturePassword  // Child only (navigation)
+DateTime? Birthday         // Optional (for children)
 decimal Balance
 DateTime CreatedAt
+```
+
+### PicturePassword
+```csharp
+int Id
+int UserId
+string ImageSequenceHash   // SHA256 Base64
+int GridSize               // Default 9
+int SequenceLength         // Default 4
+int FailedAttempts         // Child rate limiting
+DateTime? LockedUntil      // Child lockout expiration
 ```
 
 ### Transaction
@@ -247,5 +326,15 @@ string Description
 DateTime NextRunDate
 DateTime? LastRunDate
 bool IsActive
+DateTime CreatedAt
+```
+
+### PasswordResetToken
+```csharp
+int Id
+int UserId
+string Token               // Unique, max 100 chars
+DateTime ExpiresAt         // 15 minutes from creation
+DateTime? UsedAt           // Null if unused
 DateTime CreatedAt
 ```

@@ -38,7 +38,8 @@ docker/
 ├── Dockerfile           # Multi-stage build
 ├── docker-compose.yml   # Container orchestration
 ├── .dockerignore        # Build exclusions
-└── nginx-example.conf   # Reverse proxy config
+├── nginx-example.conf   # Reverse proxy config
+└── update.sh            # Update script
 ```
 
 ## Reverse Proxy Setup (Nginx)
@@ -131,6 +132,7 @@ Override settings via environment variables in `docker-compose.yml`:
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Runtime environment |
 | `ASPNETCORE_URLS` | `http://+:5050` | Listen URL |
 | `ConnectionStrings__DefaultConnection` | `Data Source=/app/data/junobank.db` | Database path |
+| `JUNO_SEED_DEMO` | *(unset)* | Set to `true` to seed demo accounts |
 
 ### Email Configuration (Future)
 
@@ -149,11 +151,20 @@ environment:
 ## First Run
 
 1. Access the app via your domain: `https://juno.yourdomain.com`
-2. Log in with default parent accounts:
-   - Email: `dad@junobank.local` / Password: `password123`
-   - Email: `mom@junobank.local` / Password: `password123`
-3. Child login uses picture password (row 3, columns 1, 3, 4 by default)
-4. **Important:** Change the default passwords in Settings!
+2. The **Setup Wizard** will launch automatically (no users exist yet)
+3. Create your admin parent account (Step 1)
+4. Optionally add a partner/second parent (Step 2)
+5. Add your children with picture passwords (Step 3)
+6. Review and confirm (Step 4)
+7. You'll be logged in automatically as the admin parent
+
+### Demo Mode (for testing)
+
+Set `JUNO_SEED_DEMO=true` to seed demo accounts instead of using the wizard:
+- **Parent 1:** dad@junobank.local / parent123 (admin)
+- **Parent 2:** mom@junobank.local / parent123
+- **Child (Junior):** Tap cat → dog → star → moon
+- **Child (Sophie):** Tap star → moon → cat → dog
 
 ## Updates
 
@@ -203,9 +214,10 @@ podman volume inspect junobank-keys
 ## Security Notes
 
 - The container runs as a non-root user (`junobank`)
-- Default demo accounts should have passwords changed
+- Production starts with Setup Wizard (no default passwords)
 - Database file permissions are restricted
 - HTTPS is handled by the reverse proxy, not the container
+- Login rate limiting: 5 attempts → 5-minute lockout
 
 ## Health Check
 

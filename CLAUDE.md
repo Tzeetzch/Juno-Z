@@ -18,12 +18,13 @@ Before responding, read these files for full context:
 
 ## Project Status
 
-**Completed:** Phases A-J (setup through multi-child support)  
-**Next:** Phase K (First-Run Setup Wizard)  
+**Completed:** Phases A-J (setup through multi-child support)
+**Current:** Phase K (First-Run Setup Wizard) - UI and service layer implemented
 **Parked:** Request notifications, production email config
 
 ### Test Credentials
 - **Parent:** dad@junobank.local / parent123
+- **Parent 2:** mom@junobank.local / parent123
 - **Child (Junior):** Tap cat → dog → star → moon
 - **Child (Sophie):** Tap star → moon → cat → dog
 
@@ -32,19 +33,20 @@ Before responding, read these files for full context:
 | Command | Purpose |
 |---------|---------|
 | `/spec` | Clarify requirements |
-| `/ba-review` | BA validates requirements |
 | `/plan` | Break into work cycles |
 | `/architect` | Review plan, identify reusable components/services |
 | `/backend` | Build services, EF Core |
 | `/ui` | Build components, pages |
 | `/unit-test` | Write xUnit tests |
 | `/e2e-test` | Write Playwright tests |
-| `/ux-review` | Design review |
-| `/tech-writer` | Update documentation |
+| `/review` | Code review |
+| `/refactor` | Refactor code |
 | `/save` | Commit and push |
 | `/debug` | Root cause analysis |
 | `/build` | Check compilation |
 | `/test` | Run all tests |
+| `/docker` | Docker build and deploy |
+| `/security` | Security review |
 
 ## Key Rules
 

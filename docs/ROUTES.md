@@ -6,12 +6,12 @@
 
 | Route | Page | Purpose |
 |-------|------|---------|
-| `/` | Home.razor | Redirects to dashboard based on role or login |
+| `/` | Home.razor | Redirects: setup → login → dashboard (based on state/role) |
 | `/login` | Login.razor | Main login page (parent button + child picker) |
-| `/login/parent` | ParentLogin.razor | Parent email/password form |
-| `/login/child` | ChildLogin.razor | **OBSOLETE** - child picker now on `/login` |
+| `/login/parent` | ParentLogin.razor | Parent email/password form with rate limiting |
 | `/forgot-password` | ForgotPassword.razor | Request password reset email |
 | `/reset-password/{Token}` | ResetPassword.razor | Set new password with token |
+| `/setup` | SetupWizard.razor | First-run setup wizard (uses EmptyLayout) |
 | `/Error` | Error.razor | Error display page |
 
 ---
@@ -34,8 +34,8 @@
 |-------|------|---------|
 | `/parent` | Parent/Dashboard.razor | All children cards overview |
 | `/parent/requests` | Parent/PendingRequests.razor | All pending requests (all children) |
-| `/parent/transaction` | Parent/ManualTransaction.razor | **LEGACY** - use per-child now |
-| `/parent/settings` | Parent/Settings.razor | Global settings |
+| `/parent/transaction` | Parent/ManualTransaction.razor | Add/remove money (parent balance) |
+| `/parent/settings` | Parent/Settings.razor | Global settings, user management (admin) |
 
 ### Per-Child Pages
 
@@ -74,6 +74,11 @@ See [API.md](API.md) for full `AppRoutes` reference.
 
 ## Navigation Flows
 
+### First Run (No Users)
+```
+/ → /setup → (4 steps) → /parent
+```
+
 ### Child Login → Dashboard
 ```
 /login → (pick child) → (picture password) → /child
@@ -87,4 +92,9 @@ See [API.md](API.md) for full `AppRoutes` reference.
 ### Parent Handling Request
 ```
 /parent → (click child card) → /parent/child/{id} → /parent/child/{id}/requests → (approve/deny)
+```
+
+### Password Reset
+```
+/login/parent → /forgot-password → (email) → /reset-password/{token} → /login/parent
 ```

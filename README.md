@@ -17,19 +17,21 @@ Physical money is becoming rare, but kids still need to learn about saving and s
 **For Parents:**
 - Approve/deny money requests
 - Manual transactions
-- Automatic weekly allowance
+- Flexible standing orders (hourly/daily/weekly/monthly/yearly)
 - Email notifications
+- Multi-child support
+- User management (admin)
 
 ## Tech Stack
 
 - **Frontend:** Blazor Server (.NET 8)
 - **Database:** SQLite + Entity Framework Core
-- **UI:** MudBlazor + custom neumorphic styling
+- **UI:** MudBlazor 8.x + custom neumorphic styling
 - **Deployment:** Docker (self-hosted)
 
 ## Status
 
-✅ **Feature complete** (Phase H) - Ready for polish and real-world testing.
+**Current:** Phase K (First-Run Setup Wizard) - Phases A-J complete.
 
 ## Quick Start
 
@@ -39,9 +41,11 @@ dotnet run
 # Open https://localhost:5001
 ```
 
-**Test Credentials:**
+**Demo Mode** (set `JUNO_SEED_DEMO=true` env var):
 - Parent: `dad@junobank.local` / `parent123`
 - Child: Tap cat → dog → star → moon
+
+Without demo mode, the Setup Wizard will guide you through creating accounts.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Docker production setup.
 
