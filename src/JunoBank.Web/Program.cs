@@ -25,7 +25,7 @@ var connectionString = string.IsNullOrEmpty(testDbName)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
-// Authentication
+// Authentication - hardened cookie configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "Cookies";
@@ -33,6 +33,11 @@ builder.Services.AddAuthentication(options =>
 }).AddCookie("Cookies", options =>
 {
     options.LoginPath = "/login";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
 });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -78,11 +83,22 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+
+// Security headers middleware
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    headers["X-XSS-Protection"] = "1; mode=block";
+    await next();
+});
 
 app.UseStaticFiles();
 app.UseAntiforgery();

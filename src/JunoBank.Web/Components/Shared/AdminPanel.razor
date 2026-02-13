@@ -174,7 +174,7 @@
         _isSaving = true;
         try
         {
-            await UserService.SetAdminStatusAsync(userId, isAdmin);
+            await UserService.SetAdminStatusAsync(userId, isAdmin, CurrentUserId);
             _successMessage = "Admin status updated!";
             await OnDataChanged.InvokeAsync();
         }
@@ -204,7 +204,8 @@
                 _newParent.Name,
                 _newParent.Email,
                 _newParent.Password,
-                _newParent.IsAdmin);
+                _newParent.IsAdmin,
+                CurrentUserId);
 
             _newParent = new NewParentModel();
             _successMessage = "Parent added successfully!";

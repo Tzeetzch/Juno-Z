@@ -68,11 +68,11 @@ Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? 
 Task<Transaction> CreateManualTransactionAsync(int parentUserId, decimal amount, TransactionType type, string description);
 Task<Transaction> CreateManualTransactionForChildAsync(int parentUserId, int childId, decimal amount, TransactionType type, string description);
 
-// User management (admin)
+// User management (admin — requires callerUserId with admin role)
 Task<List<ParentSummary>> GetAllParentsAsync();
-Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false);
-Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId);
-Task SetAdminStatusAsync(int userId, bool isAdmin);
+Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false, int? callerUserId = null);
+Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId, bool requireAdmin = true);
+Task SetAdminStatusAsync(int userId, bool isAdmin, int callerUserId);
 Task<bool> IsAdminAsync(int userId);
 ```
 

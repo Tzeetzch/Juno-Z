@@ -10,7 +10,7 @@ public class UserServiceTests : DatabaseTestBase
 
     public UserServiceTests()
     {
-        _service = new UserService(Db);
+        _service = new UserService(Db, CreateLogger<UserService>());
     }
 
     #region GetAllChildrenSummaryAsync Tests
@@ -381,7 +381,7 @@ public class UserServiceTests : DatabaseTestBase
     public async Task CreateChildAsync_NoTransactionForZeroBalance()
     {
         // Arrange
-        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
         Db.Users.Add(parent);
         await Db.SaveChangesAsync();
 
@@ -396,12 +396,13 @@ public class UserServiceTests : DatabaseTestBase
     public async Task SetAdminStatusAsync_UpdatesAdminFlag()
     {
         // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
         var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
-        Db.Users.Add(parent);
+        Db.Users.AddRange(admin, parent);
         await Db.SaveChangesAsync();
 
         // Act
-        await _service.SetAdminStatusAsync(parent.Id, true);
+        await _service.SetAdminStatusAsync(parent.Id, true, admin.Id);
 
         // Assert
         var updated = await Db.Users.FindAsync(parent.Id);
@@ -412,16 +413,57 @@ public class UserServiceTests : DatabaseTestBase
     public async Task SetAdminStatusAsync_IgnoresNonParent()
     {
         // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
         var child = new User { Name = "Junior", Role = UserRole.Child };
-        Db.Users.Add(child);
+        Db.Users.AddRange(admin, child);
         await Db.SaveChangesAsync();
 
         // Act
-        await _service.SetAdminStatusAsync(child.Id, true);
+        await _service.SetAdminStatusAsync(child.Id, true, admin.Id);
 
         // Assert
         var updated = await Db.Users.FindAsync(child.Id);
         Assert.False(updated!.IsAdmin);
+    }
+
+    [Fact]
+    public async Task SetAdminStatusAsync_ThrowsWhenCallerNotAdmin()
+    {
+        // Arrange
+        var nonAdmin = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        var target = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.AddRange(nonAdmin, target);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _service.SetAdminStatusAsync(target.Id, true, nonAdmin.Id));
+    }
+
+    [Fact]
+    public async Task CreateParentAsync_ThrowsWhenCallerNotAdmin()
+    {
+        // Arrange
+        var nonAdmin = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.Add(nonAdmin);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _service.CreateParentAsync("New", "new@test.com", "pass", false, nonAdmin.Id));
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_ThrowsWhenCallerNotAdmin()
+    {
+        // Arrange
+        var nonAdmin = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.Add(nonAdmin);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _service.CreateChildAsync("Kid", DateTime.Today, 0, new[] { "a", "b", "c", "d" }, nonAdmin.Id));
     }
 
     [Fact]

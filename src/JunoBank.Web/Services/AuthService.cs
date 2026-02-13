@@ -16,16 +16,20 @@ public class AuthService : IAuthService
     private readonly IAuthStateProvider _authProvider;
     private readonly TimeProvider _timeProvider;
 
+    private readonly ILogger<AuthService> _logger;
+
     public AuthService(
         AppDbContext db,
         IPasswordService passwordService,
         IAuthStateProvider authProvider,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ILogger<AuthService> logger)
     {
         _db = db;
         _passwordService = passwordService;
         _authProvider = authProvider;
         _timeProvider = timeProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -33,6 +37,7 @@ public class AuthService : IAuthService
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
+            _logger.LogWarning("Parent login attempt with empty credentials");
             return AuthResult.Failed("Invalid email or password");
         }
 
@@ -41,6 +46,9 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
+            // Perform dummy hash to prevent timing-based email enumeration
+            _passwordService.VerifyPassword(password, "$2a$11$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            _logger.LogWarning("Parent login attempt for unknown email");
             return AuthResult.Failed("Invalid email or password");
         }
 
@@ -49,6 +57,7 @@ public class AuthService : IAuthService
         // Check lockout (before password validation to prevent timing attacks)
         if (user.LockoutUntil.HasValue && user.LockoutUntil > now)
         {
+            _logger.LogWarning("Parent login blocked — account locked out (user {UserId})", user.Id);
             var remaining = (int)(user.LockoutUntil.Value - now).TotalMinutes + 1;
             return AuthResult.LockedOut(remaining, user.LockoutUntil.Value);
         }
@@ -57,11 +66,13 @@ public class AuthService : IAuthService
         {
             // Failed attempt - increment counter
             user.FailedLoginAttempts = (user.FailedLoginAttempts ?? 0) + 1;
+            _logger.LogWarning("Parent login failed for user {UserId} (attempt {Attempt}/5)", user.Id, user.FailedLoginAttempts);
 
             if (user.FailedLoginAttempts >= 5)
             {
                 user.LockoutUntil = now.AddMinutes(5);
                 await _db.SaveChangesAsync();
+                _logger.LogWarning("Parent account {UserId} locked out for 5 minutes", user.Id);
                 return AuthResult.LockedOut(5, user.LockoutUntil.Value);
             }
 
@@ -74,6 +85,7 @@ public class AuthService : IAuthService
         user.FailedLoginAttempts = 0;
         user.LockoutUntil = null;
         await _db.SaveChangesAsync();
+        _logger.LogInformation("Parent login successful for user {UserId}", user.Id);
 
         var session = new UserSession
         {
@@ -122,19 +134,21 @@ public class AuthService : IAuthService
         // Check lockout
         if (picturePassword.LockedUntil.HasValue && picturePassword.LockedUntil > now)
         {
+            _logger.LogWarning("Child login blocked — account locked out (child {ChildId})", childId);
             var remaining = (int)(picturePassword.LockedUntil.Value - now).TotalMinutes + 1;
             return AuthResult.LockedOut(remaining, picturePassword.LockedUntil.Value);
         }
 
-        // Hash the sequence and compare
+        // Hash the sequence and compare (constant-time to prevent timing attacks)
         var sequenceHash = SecurityUtils.HashPictureSequence(string.Join(",", pictureSequence));
 
-        if (sequenceHash == picturePassword.ImageSequenceHash)
+        if (SecurityUtils.ConstantTimeEquals(sequenceHash, picturePassword.ImageSequenceHash))
         {
             // Success! Reset failed attempts
             picturePassword.FailedAttempts = 0;
             picturePassword.LockedUntil = null;
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Child login successful for child {ChildId}", childId);
 
             var session = new UserSession
             {
@@ -149,11 +163,13 @@ public class AuthService : IAuthService
 
         // Failed attempt
         picturePassword.FailedAttempts++;
+        _logger.LogWarning("Child login failed for child {ChildId} (attempt {Attempt}/5)", childId, picturePassword.FailedAttempts);
 
         if (picturePassword.FailedAttempts >= 5)
         {
             picturePassword.LockedUntil = now.AddMinutes(5);
             await _db.SaveChangesAsync();
+            _logger.LogWarning("Child account {ChildId} locked out for 5 minutes", childId);
             return AuthResult.LockedOut(5, picturePassword.LockedUntil.Value);
         }
 

@@ -71,13 +71,29 @@
 
 ---
 
+## Security Hardening
+
+**Status:** Done
+
+**What's done:**
+- **Admin authorization** — `SetAdminStatusAsync`, `CreateParentAsync`, `CreateChildAsync` now require admin role
+- **Role validation** — Service-layer `RequireParentAsync` / `RequireAdminAsync` guards with `UnauthorizedAccessException`
+- **Cookie hardening** — `HttpOnly`, `SameSite=Strict`, `SecurePolicy=SameAsRequest`, 8-hour sliding expiration
+- **Timing-safe comparison** — Picture password uses `CryptographicOperations.FixedTimeEquals`
+- **Anti-enumeration** — Dummy BCrypt hash on unknown email login to prevent timing-based email discovery
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-XSS-Protection`
+- **Security audit logging** — Login attempts, lockouts, admin actions, transactions logged via `ILogger`
+- **Unit tests** — 3 new authorization tests (`SetAdminStatusAsync_ThrowsWhenCallerNotAdmin`, `CreateParentAsync_ThrowsWhenCallerNotAdmin`, `CreateChildAsync_ThrowsWhenCallerNotAdmin`)
+
+---
+
 ## Test Results (2026-02-13)
 
-**All 170 tests passing.**
+**All 173 tests passing.**
 
 | Suite | Pass | Fail | Total |
 |-------|------|------|-------|
-| Unit tests (xUnit) | 105 | 0 | 105 |
+| Unit tests (xUnit) | 108 | 0 | 108 |
 | E2E tests (Playwright) | 65 | 0 | 65 |
 
 **E2E spec breakdown:**

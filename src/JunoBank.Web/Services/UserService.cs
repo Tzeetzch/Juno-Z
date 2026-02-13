@@ -8,10 +8,34 @@ namespace JunoBank.Web.Services;
 public class UserService : IUserService
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(AppDbContext db)
+    public UserService(AppDbContext db, ILogger<UserService> logger)
     {
         _db = db;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Validates that the given userId belongs to a parent. Throws UnauthorizedAccessException if not.
+    /// </summary>
+    private async Task<User> RequireParentAsync(int userId)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user == null || user.Role != UserRole.Parent)
+            throw new UnauthorizedAccessException("Only parents can perform this action.");
+        return user;
+    }
+
+    /// <summary>
+    /// Validates that the given userId belongs to an admin. Throws UnauthorizedAccessException if not.
+    /// </summary>
+    private async Task<User> RequireAdminAsync(int userId)
+    {
+        var user = await RequireParentAsync(userId);
+        if (!user.IsAdmin)
+            throw new UnauthorizedAccessException("Only administrators can perform this action.");
+        return user;
     }
 
     public async Task<decimal> GetBalanceAsync(int userId)
@@ -112,6 +136,8 @@ public class UserService : IUserService
 
     public async Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null)
     {
+        await RequireParentAsync(parentUserId);
+
         var request = await _db.MoneyRequests
             .Include(r => r.Child)
             .FirstOrDefaultAsync(r => r.Id == requestId);
@@ -122,9 +148,8 @@ public class UserService : IUserService
         if (request.Status != RequestStatus.Pending)
             throw new InvalidOperationException("Request has already been resolved");
 
-        var parent = await _db.Users.FindAsync(parentUserId);
-        if (parent == null || parent.Role != UserRole.Parent)
-            throw new InvalidOperationException("Only parents can resolve requests");
+        _logger.LogInformation("Parent {ParentId} {Action} request {RequestId} for child {ChildId} ({Amount:C})",
+            parentUserId, approve ? "approving" : "denying", requestId, request.ChildId, request.Amount);
 
         request.Status = approve ? RequestStatus.Approved : RequestStatus.Denied;
         request.ResolvedByUserId = parentUserId;
@@ -175,9 +200,8 @@ public class UserService : IUserService
 
     public async Task<Transaction> CreateManualTransactionAsync(int parentUserId, decimal amount, TransactionType type, string description)
     {
-        var parent = await _db.Users.FindAsync(parentUserId);
-        if (parent == null || parent.Role != UserRole.Parent)
-            throw new InvalidOperationException("Only parents can create manual transactions");
+        await RequireParentAsync(parentUserId);
+        _logger.LogInformation("Parent {ParentId} creating {Type} of {Amount:C}", parentUserId, type, amount);
 
         var child = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Child);
         if (child == null)
@@ -219,9 +243,8 @@ public class UserService : IUserService
 
     public async Task<Transaction> CreateManualTransactionForChildAsync(int parentUserId, int childId, decimal amount, TransactionType type, string description)
     {
-        var parent = await _db.Users.FindAsync(parentUserId);
-        if (parent == null || parent.Role != UserRole.Parent)
-            throw new InvalidOperationException("Only parents can create manual transactions");
+        await RequireParentAsync(parentUserId);
+        _logger.LogInformation("Parent {ParentId} creating {Type} of {Amount:C} for child {ChildId}", parentUserId, type, amount, childId);
 
         var child = await _db.Users.FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
         if (child == null)
@@ -349,10 +372,14 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
-    public async Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false)
+    public async Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false, int? callerUserId = null)
     {
+        if (callerUserId.HasValue)
+            await RequireAdminAsync(callerUserId.Value);
+        _logger.LogInformation("Creating parent account for {Email} (by user {CallerId})", email, callerUserId);
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-        
+
         var parent = new User
         {
             Name = name,
@@ -370,8 +397,12 @@ public class UserService : IUserService
         return parent;
     }
 
-    public async Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId)
+    public async Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId, bool requireAdmin = true)
     {
+        if (requireAdmin)
+            await RequireAdminAsync(createdByUserId);
+        _logger.LogInformation("Creating child account {Name} (by user {CallerId})", name, createdByUserId);
+
         var child = new User
         {
             Name = name,
@@ -416,8 +447,11 @@ public class UserService : IUserService
         return child;
     }
 
-    public async Task SetAdminStatusAsync(int userId, bool isAdmin)
+    public async Task SetAdminStatusAsync(int userId, bool isAdmin, int callerUserId)
     {
+        await RequireAdminAsync(callerUserId);
+        _logger.LogInformation("Admin {CallerId} setting admin status of user {UserId} to {IsAdmin}", callerUserId, userId, isAdmin);
+
         var user = await _db.Users.FindAsync(userId);
         if (user != null && user.Role == UserRole.Parent)
         {

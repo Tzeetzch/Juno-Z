@@ -47,19 +47,19 @@ public interface IUserService
     Task<List<ParentSummary>> GetAllParentsAsync();
 
     /// <summary>
-    /// Creates a new parent user.
+    /// Creates a new parent user. Requires admin when callerUserId is provided.
     /// </summary>
-    Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false);
+    Task<User> CreateParentAsync(string name, string email, string password, bool isAdmin = false, int? callerUserId = null);
 
     /// <summary>
-    /// Creates a new child user.
+    /// Creates a new child user. Requires admin by default.
     /// </summary>
-    Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId);
+    Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId, bool requireAdmin = true);
 
     /// <summary>
-    /// Updates a user's admin status.
+    /// Updates a user's admin status. Requires caller to be admin.
     /// </summary>
-    Task SetAdminStatusAsync(int userId, bool isAdmin);
+    Task SetAdminStatusAsync(int userId, bool isAdmin, int callerUserId);
 
     /// <summary>
     /// Checks if a user is an admin.

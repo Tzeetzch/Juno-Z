@@ -22,7 +22,7 @@ public class AuthServiceTests : DatabaseTestBase
         _authProviderMock = new Mock<IAuthStateProvider>();
         _authProviderMock.Setup(x => x.LoginAsync(It.IsAny<UserSession>())).Returns(Task.CompletedTask);
         
-        _service = new AuthService(Db, _passwordServiceMock.Object, _authProviderMock.Object, _timeProvider);
+        _service = new AuthService(Db, _passwordServiceMock.Object, _authProviderMock.Object, _timeProvider, CreateLogger<AuthService>());
     }
 
     #region GetChildrenForLoginAsync Tests

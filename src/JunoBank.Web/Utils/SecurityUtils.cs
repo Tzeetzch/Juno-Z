@@ -16,8 +16,17 @@ public static class SecurityUtils
     /// <returns>Base64-encoded hash of the sequence</returns>
     public static string HashPictureSequence(string sequence)
     {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sequence));
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(sequence));
         return Convert.ToBase64String(bytes);
+    }
+
+    /// <summary>
+    /// Constant-time comparison of two hash strings to prevent timing attacks.
+    /// </summary>
+    public static bool ConstantTimeEquals(string a, string b)
+    {
+        var bytesA = Encoding.UTF8.GetBytes(a);
+        var bytesB = Encoding.UTF8.GetBytes(b);
+        return CryptographicOperations.FixedTimeEquals(bytesA, bytesB);
     }
 }
