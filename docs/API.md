@@ -74,7 +74,15 @@ Task<User> CreateParentAsync(string name, string email, string password, bool is
 Task<User> CreateChildAsync(string name, DateTime birthday, decimal startingBalance, string[] pictureSequence, int createdByUserId, bool requireAdmin = true);
 Task SetAdminStatusAsync(int userId, bool isAdmin, int callerUserId);
 Task<bool> IsAdminAsync(int userId);
+Task ResetParentPasswordAsync(int targetUserId, string newPassword, int callerAdminId);
 ```
+
+**ResetParentPasswordAsync rules:**
+- Caller must be admin
+- Cannot reset own password (use forgot-password flow)
+- Target must be a parent (not a child)
+- Password min 8 chars
+- Clears lockout state (FailedLoginAttempts, LockoutUntil)
 
 **Key DTOs:**
 - `ChildSummary` - Id, Name, Balance, PendingRequestCount (for parent dashboard cards)
@@ -118,11 +126,14 @@ Task<SetupResult> CompleteSetupAsync(SetupData data);
 ```
 
 **Setup DTOs:**
-- `SetupData` - Admin (required), Partner (optional), Children (list)
+- `SetupData` - Admin (required), Partner (optional), Children (list), Email (optional)
 - `AdminData` - Name, Email, Password
 - `PartnerData` - Name, Email, Password
 - `ChildData` - Name, Birthday, StartingBalance, PictureSequence
+- `EmailConfigData` - Host, Port, Username, Password, FromEmail
 - `SetupResult` - Success, Error, AdminUserId
+
+**Email config:** When provided, writes `email-config.json` to the data directory. `Program.cs` loads this as an optional config source. Environment variables override file settings.
 
 ---
 

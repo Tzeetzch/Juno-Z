@@ -465,4 +465,31 @@ public class UserService : IUserService
         var user = await _db.Users.FindAsync(userId);
         return user?.IsAdmin ?? false;
     }
+
+    public async Task ResetParentPasswordAsync(int targetUserId, string newPassword, int callerAdminId)
+    {
+        await RequireAdminAsync(callerAdminId);
+
+        if (targetUserId == callerAdminId)
+            throw new InvalidOperationException("Cannot reset your own password. Use the forgot password flow instead.");
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            throw new ArgumentException("Password must be at least 8 characters.", nameof(newPassword));
+
+        var target = await _db.Users.FindAsync(targetUserId);
+        if (target == null)
+            throw new ArgumentException("User not found.", nameof(targetUserId));
+
+        if (target.Role != UserRole.Parent)
+            throw new ArgumentException("Can only reset passwords for parent accounts.", nameof(targetUserId));
+
+        _logger.LogInformation("Admin {AdminId} resetting password for parent {TargetId} ({TargetEmail})",
+            callerAdminId, targetUserId, target.Email);
+
+        target.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        target.FailedLoginAttempts = 0;
+        target.LockoutUntil = null;
+
+        await _db.SaveChangesAsync();
+    }
 }

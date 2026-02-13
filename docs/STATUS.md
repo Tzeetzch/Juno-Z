@@ -89,12 +89,12 @@
 
 ## Test Results (2026-02-13)
 
-**All 173 tests passing.**
+**All 181 tests passing.**
 
 | Suite | Pass | Fail | Total |
 |-------|------|------|-------|
-| Unit tests (xUnit) | 108 | 0 | 108 |
-| E2E tests (Playwright) | 65 | 0 | 65 |
+| Unit tests (xUnit) | 115 | 0 | 115 |
+| E2E tests (Playwright) | 66 | 0 | 66 |
 
 **E2E spec breakdown:**
 
@@ -109,7 +109,7 @@
 | parent-history.spec.ts | 4 | Pass |
 | parent-login-ratelimit.spec.ts | 2 | Pass |
 | parent-requests.spec.ts | 6 | Pass |
-| parent-settings.spec.ts | 7 | Pass |
+| parent-settings.spec.ts | 8 | Pass |
 | parent-transaction.spec.ts | 5 | Pass |
 | request-deposit.spec.ts | 4 | Pass |
 | request-withdrawal.spec.ts | 4 | Pass |
@@ -142,9 +142,22 @@ All previously open tickets have been resolved:
 
 ---
 
+## Password Recovery (Three-Layer Fix)
+
+**Status:** Done
+
+**What's done:**
+- **Layer 1: SMTP via Setup Wizard** — New Step 4 (Email) in setup wizard. Gmail App Password instructions, test email button, writes `email-config.json` to data volume. `Program.cs` loads it as optional config source. Environment variables still override.
+- **Layer 2: Admin resets other parent** — `ResetParentPasswordAsync` in UserService (admin-only, clears lockout). Reset Password button in AdminPanel for non-self parents.
+- **Layer 3: CLI emergency reset** — `docker exec junobank dotnet JunoBank.Web.dll reset-password user@email.com newpassword` resets password and clears lockout without starting web server.
+- **Dashboard UX** — Settings icon added to parent dashboard for navigation.
+- **Unit tests** — 7 new tests for `ResetParentPasswordAsync` (admin success, non-admin, self-reset, not found, child target, short password, lockout cleared)
+- **E2E test** — Settings icon visibility on dashboard
+
+---
+
 ## Parked Features
 
 - Request notifications to parents
 - Per-parent notification preferences
-- Production SMTP configuration
 - Multi-family support (device registration flow)

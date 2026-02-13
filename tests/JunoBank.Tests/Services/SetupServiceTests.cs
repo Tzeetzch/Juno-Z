@@ -2,6 +2,7 @@ using JunoBank.Tests.Helpers;
 using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
 using JunoBank.Web.Utils;
+using Microsoft.Extensions.Configuration;
 
 namespace JunoBank.Tests.Services;
 
@@ -11,7 +12,8 @@ public class SetupServiceTests : DatabaseTestBase
 
     public SetupServiceTests()
     {
-        _service = new SetupService(Db);
+        var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
+        _service = new SetupService(Db, config);
     }
 
     #region IsSetupRequiredAsync Tests

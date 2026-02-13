@@ -109,7 +109,13 @@ void ClearSelection()  // Clear all selections and reshuffle grid
 ---
 
 ### AdminPanel.razor
-Admin-only user management panel. Extracted from Settings.razor. Displays parent/child lists with admin toggle, and forms to add new parents and children.
+Admin-only user management panel. Extracted from Settings.razor. Displays parent/child lists with admin toggle, password reset for other parents, and forms to add new parents and children.
+
+**Features:**
+- Toggle admin status for other parents
+- Reset password for other parents (inline form with confirmation)
+- Add new parent accounts
+- Add new child accounts (with picture password)
 
 **Parameters:**
 ```csharp

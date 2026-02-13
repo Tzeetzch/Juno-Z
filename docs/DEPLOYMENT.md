@@ -97,7 +97,7 @@ Two volumes are created for persistent data:
 
 | Volume | Purpose |
 |--------|---------|
-| `junobank-data` | SQLite database (`junobank.db`) |
+| `junobank-data` | SQLite database (`junobank.db`) + `email-config.json` |
 | `junobank-keys` | ASP.NET Data Protection keys (auth cookies) |
 
 ### Backup
@@ -134,9 +134,9 @@ Override settings via environment variables in `docker-compose.yml`:
 | `ConnectionStrings__DefaultConnection` | `Data Source=/app/data/junobank.db` | Database path |
 | `JUNO_SEED_DEMO` | *(unset)* | Set to `true` to seed demo accounts |
 
-### Email Configuration (Future)
+### Email Configuration
 
-Email is currently disabled. When ready to enable:
+Email enables password reset links. Configure via the **Setup Wizard** (Step 4) or environment variables:
 
 ```yaml
 environment:
@@ -148,6 +148,10 @@ environment:
   - Email__FromName=Juno Bank
 ```
 
+**Priority:** Environment variables override `email-config.json` (written by Setup Wizard).
+
+**Gmail setup:** Enable 2-Step Verification → create App Password (Google Account → Security → App Passwords → Mail). Use the 16-character app password, not your Gmail password.
+
 ## First Run
 
 1. Access the app via your domain: `https://juno.yourdomain.com`
@@ -155,8 +159,9 @@ environment:
 3. Create your admin parent account (Step 1)
 4. Optionally add a partner/second parent (Step 2)
 5. Add your children with picture passwords (Step 3)
-6. Review and confirm (Step 4)
-7. You'll be logged in automatically as the admin parent
+6. Configure email for password recovery, or skip (Step 4)
+7. Review and confirm (Step 5)
+8. You'll be logged in automatically as the admin parent
 
 ### Demo Mode (for testing)
 
@@ -203,6 +208,22 @@ Check Cloudflare WebSockets setting (Network → WebSockets → On)
 SQLite allows only one writer at a time. If you see "database is locked":
 1. Ensure only one container instance is running
 2. Restart the container: `podman-compose restart`
+
+### Password Recovery
+
+Three options for resetting a forgotten password:
+
+1. **Email reset** — If email is configured, use the "Forgot Password?" link on the login page. A reset link is sent to the parent's email.
+
+2. **Admin resets another parent** — An admin parent can reset another parent's password from Settings → Admin Panel → "Reset Password" button.
+
+3. **CLI emergency reset** — If all else fails, use Docker exec:
+```bash
+docker exec junobank dotnet JunoBank.Web.dll reset-password user@email.com newpassword
+# or with Podman:
+podman exec junobank dotnet JunoBank.Web.dll reset-password user@email.com newpassword
+```
+This resets the password and clears any lockout state.
 
 ### Auth cookies don't persist after restart
 

@@ -33,9 +33,52 @@
                                ValueChanged="@(async (bool v) => await ToggleAdminStatus(parent.Id, v))"
                                Color="Color.Primary"
                                Label="Admin" />
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Warning"
+                               Size="Size.Small"
+                               OnClick="@(() => ToggleResetForm(parent.Id))">
+                        Reset Password
+                    </MudButton>
                 }
             </div>
         </div>
+        @if (_resetTargetId == parent.Id)
+        {
+            <div style="padding: 0.75rem; margin: 0.25rem 0; border-radius: 8px; background: rgba(255,107,53,0.08);">
+                <MudTextField @bind-Value="_resetPassword"
+                              Label="New Password"
+                              InputType="InputType.Password"
+                              Class="mb-2"
+                              Immediate="true" />
+                <MudTextField @bind-Value="_resetConfirmPassword"
+                              Label="Confirm Password"
+                              InputType="InputType.Password"
+                              Class="mb-2"
+                              Immediate="true" />
+                <div style="display: flex; gap: 0.5rem;">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Warning"
+                               Size="Size.Small"
+                               Disabled="@(_isSaving || string.IsNullOrWhiteSpace(_resetPassword) || _resetPassword != _resetConfirmPassword || _resetPassword.Length < 8)"
+                               OnClick="@(() => ResetParentPassword(parent.Id))">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                        }
+                        Confirm Reset
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelReset">Cancel</MudButton>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_resetPassword) && _resetPassword.Length < 8)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-1">Password must be at least 8 characters</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(_resetConfirmPassword) && _resetPassword != _resetConfirmPassword)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-1">Passwords do not match</MudText>
+                }
+            </div>
+        }
     }
 </div>
 
@@ -168,6 +211,52 @@
 
     private NewParentModel _newParent = new();
     private NewChildModel _newChild = new();
+
+    // Password reset
+    private int? _resetTargetId;
+    private string _resetPassword = "";
+    private string _resetConfirmPassword = "";
+
+    private void ToggleResetForm(int parentId)
+    {
+        if (_resetTargetId == parentId)
+        {
+            CancelReset();
+        }
+        else
+        {
+            _resetTargetId = parentId;
+            _resetPassword = "";
+            _resetConfirmPassword = "";
+        }
+    }
+
+    private void CancelReset()
+    {
+        _resetTargetId = null;
+        _resetPassword = "";
+        _resetConfirmPassword = "";
+    }
+
+    private async Task ResetParentPassword(int targetId)
+    {
+        _isSaving = true;
+        _errorMessage = "";
+        try
+        {
+            await UserService.ResetParentPasswordAsync(targetId, _resetPassword, CurrentUserId);
+            _successMessage = "Password reset successfully!";
+            CancelReset();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
 
     private async Task ToggleAdminStatus(int userId, bool isAdmin)
     {

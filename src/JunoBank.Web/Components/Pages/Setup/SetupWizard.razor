@@ -9,17 +9,17 @@
 <div class="setup-container">
     <div class="setup-card neu-card">
         @* Progress indicator *@
-        @if (_currentStep <= 4)
+        @if (_currentStep <= 5)
         {
             <div class="setup-progress">
                 <div class="progress-steps">
-                    @for (int i = 1; i <= 4; i++)
+                    @for (int i = 1; i <= 5; i++)
                     {
                         var step = i;
                         <div class="progress-step @(step < _currentStep ? "completed" : step == _currentStep ? "active" : "")">
                             <div class="step-number">@step</div>
                         </div>
-                        @if (i < 4)
+                        @if (i < 5)
                         {
                             <div class="step-line @(step < _currentStep ? "completed" : "")"></div>
                         }
@@ -43,11 +43,15 @@
                 <SetupStep3 Children="_children" OnNext="GoToStep4" OnBack="GoToStep2" />
                 break;
             case 4:
-                <SetupStep4 Admin="_adminData" Partner="_partnerData" Children="_children" 
-                            OnBack="GoToStep3" OnEdit="HandleEdit" OnSubmit="HandleSubmit"
-                            IsSubmitting="_isSubmitting" />
+                <SetupStep4Email Model="_emailData" AdminEmail="@_adminData.Email"
+                                 OnNext="GoToStep5" OnBack="GoToStep3" OnSkip="SkipEmail" />
                 break;
             case 5:
+                <SetupStep4 Admin="_adminData" Partner="_partnerData" Children="_children"
+                            OnBack="GoToStep4" OnEdit="HandleEdit" OnSubmit="HandleSubmit"
+                            IsSubmitting="_isSubmitting" />
+                break;
+            case 6:
                 <SetupComplete ChildNames="@_children.Select(c => c.Name).ToList()" />
                 break;
         }
@@ -172,6 +176,7 @@
     private AdminFormModel _adminData = new();
     private PartnerFormModel? _partnerData;
     private List<ChildFormModel> _children = new();
+    private SetupStep4Email.EmailFormModel _emailData = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -186,11 +191,18 @@
     private void GoToStep2() => _currentStep = 2;
     private void GoToStep3() => _currentStep = 3;
     private void GoToStep4() => _currentStep = 4;
+    private void GoToStep5() => _currentStep = 5;
 
     private void SkipPartner()
     {
         _partnerData = null;
         GoToStep3();
+    }
+
+    private void SkipEmail()
+    {
+        _emailData = new SetupStep4Email.EmailFormModel();
+        GoToStep5();
     }
 
     private void HandleEdit(int step)
@@ -202,6 +214,17 @@
     {
         _isSubmitting = true;
         StateHasChanged();
+
+        var emailConfig = !string.IsNullOrWhiteSpace(_emailData.Username)
+            ? new EmailConfigData
+            {
+                Host = _emailData.Host,
+                Port = _emailData.Port,
+                Username = _emailData.Username!,
+                Password = _emailData.Password!,
+                FromEmail = string.IsNullOrWhiteSpace(_emailData.FromEmail) ? _emailData.Username! : _emailData.FromEmail
+            }
+            : null;
 
         var data = new SetupData
         {
@@ -223,7 +246,8 @@
                 Birthday = c.Birthday,
                 StartingBalance = c.StartingBalance,
                 PictureSequence = c.PictureSequence.ToArray()
-            }).ToList()
+            }).ToList(),
+            Email = emailConfig
         };
 
         var result = await SetupService.CompleteSetupAsync(data);
@@ -234,7 +258,7 @@
             var authResult = await AuthService.AuthenticateParentAsync(_adminData.Email, _adminData.Password);
             if (authResult.Success)
             {
-                _currentStep = 5; // Success screen
+                _currentStep = 6; // Success screen
             }
             else
             {
@@ -255,7 +279,8 @@
         1 => "Your Account",
         2 => "Partner",
         3 => "Children",
-        4 => "Review",
+        4 => "Email",
+        5 => "Review",
         _ => ""
     };
 

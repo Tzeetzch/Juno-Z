@@ -508,6 +508,120 @@ public class UserServiceTests : DatabaseTestBase
 
     #endregion
 
+    #region ResetParentPasswordAsync Tests
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_AdminResetsOtherParent_Succeeds()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass"), Role = UserRole.Parent, IsAdmin = true };
+        var target = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass"), Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.AddRange(admin, target);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.ResetParentPasswordAsync(target.Id, "NewPass123", admin.Id);
+
+        // Assert
+        var updated = await Db.Users.FindAsync(target.Id);
+        Assert.True(BCrypt.Net.BCrypt.Verify("NewPass123", updated!.PasswordHash));
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_NonAdminCaller_ThrowsUnauthorized()
+    {
+        // Arrange
+        var nonAdmin = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        var target = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.AddRange(nonAdmin, target);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _service.ResetParentPasswordAsync(target.Id, "NewPass123", nonAdmin.Id));
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_ResetOwnPassword_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
+        Db.Users.Add(admin);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.ResetParentPasswordAsync(admin.Id, "NewPass123", admin.Id));
+        Assert.Contains("Cannot reset your own password", ex.Message);
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_TargetNotFound_ThrowsArgument()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
+        Db.Users.Add(admin);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.ResetParentPasswordAsync(999, "NewPass123", admin.Id));
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_TargetIsChild_ThrowsArgument()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.AddRange(admin, child);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.ResetParentPasswordAsync(child.Id, "NewPass123", admin.Id));
+        Assert.Contains("parent accounts", ex.Message);
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_ShortPassword_ThrowsArgument()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
+        var target = new User { Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false };
+        Db.Users.AddRange(admin, target);
+        await Db.SaveChangesAsync();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.ResetParentPasswordAsync(target.Id, "short", admin.Id));
+        Assert.Contains("at least 8 characters", ex.Message);
+    }
+
+    [Fact]
+    public async Task ResetParentPasswordAsync_ClearsLockoutState()
+    {
+        // Arrange
+        var admin = new User { Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = true };
+        var target = new User
+        {
+            Name = "Mom", Email = "mom@test.com", PasswordHash = "hash", Role = UserRole.Parent, IsAdmin = false,
+            FailedLoginAttempts = 5, LockoutUntil = DateTime.UtcNow.AddMinutes(10)
+        };
+        Db.Users.AddRange(admin, target);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.ResetParentPasswordAsync(target.Id, "NewPass123", admin.Id);
+
+        // Assert
+        var updated = await Db.Users.FindAsync(target.Id);
+        Assert.Equal(0, updated!.FailedLoginAttempts);
+        Assert.Null(updated.LockoutUntil);
+    }
+
+    #endregion
+
     #region Pagination Tests
 
     [Fact]

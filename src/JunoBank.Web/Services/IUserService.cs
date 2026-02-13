@@ -65,6 +65,12 @@ public interface IUserService
     /// Checks if a user is an admin.
     /// </summary>
     Task<bool> IsAdminAsync(int userId);
+
+    /// <summary>
+    /// Resets another parent's password. Requires caller to be admin. Cannot reset own password.
+    /// Also clears lockout state.
+    /// </summary>
+    Task ResetParentPasswordAsync(int targetUserId, string newPassword, int callerAdminId);
 }
 
 public class ParentDashboardData

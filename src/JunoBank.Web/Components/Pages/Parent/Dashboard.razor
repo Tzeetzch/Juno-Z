@@ -18,9 +18,16 @@
     }
     else
     {
-        <MudText Typo="Typo.h3" HtmlTag="h1" Style="margin-bottom: 2rem;">
-            Welcome, @_userName!
-        </MudText>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <MudText Typo="Typo.h3" HtmlTag="h1">
+                Welcome, @_userName!
+            </MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                           Color="Color.Default"
+                           Size="Size.Large"
+                           aria-label="Settings"
+                           OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Settings))" />
+        </div>
 
         <!-- Children Cards -->
         <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">Your Children</MudText>

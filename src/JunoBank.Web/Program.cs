@@ -2,6 +2,7 @@ using JunoBank.Web.Auth;
 using JunoBank.Web.BackgroundServices;
 using JunoBank.Web.Components;
 using JunoBank.Web.Data;
+using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -9,6 +10,10 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load email config from data volume (written by setup wizard, persists across restarts)
+var emailConfigPath = Path.Combine("Data", "email-config.json");
+builder.Configuration.AddJsonFile(emailConfigPath, optional: true, reloadOnChange: true);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -112,6 +117,39 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.MigrateAsync();
     await DbInitializer.SeedAsync(context);
+}
+
+// CLI: emergency password reset
+// Usage: dotnet JunoBank.Web.dll reset-password user@email.com newpassword
+if (args.Length >= 3 && args[0] == "reset-password")
+{
+    var email = args[1].ToLowerInvariant();
+    var newPassword = args[2];
+
+    if (newPassword.Length < 8)
+    {
+        Console.Error.WriteLine("Error: Password must be at least 8 characters.");
+        return;
+    }
+
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == email && u.Role == UserRole.Parent);
+
+    if (user == null)
+    {
+        Console.Error.WriteLine($"Error: No parent account found with email '{email}'.");
+        return;
+    }
+
+    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+    user.FailedLoginAttempts = 0;
+    user.LockoutUntil = null;
+    await db.SaveChangesAsync();
+
+    Console.WriteLine($"Password reset successfully for {user.Name} ({user.Email}).");
+    Console.WriteLine("Lockout state cleared.");
+    return;
 }
 
 app.Run();

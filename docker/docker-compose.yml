@@ -18,6 +18,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/junobank.db
       - DataProtection__Keys=/app/keys
+      # SMTP email (optional — enables password reset emails)
+      # Configure via setup wizard or uncomment and fill in below:
+      # - Email__Host=smtp.gmail.com
+      # - Email__Port=587
+      # - Email__Username=you@gmail.com
+      # - Email__Password=your-app-password
+      # - Email__FromEmail=you@gmail.com
+      # - Email__UseSsl=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5050/"]
       interval: 30s
