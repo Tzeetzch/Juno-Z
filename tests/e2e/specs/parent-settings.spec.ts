@@ -74,7 +74,7 @@ test.describe('Parent Settings (Per-Child)', () => {
     await loginAsParent(page);
     await navigateToChildSettings(page, 'Junior');
 
-    await expect(page.getByText('🖼️ Picture Password')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Picture Password' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Coming soon/i)).toBeVisible();
   });
 

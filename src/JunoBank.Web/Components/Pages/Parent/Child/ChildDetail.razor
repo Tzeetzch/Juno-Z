@@ -9,7 +9,7 @@
 
 <PageTitle>@(_child?.Name ?? "Child") - Juno Bank</PageTitle>
 
-<div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-xl">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -56,14 +56,14 @@
         }
 
         <!-- Actions for this child -->
-        <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">Actions</MudText>
+        <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">Actions</MudText>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequests(ChildId)))">
-                📋 Pending Requests @if (_openRequestCount > 0) { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@_openRequestCount</MudChip> }
+                <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-1" /> Pending Requests @if (_openRequestCount > 0) { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@_openRequestCount</MudChip> }
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
@@ -77,21 +77,21 @@
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildTransactionHistory(ChildId)))">
-                📊 Transaction History
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-1" /> Transaction History
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Default"
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildRequestHistory(ChildId)))">
-                📜 Request History
+                <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-1" /> Request History
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Default"
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
                        OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildSettings(ChildId)))">
-                ⚙️ Settings
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-1" /> Settings
             </MudButton>
         </div>
     }

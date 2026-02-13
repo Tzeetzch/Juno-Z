@@ -6,7 +6,8 @@
     {
         <button class="picture-btn @(IsSelected(image) ? "selected" : "")"
                 @onclick="() => SelectImage(image)"
-                disabled="@IsComplete">
+                disabled="@IsComplete"
+                aria-label="@image">
             <span style="font-size: 2.5rem;">@GetEmoji(image)</span>
         </button>
     }

@@ -27,7 +27,7 @@ public interface IUserService
     /// <summary>
     /// Gets completed (approved/denied) requests for a specific child.
     /// </summary>
-    Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int limit = 50);
+    Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int skip = 0, int limit = 20);
     
     /// <summary>
     /// Creates a manual transaction for a specific child.
@@ -37,7 +37,7 @@ public interface IUserService
     /// <summary>
     /// Gets transactions for a specific child.
     /// </summary>
-    Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100);
+    Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int skip = 0, int limit = 20);
 
     // User Management (Admin only)
     

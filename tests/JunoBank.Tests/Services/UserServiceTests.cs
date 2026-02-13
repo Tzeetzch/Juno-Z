@@ -465,4 +465,102 @@ public class UserServiceTests : DatabaseTestBase
     }
 
     #endregion
+
+    #region Pagination Tests
+
+    [Fact]
+    public async Task GetTransactionsForChildAsync_RespectsSkipAndLimit()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 100m };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        for (int i = 0; i < 5; i++)
+        {
+            Db.Transactions.Add(new Transaction
+            {
+                UserId = child.Id,
+                Amount = (i + 1) * 10m,
+                Type = TransactionType.Deposit,
+                Description = $"Tx {i}",
+                IsApproved = true,
+                CreatedAt = DateTime.UtcNow.AddMinutes(-i)
+            });
+        }
+        await Db.SaveChangesAsync();
+
+        // Act - get first page of 2
+        var page1 = await _service.GetTransactionsForChildAsync(child.Id, skip: 0, limit: 2);
+        // Act - get second page of 2
+        var page2 = await _service.GetTransactionsForChildAsync(child.Id, skip: 2, limit: 2);
+        // Act - get third page (only 1 left)
+        var page3 = await _service.GetTransactionsForChildAsync(child.Id, skip: 4, limit: 2);
+
+        // Assert
+        Assert.Equal(2, page1.Count);
+        Assert.Equal(2, page2.Count);
+        Assert.Single(page3);
+        // Pages should not overlap
+        Assert.DoesNotContain(page1, t => page2.Any(t2 => t2.Id == t.Id));
+    }
+
+    [Fact]
+    public async Task GetCompletedRequestsForChildAsync_RespectsSkipAndLimit()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 100m };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        for (int i = 0; i < 5; i++)
+        {
+            Db.MoneyRequests.Add(new MoneyRequest
+            {
+                ChildId = child.Id,
+                Amount = (i + 1) * 5m,
+                Type = RequestType.Deposit,
+                Description = $"Req {i}",
+                Status = RequestStatus.Approved,
+                ResolvedAt = DateTime.UtcNow.AddMinutes(-i)
+            });
+        }
+        await Db.SaveChangesAsync();
+
+        // Act
+        var page1 = await _service.GetCompletedRequestsForChildAsync(child.Id, skip: 0, limit: 3);
+        var page2 = await _service.GetCompletedRequestsForChildAsync(child.Id, skip: 3, limit: 3);
+
+        // Assert
+        Assert.Equal(3, page1.Count);
+        Assert.Equal(2, page2.Count);
+        Assert.DoesNotContain(page1, r => page2.Any(r2 => r2.Id == r.Id));
+    }
+
+    [Fact]
+    public async Task GetTransactionsForChildAsync_ReturnsEmpty_WhenSkipExceedsTotal()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.Transactions.Add(new Transaction
+        {
+            UserId = child.Id,
+            Amount = 10m,
+            Type = TransactionType.Deposit,
+            Description = "Single",
+            IsApproved = true
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetTransactionsForChildAsync(child.Id, skip: 100, limit: 20);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    #endregion
 }

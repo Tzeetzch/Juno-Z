@@ -11,7 +11,7 @@
     </Authorized>
     <NotAuthorized>
         <div style="max-width: 400px; margin: 2rem auto; text-align: center;">
-            <MudText Typo="Typo.h4" Class="mb-6">Welcome to Juno Bank</MudText>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-6">Welcome to Juno Bank</MudText>
 
             @if (_selectedChild == null)
             {
@@ -30,7 +30,7 @@
                 </div>
 
                 <!-- Kid Login Section -->
-                <MudText Typo="Typo.h6" Class="mb-4">I'm a Kid</MudText>
+                <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-4">I'm a Kid</MudText>
 
                 @if (_isLoading)
                 {

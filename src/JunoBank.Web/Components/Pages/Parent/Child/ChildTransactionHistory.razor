@@ -2,19 +2,16 @@
 @attribute [Authorize(Roles = "Parent")]
 @using JunoBank.Web.Auth
 @using JunoBank.Web.Components.Shared
-@using JunoBank.Web.Data
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @using JunoBank.Web.Utils
-@using Microsoft.EntityFrameworkCore
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
-@inject AppDbContext Db
 @inject NavigationManager Navigation
 
 <PageTitle>Transactions - @(_child?.Name ?? "Child")</PageTitle>
 
-<div style="max-width: 700px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-lg">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -22,8 +19,8 @@
     else if (_child == null)
     {
         <MudAlert Severity="Severity.Error">Child not found</MudAlert>
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
                    Class="mt-4"
                    OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.Dashboard))">
             Back to Dashboard
@@ -33,8 +30,8 @@
     {
         <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
 
-        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
-            💰 @_child.Name's Transactions
+        <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin-bottom: 2rem;">
+            <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-2" /> @_child.Name's Transactions
         </MudText>
 
         @if (_transactions.Count == 0)
@@ -51,6 +48,22 @@
         else
         {
             <TransactionList Transactions="_transactions" />
+
+            @if (_hasMore)
+            {
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Disabled="_isLoadingMore"
+                               OnClick="LoadMore">
+                        @if (_isLoadingMore)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Load More
+                    </MudButton>
+                </div>
+            }
         }
     }
 </div>
@@ -58,9 +71,13 @@
 @code {
     [Parameter] public int ChildId { get; set; }
 
+    private const int PageSize = 20;
+
     private User? _child;
     private List<Transaction> _transactions = new();
     private bool _isLoading = true;
+    private bool _isLoadingMore;
+    private bool _hasMore;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,16 +89,25 @@
         }
 
         _child = await UserService.GetChildByIdAsync(ChildId);
-        
+
         if (_child != null)
         {
-            _transactions = await Db.Transactions
-                .Where(t => t.UserId == ChildId && t.IsApproved)
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(100)
-                .ToListAsync();
+            var batch = await UserService.GetTransactionsForChildAsync(ChildId, 0, PageSize);
+            _transactions = batch;
+            _hasMore = batch.Count == PageSize;
         }
-        
+
         _isLoading = false;
+    }
+
+    private async Task LoadMore()
+    {
+        _isLoadingMore = true;
+
+        var batch = await UserService.GetTransactionsForChildAsync(ChildId, _transactions.Count, PageSize);
+        _transactions.AddRange(batch);
+        _hasMore = batch.Count == PageSize;
+
+        _isLoadingMore = false;
     }
 }

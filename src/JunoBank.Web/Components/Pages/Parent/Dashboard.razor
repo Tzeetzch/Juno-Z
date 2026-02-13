@@ -10,7 +10,7 @@
 
 <PageTitle>Parent Dashboard</PageTitle>
 
-<div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-xl">
 
     @if (_isLoading)
     {
@@ -18,12 +18,12 @@
     }
     else
     {
-        <MudText Typo="Typo.h3" Style="margin-bottom: 2rem;">
+        <MudText Typo="Typo.h3" HtmlTag="h1" Style="margin-bottom: 2rem;">
             Welcome, @_userName!
         </MudText>
 
         <!-- Children Cards -->
-        <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">Your Children</MudText>
+        <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">Your Children</MudText>
         <div class="children-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
             @foreach (var child in _children)
             {

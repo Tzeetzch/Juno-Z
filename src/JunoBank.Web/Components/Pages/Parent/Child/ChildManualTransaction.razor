@@ -12,7 +12,7 @@
 
 <PageTitle>Add/Remove Money - @(_child?.Name ?? "Child")</PageTitle>
 
-<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-sm">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -31,7 +31,7 @@
     {
         <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
 
-        <MudText Typo="Typo.h4" Style="margin-bottom: 0.5rem;">
+        <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin-bottom: 0.5rem;">
             💰 Add or Remove Money
         </MudText>
         <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); margin-bottom: 2rem;">

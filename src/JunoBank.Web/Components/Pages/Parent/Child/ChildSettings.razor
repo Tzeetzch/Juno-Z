@@ -14,7 +14,7 @@
 
 <PageTitle>Settings - @(_child?.Name ?? "Child")</PageTitle>
 
-<div style="max-width: 600px; margin: 0 auto; padding: 2rem;">
+<div class="page-container">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -33,14 +33,14 @@
     {
         <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
 
-        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
-            ⚙️ Settings for @_child.Name
+        <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin-bottom: 2rem;">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" /> Settings for @_child.Name
         </MudText>
 
         <!-- Standing Orders Section -->
         <div class="neu-card" style="padding: 2rem; margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <MudText Typo="Typo.h5">
+                <MudText Typo="Typo.h5" HtmlTag="h2">
                     💰 Standing Orders
                 </MudText>
                 <MudButton Variant="Variant.Filled"
@@ -106,8 +106,8 @@
 
         <!-- Picture Password Section -->
         <div class="neu-card" style="padding: 2rem;">
-            <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
-                🖼️ Picture Password
+            <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
+                <MudIcon Icon="@Icons.Material.Filled.Image" Class="mr-2" /> Picture Password
             </MudText>
             <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); margin-bottom: 1rem;">
                 Change @_child.Name's picture password for logging in.

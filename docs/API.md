@@ -175,14 +175,13 @@ Centralized URL constants. **Always use these instead of magic strings.**
 
 ```csharp
 // Child routes
-AppRoutes.Child.Dashboard           // "/child/dashboard"
+AppRoutes.Child.Dashboard           // "/child"
 AppRoutes.Child.RequestDeposit      // "/child/request-deposit"
 AppRoutes.Child.RequestWithdrawal   // "/child/request-withdrawal"
 
 // Parent routes
 AppRoutes.Parent.Dashboard          // "/parent"
 AppRoutes.Parent.PendingRequests    // "/parent/requests"
-AppRoutes.Parent.TransactionHistory // "/parent/history"
 AppRoutes.Parent.Settings           // "/parent/settings"
 
 // Parent child-context routes (methods)

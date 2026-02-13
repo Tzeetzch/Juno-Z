@@ -89,21 +89,23 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
-    public async Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int limit = 50)
+    public async Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int skip = 0, int limit = 20)
     {
         return await _db.MoneyRequests
             .Include(r => r.Child)
             .Where(r => r.ChildId == childId && r.Status != RequestStatus.Pending)
             .OrderByDescending(r => r.ResolvedAt)
+            .Skip(skip)
             .Take(limit)
             .ToListAsync();
     }
 
-    public async Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100)
+    public async Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int skip = 0, int limit = 20)
     {
         return await _db.Transactions
             .Where(t => t.UserId == childId)
             .OrderByDescending(t => t.CreatedAt)
+            .Skip(skip)
             .Take(limit)
             .ToListAsync();
     }

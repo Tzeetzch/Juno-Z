@@ -12,7 +12,7 @@
 
 <PageTitle>Pending Requests - @(_child?.Name ?? "Child")</PageTitle>
 
-<div style="max-width: 700px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-lg">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -31,8 +31,8 @@
     {
         <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildDetail(ChildId)" />
 
-        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
-            📋 Pending Requests
+        <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin-bottom: 2rem;">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" /> Pending Requests
         </MudText>
 
         @if (!_requests.Any())
@@ -72,16 +72,18 @@
                                    Size="Size.Medium"
                                    Style="flex: 1;"
                                    Disabled="_isProcessing"
+                                   StartIcon="@Icons.Material.Filled.Check"
                                    OnClick="@(() => Resolve(request.Id, true))">
-                            ✅ Approve
+                            Approve
                         </MudButton>
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Error"
                                    Size="Size.Medium"
                                    Style="flex: 1;"
                                    Disabled="_isProcessing"
+                                   StartIcon="@Icons.Material.Filled.Close"
                                    OnClick="@(() => Resolve(request.Id, false))">
-                            ❌ Deny
+                            Deny
                         </MudButton>
                     </div>
                 </div>

@@ -39,7 +39,7 @@ test.describe('Parent Pending Requests', () => {
     await page.locator('.neu-card:has-text("Total Pending Requests")').click();
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByText('📋 Pending Requests')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Pending Requests')).toBeVisible({ timeout: 10000 });
   });
 
   test('should show approve and deny buttons for pending request', async ({ page }) => {
@@ -98,7 +98,7 @@ test.describe('Parent Pending Requests', () => {
       await page.waitForLoadState('networkidle');
 
       // Should show either requests or empty state heading
-      const heading = page.getByText('📋 Pending Requests');
+      const heading = page.getByText('Pending Requests');
       await expect(heading).toBeVisible({ timeout: 10000 });
     }
     // If no card visible, there are no pending requests — that's also valid

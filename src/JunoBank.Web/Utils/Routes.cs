@@ -7,7 +7,7 @@ public static class AppRoutes
 {
     public static class Child
     {
-        public const string Dashboard = "/child/dashboard";
+        public const string Dashboard = "/child";
         public const string RequestDeposit = "/child/request-deposit";
         public const string RequestWithdrawal = "/child/request-withdrawal";
     }
@@ -16,7 +16,6 @@ public static class AppRoutes
     {
         public const string Dashboard = "/parent";
         public const string PendingRequests = "/parent/requests";
-        public const string TransactionHistory = "/parent/history";
         public const string Settings = "/parent/settings";
 
         /// <summary>

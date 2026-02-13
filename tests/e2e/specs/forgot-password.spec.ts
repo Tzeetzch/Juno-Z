@@ -5,7 +5,7 @@ test.describe("Forgot Password Flow", () => {
     await page.goto("/forgot-password");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.locator("h4")).toHaveText("Forgot Password");
+    await expect(page.locator("h1")).toHaveText("Forgot Password");
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByText("Send Reset Link")).toBeVisible();
   });

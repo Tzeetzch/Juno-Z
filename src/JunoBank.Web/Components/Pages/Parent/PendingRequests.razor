@@ -10,14 +10,14 @@
 
 <PageTitle>Pending Requests</PageTitle>
 
-<div style="max-width: 700px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-lg">
 
     <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@(() => Navigation.NavigateTo("/parent"))">
         ← Back to Dashboard
     </MudButton>
 
-    <MudText Typo="Typo.h4" Style="margin: 1rem 0 2rem;">
-        📋 Pending Requests
+    <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin: 1rem 0 2rem;">
+        <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" /> Pending Requests
     </MudText>
 
     @if (_isLoading)
@@ -61,16 +61,18 @@
                                Size="Size.Medium"
                                Style="flex: 1;"
                                Disabled="_isProcessing"
+                               StartIcon="@Icons.Material.Filled.Check"
                                OnClick="@(() => Resolve(request.Id, true))">
-                        ✅ Approve
+                        Approve
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Error"
                                Size="Size.Medium"
                                Style="flex: 1;"
                                Disabled="_isProcessing"
+                               StartIcon="@Icons.Material.Filled.Close"
                                OnClick="@(() => Resolve(request.Id, false))">
-                        ❌ Deny
+                        Deny
                     </MudButton>
                 </div>
             </div>

@@ -6,7 +6,8 @@
         var selectionIndex = GetSelectionIndex(image);
         <button class="picture-btn @(selectionIndex >= 0 ? "selected" : "")"
                 @onclick="() => SelectImage(image)"
-                type="button">
+                type="button"
+                aria-label="@image">
             <span style="font-size: 2.5rem;">@GetEmoji(image)</span>
             @if (selectionIndex >= 0)
             {

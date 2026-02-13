@@ -11,7 +11,7 @@
 
 <PageTitle>My Piggy Bank</PageTitle>
 
-<div style="max-width: 600px; margin: 0 auto; padding: 2rem;">
+<div class="page-container">
 
     @if (_isLoading)
     {
@@ -21,7 +21,7 @@
     {
         <!-- Welcome Message -->
         <div style="text-align: center; margin-bottom: 2rem;">
-            <MudText Typo="Typo.h3" Style="color: var(--mud-palette-primary);">
+            <MudText Typo="Typo.h3" HtmlTag="h1" Style="color: var(--mud-palette-primary);">
                 Hi @_userName! 👋
             </MudText>
         </div>
@@ -63,7 +63,7 @@
         @if (_requests.Any())
         {
             <div style="margin-top: 3rem;">
-                <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+                <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
                     📋 My Requests
                 </MudText>
 
@@ -93,7 +93,7 @@
 
         <!-- Transaction History -->
         <div style="margin-top: 3rem;">
-            <MudText Typo="Typo.h5" Style="margin-bottom: 1rem;">
+            <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
                 📜 My Money History
             </MudText>
             <TransactionList Transactions="_transactions" />

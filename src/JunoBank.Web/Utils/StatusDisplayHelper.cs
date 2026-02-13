@@ -13,9 +13,9 @@ public static class StatusDisplayHelper
     /// </summary>
     public static string GetStatusText(RequestStatus status) => status switch
     {
-        RequestStatus.Pending => "⏳ Waiting",
-        RequestStatus.Approved => "✅ Approved",
-        RequestStatus.Denied => "❌ Denied",
+        RequestStatus.Pending => "Waiting",
+        RequestStatus.Approved => "Approved",
+        RequestStatus.Denied => "Denied",
         _ => ""
     };
 

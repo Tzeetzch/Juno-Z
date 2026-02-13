@@ -51,7 +51,7 @@ test.describe('Parent History (Per-Child)', () => {
     await page.waitForLoadState('networkidle');
 
     // Should show heading
-    await expect(page.getByText('📜 Request History')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Request History')).toBeVisible({ timeout: 10000 });
   });
 
   test('should navigate back from transaction history', async ({ page }) => {

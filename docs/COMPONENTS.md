@@ -108,6 +108,27 @@ void ClearSelection()  // Clear all selections and reshuffle grid
 
 ---
 
+### AdminPanel.razor
+Admin-only user management panel. Extracted from Settings.razor. Displays parent/child lists with admin toggle, and forms to add new parents and children.
+
+**Parameters:**
+```csharp
+[Parameter, EditorRequired] public int CurrentUserId { get; set; }
+[Parameter, EditorRequired] public List<ParentSummary> Parents { get; set; }
+[Parameter, EditorRequired] public List<ChildSummary> Children { get; set; }
+[Parameter] public EventCallback OnDataChanged { get; set; }
+```
+
+**Usage:**
+```razor
+<AdminPanel CurrentUserId="_currentUserId"
+            Parents="_parents"
+            Children="_children"
+            OnDataChanged="RefreshData" />
+```
+
+---
+
 ### TransactionList.razor
 Displays a list of transactions with type-based icons, descriptions, dates, and color-coded amounts (green for deposits/allowance, red for withdrawals).
 

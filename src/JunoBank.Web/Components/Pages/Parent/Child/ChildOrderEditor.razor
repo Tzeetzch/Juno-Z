@@ -14,7 +14,7 @@
 
 <PageTitle>@(_isNew ? "New" : "Edit") Standing Order</PageTitle>
 
-<div style="max-width: 500px; margin: 0 auto; padding: 2rem;">
+<div class="page-container-sm">
     @if (_isLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Large" />
@@ -33,8 +33,15 @@
     {
         <ChildContextHeader ChildName="@_child.Name" BackUrl="@AppRoutes.Parent.ChildSettings(ChildId)" />
 
-        <MudText Typo="Typo.h4" Style="margin-bottom: 2rem;">
-            @(_isNew ? "➕ New Standing Order" : "✏️ Edit Standing Order")
+        <MudText Typo="Typo.h4" HtmlTag="h1" Style="margin-bottom: 2rem;">
+            @if (_isNew)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" /> <text>New Standing Order</text>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-1" /> <text>Edit Standing Order</text>
+            }
         </MudText>
 
         @if (!string.IsNullOrEmpty(_errorMessage))
@@ -42,6 +49,7 @@
             <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
         }
 
+        <form @onsubmit="Save" @onsubmit:preventDefault>
         <div class="neu-card" style="padding: 2rem;">
             <MudSwitch @bind-Value="_isActive" Color="Color.Primary" Label="Active" Class="mb-4" />
 
@@ -148,7 +156,7 @@
                            Color="Color.Primary"
                            FullWidth="true"
                            Disabled="_isSaving"
-                           OnClick="Save">
+                           ButtonType="ButtonType.Submit">
                     @if (_isSaving)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -157,6 +165,7 @@
                 </MudButton>
             </div>
         </div>
+        </form>
     }
 </div>
 
