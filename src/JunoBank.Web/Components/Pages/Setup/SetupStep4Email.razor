@@ -117,8 +117,7 @@
                 ["Email:Port"] = Model.Port.ToString(),
                 ["Email:Username"] = Model.Username,
                 ["Email:Password"] = Model.Password,
-                ["Email:FromEmail"] = string.IsNullOrWhiteSpace(Model.FromEmail) ? Model.Username : Model.FromEmail,
-                ["Email:UseSsl"] = "true"
+                ["Email:FromEmail"] = string.IsNullOrWhiteSpace(Model.FromEmail) ? Model.Username : Model.FromEmail
             };
 
             var config = new ConfigurationBuilder()

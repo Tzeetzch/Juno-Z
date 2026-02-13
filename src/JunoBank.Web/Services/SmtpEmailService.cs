@@ -1,4 +1,5 @@
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using MimeKit;
 
 namespace JunoBank.Web.Services;
@@ -29,8 +30,6 @@ public class SmtpEmailService : IEmailService
             var password = emailSection["Password"];
             var fromEmail = emailSection["FromEmail"] ?? username ?? throw new InvalidOperationException("Email:FromEmail not configured");
             var fromName = emailSection["FromName"] ?? "Juno Bank";
-            var useSsl = emailSection.GetValue<bool>("UseSsl", true);
-
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(MailboxAddress.Parse(to));
@@ -43,8 +42,15 @@ public class SmtpEmailService : IEmailService
             message.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
-            
-            await client.ConnectAsync(host, port, useSsl);
+
+            // Port 465 = implicit SSL, port 587 = STARTTLS, other = auto-detect
+            var socketOptions = port switch
+            {
+                465 => SecureSocketOptions.SslOnConnect,
+                587 => SecureSocketOptions.StartTls,
+                _ => SecureSocketOptions.Auto
+            };
+            await client.ConnectAsync(host, port, socketOptions);
             
             // Only authenticate if credentials are provided
             if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))

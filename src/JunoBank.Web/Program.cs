@@ -59,16 +59,17 @@ builder.Services.AddScoped<IAllowanceService, AllowanceService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 
-// Email service - use SMTP if configured, otherwise console fallback
-var emailHost = builder.Configuration.GetValue<string>("Email:Host");
-if (!string.IsNullOrEmpty(emailHost))
+// Email service - checks config at runtime so setup wizard changes take effect immediately
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddScoped<ConsoleEmailService>();
+builder.Services.AddScoped<IEmailService>(sp =>
 {
-    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-}
-else
-{
-    builder.Services.AddScoped<IEmailService, ConsoleEmailService>();
-}
+    var config = sp.GetRequiredService<IConfiguration>();
+    var emailHost = config.GetValue<string>("Email:Host");
+    if (!string.IsNullOrEmpty(emailHost))
+        return sp.GetRequiredService<SmtpEmailService>();
+    return sp.GetRequiredService<ConsoleEmailService>();
+});
 
 // Background services
 builder.Services.AddHostedService<AllowanceBackgroundService>();
