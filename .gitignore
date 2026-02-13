@@ -57,6 +57,9 @@ logs/
 # Claude Code local settings
 .claude/settings.local.json
 
+# Screenshots (generated during testing/review, not source)
+screenshots/
+
 # Node / Playwright (in tests/e2e/)
 tests/e2e/node_modules/
 tests/e2e/test-results/

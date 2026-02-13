@@ -101,6 +101,6 @@ test.describe('Child Picture Login', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify logged in state (check for welcome heading with child name)
-    await expect(page.getByText(/Hi.*!/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /Hi.*!/i })).toBeVisible({ timeout: 10000 });
   });
 });

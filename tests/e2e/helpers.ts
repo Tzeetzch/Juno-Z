@@ -13,6 +13,8 @@ import { Page, expect } from '@playwright/test';
 
 export const PARENT_EMAIL = 'dad@junobank.local';
 export const PARENT_PASSWORD = 'parent123';
+export const PARENT_EMAIL_ALT = 'mom@junobank.local';  // For rate limiting tests
+export const PARENT_PASSWORD_ALT = 'parent123';
 export const CHILD_PICTURE_SEQUENCE = ['🐱', '🐶', '⭐', '🌙'];
 export const SOPHIE_PICTURE_SEQUENCE = ['⭐', '🌙', '🐱', '🐶'];
 

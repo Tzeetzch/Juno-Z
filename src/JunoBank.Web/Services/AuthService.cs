@@ -44,10 +44,36 @@ public class AuthService : IAuthService
             return AuthResult.Failed("Invalid email or password");
         }
 
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+        // Check lockout (before password validation to prevent timing attacks)
+        if (user.LockoutUntil.HasValue && user.LockoutUntil > now)
+        {
+            var remaining = (int)(user.LockoutUntil.Value - now).TotalMinutes + 1;
+            return AuthResult.LockedOut(remaining, user.LockoutUntil.Value);
+        }
+
         if (!_passwordService.VerifyPassword(password, user.PasswordHash ?? string.Empty))
         {
-            return AuthResult.Failed("Invalid email or password");
+            // Failed attempt - increment counter
+            user.FailedLoginAttempts = (user.FailedLoginAttempts ?? 0) + 1;
+
+            if (user.FailedLoginAttempts >= 5)
+            {
+                user.LockoutUntil = now.AddMinutes(5);
+                await _db.SaveChangesAsync();
+                return AuthResult.LockedOut(5, user.LockoutUntil.Value);
+            }
+
+            await _db.SaveChangesAsync();
+            var attemptsRemaining = 5 - user.FailedLoginAttempts.Value;
+            return AuthResult.FailedWithAttemptsRemaining(attemptsRemaining);
         }
+
+        // Success! Reset failed attempts
+        user.FailedLoginAttempts = 0;
+        user.LockoutUntil = null;
+        await _db.SaveChangesAsync();
 
         var session = new UserSession
         {
@@ -97,7 +123,7 @@ public class AuthService : IAuthService
         if (picturePassword.LockedUntil.HasValue && picturePassword.LockedUntil > now)
         {
             var remaining = (int)(picturePassword.LockedUntil.Value - now).TotalMinutes + 1;
-            return AuthResult.LockedOut(remaining);
+            return AuthResult.LockedOut(remaining, picturePassword.LockedUntil.Value);
         }
 
         // Hash the sequence and compare
@@ -128,7 +154,7 @@ public class AuthService : IAuthService
         {
             picturePassword.LockedUntil = now.AddMinutes(5);
             await _db.SaveChangesAsync();
-            return AuthResult.LockedOut(5);
+            return AuthResult.LockedOut(5, picturePassword.LockedUntil.Value);
         }
 
         await _db.SaveChangesAsync();

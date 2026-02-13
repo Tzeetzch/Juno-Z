@@ -1,5 +1,6 @@
 @page "/login/parent"
 @using JunoBank.Web.Services
+@implements IDisposable
 
 <PageTitle>Parent Login - Juno Bank</PageTitle>
 
@@ -22,7 +23,19 @@
                           Class="mb-4"
                           FullWidth="true" />
 
-            @if (!string.IsNullOrEmpty(_error))
+            @if (_isLockedOut && _lockoutUntil.HasValue)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    Account locked. Try again in @_countdownDisplay
+                </MudAlert>
+            }
+            else if (_attemptsRemaining.HasValue)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    Wrong password. @_attemptsRemaining attempts remaining.
+                </MudAlert>
+            }
+            else if (!string.IsNullOrEmpty(_error))
             {
                 <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
             }
@@ -30,7 +43,7 @@
             <button type="submit"
                     class="neu-btn neu-btn-primary neu-btn-large"
                     style="width: 100%;"
-                    disabled="@_isLoading">
+                    disabled="@(_isLoading || _isLockedOut)">
                 @if (_isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -68,10 +81,17 @@
     private string _password = string.Empty;
     private string _error = string.Empty;
     private bool _isLoading;
+    private bool _isLockedOut;
+    private DateTime? _lockoutUntil;
+    private int? _attemptsRemaining;
+    private string _countdownDisplay = string.Empty;
+    private System.Threading.Timer? _countdownTimer;
 
     private async Task HandleLogin()
     {
         _error = string.Empty;
+        _attemptsRemaining = null;
+        _isLockedOut = false;
         _isLoading = true;
 
         try
@@ -80,7 +100,20 @@
 
             if (!result.Success)
             {
-                _error = result.Error ?? "Invalid email or password";
+                if (result.IsLockedOut && result.LockoutUntil.HasValue)
+                {
+                    _isLockedOut = true;
+                    _lockoutUntil = result.LockoutUntil.Value;
+                    StartCountdownTimer();
+                }
+                else if (result.AttemptsRemaining.HasValue)
+                {
+                    _attemptsRemaining = result.AttemptsRemaining.Value;
+                }
+                else
+                {
+                    _error = result.Error ?? "Invalid email or password";
+                }
                 return;
             }
 
@@ -95,6 +128,50 @@
         {
             _isLoading = false;
         }
+    }
+
+    private void StartCountdownTimer()
+    {
+        _countdownTimer?.Dispose();
+        UpdateCountdown();
+
+        _countdownTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                UpdateCountdown();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private void UpdateCountdown()
+    {
+        if (!_lockoutUntil.HasValue)
+        {
+            _countdownDisplay = string.Empty;
+            return;
+        }
+
+        var remaining = _lockoutUntil.Value - DateTime.UtcNow;
+
+        if (remaining.TotalSeconds <= 0)
+        {
+            _isLockedOut = false;
+            _lockoutUntil = null;
+            _countdownTimer?.Dispose();
+            _countdownDisplay = string.Empty;
+            return;
+        }
+
+        var minutes = (int)remaining.TotalMinutes;
+        var seconds = remaining.Seconds;
+        _countdownDisplay = $"{minutes}:{seconds:D2}";
+    }
+
+    public void Dispose()
+    {
+        _countdownTimer?.Dispose();
     }
 
     private void GoBack()

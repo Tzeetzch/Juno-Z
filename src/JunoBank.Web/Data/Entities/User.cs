@@ -12,6 +12,8 @@ public class User
     // Parent authentication
     public string? Email { get; set; }
     public string? PasswordHash { get; set; }
+    public int? FailedLoginAttempts { get; set; }
+    public DateTime? LockoutUntil { get; set; }
 
     // Child authentication
     public PicturePassword? PicturePassword { get; set; }

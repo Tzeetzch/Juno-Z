@@ -78,7 +78,7 @@ export default defineConfig({
 
   /* Run local dev server before starting tests */
   webServer: {
-    command: `cmd /c "cd ../../src/JunoBank.Web && set JUNO_TEST_DB=${testDbName} && dotnet run --launch-profile http-test"`,
+    command: `cmd /c "cd ../../src/JunoBank.Web && set JUNO_TEST_DB=${testDbName} && set JUNO_SEED_DEMO=true && dotnet run --launch-profile http-test"`,
     url: 'http://localhost:5208',
     reuseExistingServer: false,  // Always start fresh server for tests
     timeout: 120 * 1000,

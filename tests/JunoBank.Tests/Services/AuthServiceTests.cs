@@ -223,4 +223,192 @@ public class AuthServiceTests : DatabaseTestBase
     }
 
     #endregion
+
+    #region AuthenticateParentAsync Lockout Tests
+
+    [Fact]
+    public async Task AuthenticateParentAsync_IncrementsFailedAttempts_OnWrongPassword()
+    {
+        // Arrange
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash"
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("wrongpassword", "correcthash")).Returns(false);
+
+        // Act
+        var result = await _service.AuthenticateParentAsync("dad@test.com", "wrongpassword");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(4, result.AttemptsRemaining);
+
+        var updatedParent = await Db.Users.FindAsync(parent.Id);
+        Assert.Equal(1, updatedParent!.FailedLoginAttempts);
+    }
+
+    [Fact]
+    public async Task AuthenticateParentAsync_LocksAccount_After5FailedAttempts()
+    {
+        // Arrange
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash",
+            FailedLoginAttempts = 4 // Already 4 failed attempts
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("wrongpassword", "correcthash")).Returns(false);
+
+        // Act
+        var result = await _service.AuthenticateParentAsync("dad@test.com", "wrongpassword");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.True(result.IsLockedOut);
+        Assert.Equal(5, result.LockoutMinutesRemaining);
+        Assert.NotNull(result.LockoutUntil);
+
+        var updatedParent = await Db.Users.FindAsync(parent.Id);
+        Assert.Equal(5, updatedParent!.FailedLoginAttempts);
+        Assert.NotNull(updatedParent.LockoutUntil);
+        Assert.True(updatedParent.LockoutUntil > _timeProvider.GetUtcNow().UtcDateTime);
+    }
+
+    [Fact]
+    public async Task AuthenticateParentAsync_PreventsLogin_WhenLockedOut()
+    {
+        // Arrange
+        var lockoutTime = _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(3);
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash",
+            FailedLoginAttempts = 5,
+            LockoutUntil = lockoutTime
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("correctpassword", "correcthash")).Returns(true);
+
+        // Act - try to login with correct password while locked out
+        var result = await _service.AuthenticateParentAsync("dad@test.com", "correctpassword");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.True(result.IsLockedOut);
+        Assert.NotNull(result.LockoutMinutesRemaining);
+        Assert.True(result.LockoutMinutesRemaining > 0);
+
+        // Password should not have been checked (lockout check comes first)
+        _passwordServiceMock.Verify(x => x.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AuthenticateParentAsync_AllowsLogin_AfterLockoutExpires()
+    {
+        // Arrange
+        var lockoutTime = _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(-1); // Expired
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash",
+            FailedLoginAttempts = 5,
+            LockoutUntil = lockoutTime
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("correctpassword", "correcthash")).Returns(true);
+
+        // Act
+        var result = await _service.AuthenticateParentAsync("dad@test.com", "correctpassword");
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Session);
+
+        var updatedParent = await Db.Users.FindAsync(parent.Id);
+        Assert.Equal(0, updatedParent!.FailedLoginAttempts);
+        Assert.Null(updatedParent.LockoutUntil);
+    }
+
+    [Fact]
+    public async Task AuthenticateParentAsync_ResetsFailedAttempts_OnSuccessfulLogin()
+    {
+        // Arrange
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash",
+            FailedLoginAttempts = 3
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("correctpassword", "correcthash")).Returns(true);
+
+        // Act
+        var result = await _service.AuthenticateParentAsync("dad@test.com", "correctpassword");
+
+        // Assert
+        Assert.True(result.Success);
+
+        var updatedParent = await Db.Users.FindAsync(parent.Id);
+        Assert.Equal(0, updatedParent!.FailedLoginAttempts);
+        Assert.Null(updatedParent.LockoutUntil);
+    }
+
+    [Fact]
+    public async Task AuthenticateParentAsync_CountdownsAttemptsRemaining()
+    {
+        // Arrange
+        var parent = new User
+        {
+            Name = "Dad",
+            Role = UserRole.Parent,
+            Email = "dad@test.com",
+            PasswordHash = "correcthash"
+        };
+        Db.Users.Add(parent);
+        await Db.SaveChangesAsync();
+
+        _passwordServiceMock.Setup(x => x.VerifyPassword("wrong", "correcthash")).Returns(false);
+
+        // Act & Assert - 5 attempts
+        var result1 = await _service.AuthenticateParentAsync("dad@test.com", "wrong");
+        Assert.Equal(4, result1.AttemptsRemaining);
+
+        var result2 = await _service.AuthenticateParentAsync("dad@test.com", "wrong");
+        Assert.Equal(3, result2.AttemptsRemaining);
+
+        var result3 = await _service.AuthenticateParentAsync("dad@test.com", "wrong");
+        Assert.Equal(2, result3.AttemptsRemaining);
+
+        var result4 = await _service.AuthenticateParentAsync("dad@test.com", "wrong");
+        Assert.Equal(1, result4.AttemptsRemaining);
+
+        var result5 = await _service.AuthenticateParentAsync("dad@test.com", "wrong");
+        Assert.True(result5.IsLockedOut);
+        Assert.Null(result5.AttemptsRemaining);
+    }
+
+    #endregion
 }
