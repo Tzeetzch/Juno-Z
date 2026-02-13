@@ -59,7 +59,7 @@
 
 ## Parent Login Rate Limiting
 
-**Status:** Implemented (uncommitted) — code exists but changes are not yet committed.
+**Status:** Done (committed in `e0312d5`)
 
 **What's done:**
 - `User` entity: `FailedLoginAttempts`, `LockoutUntil` fields
@@ -68,6 +68,35 @@
 - Migration: `AddParentLoginRateLimiting`
 - Unit tests: `AuthServiceTests` covers rate limiting scenarios
 - E2E spec: `parent-login-ratelimit.spec.ts`
+
+---
+
+## Test Results (2026-02-13)
+
+**All 165 tests passing.**
+
+| Suite | Pass | Fail | Total |
+|-------|------|------|-------|
+| Unit tests (xUnit) | 102 | 0 | 102 |
+| E2E tests (Playwright) | 63 | 0 | 63 |
+
+**E2E spec breakdown:**
+
+| Spec file | Tests | Status |
+|-----------|-------|--------|
+| smoke.spec.ts | 2 | Pass |
+| example.spec.ts | 7 | Pass |
+| child-dashboard.spec.ts | 5 | Pass |
+| child-requests.spec.ts | 3 | Pass |
+| forgot-password.spec.ts | 8 | Pass |
+| parent-dashboard.spec.ts | 6 | Pass |
+| parent-history.spec.ts | 4 | Pass |
+| parent-login-ratelimit.spec.ts | 2 | Pass |
+| parent-requests.spec.ts | 6 | Pass |
+| parent-settings.spec.ts | 7 | Pass |
+| parent-transaction.spec.ts | 5 | Pass |
+| request-deposit.spec.ts | 4 | Pass |
+| request-withdrawal.spec.ts | 4 | Pass |
 
 ---
 
