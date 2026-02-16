@@ -38,6 +38,7 @@ test_*.db
 
 # User secrets
 secrets.json
+email-config.json
 appsettings.*.json
 !appsettings.json
 !appsettings.Development.json.example
