@@ -152,7 +152,7 @@
                             Class="mb-3" />
 
                 <MudText Typo="Typo.body2" Class="mb-2">Picture Password (select 4 in order)</MudText>
-                <PictureGridSetup SelectedPictures="_newChild.PictureSequence" />
+                <PictureGridSetup @bind-SelectedImages="_newChild.PictureSequence" />
 
                 <SubmitButton Text="Add Child"
                               IsLoading="_isSaving"
