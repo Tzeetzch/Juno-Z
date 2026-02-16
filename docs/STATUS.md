@@ -87,7 +87,7 @@
 
 ---
 
-## Test Results (2026-02-13)
+## Test Results (2026-02-16)
 
 **All 181 tests passing.**
 
@@ -153,6 +153,31 @@ All previously open tickets have been resolved:
 - **Dashboard UX** — Settings icon added to parent dashboard for navigation.
 - **Unit tests** — 7 new tests for `ResetParentPasswordAsync` (admin success, non-admin, self-reset, not found, child target, short password, lockout cleared)
 - **E2E test** — Settings icon visibility on dashboard
+
+---
+
+## Shared Component Extraction
+
+**Status:** Done
+
+**What's done:**
+- **MoneyInput** — Standardized € currency input replacing 7 inline MudNumericField instances. Fixed Step=0.50m bug in standing orders, $ symbol in admin panel, missing € adornment in setup wizard.
+- **ErrorAlert** — Conditional alert with optional close button replacing 12 inline patterns.
+- **SubmitButton** — Loading spinner + submit button replacing 7 inline patterns.
+- **DescriptionField** — Multi-line textarea (MaxLength=500, Counter) replacing 4 inline patterns.
+- **PasswordFields** — Password + Confirm pair with visibility toggle replacing 3 inline patterns.
+
+All components in `Components/Shared/`, documented in `docs/COMPONENTS.md`.
+
+---
+
+## SMTP Email Fix
+
+**Status:** Done (commit `9f591c9`)
+
+**What was fixed:**
+- `SmtpEmailService` now uses STARTTLS for port 587 (was incorrectly using full SSL)
+- Email service DI registration changed from static (build-time) to runtime factory so setup wizard email config takes effect without restart
 
 ---
 
