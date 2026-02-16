@@ -4,6 +4,7 @@
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @inject CustomAuthStateProvider AuthProvider
+@inject IBrowserTimeService BrowserTime
 @inject IUserService UserService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -47,7 +48,7 @@
                             @request.Description
                         </MudText>
                         <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                            From @request.Child.Name — @request.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                            From @request.Child.Name — @BrowserTime.ToLocal(request.CreatedAt).ToString("dd MMM yyyy HH:mm")
                         </MudText>
                     </div>
                     <MudText Typo="Typo.h5" Style="color: var(--mud-palette-primary); font-weight: bold;">

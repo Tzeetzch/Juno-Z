@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IBrowserTimeService BrowserTime
 
 <PageTitle>Settings - @(_child?.Name ?? "Child")</PageTitle>
 
@@ -170,19 +171,20 @@
         _ => "?"
     };
 
-    private string FormatNextRun(DateTime next)
+    private string FormatNextRun(DateTime nextUtc)
     {
-        var now = DateTime.Now;
-        var diff = next - now;
-        
+        var local = BrowserTime.ToLocal(nextUtc);
+        var now = BrowserTime.ToLocal(DateTime.UtcNow);
+        var diff = local - now;
+
         if (diff.TotalDays < 1)
-            return next.ToString("'Today at' h:mm tt");
+            return local.ToString("'Today at' h:mm tt");
         if (diff.TotalDays < 2)
-            return next.ToString("'Tomorrow at' h:mm tt");
+            return local.ToString("'Tomorrow at' h:mm tt");
         if (diff.TotalDays < 7)
-            return next.ToString("dddd 'at' h:mm tt");
-        
-        return next.ToString("MMM d 'at' h:mm tt");
+            return local.ToString("dddd 'at' h:mm tt");
+
+        return local.ToString("MMM d 'at' h:mm tt");
     }
 
     private void AddNewOrder()

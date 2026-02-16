@@ -17,7 +17,7 @@ public class AllowanceServiceTests : DatabaseTestBase
         _service = new AllowanceService(Db, _timeProvider, CreateLogger<AllowanceService>());
     }
 
-    private DateTime Now => _timeProvider.GetLocalNow().DateTime;
+    private DateTime Now => _timeProvider.GetUtcNow().DateTime;
 
     #region CalculateNextRunDate Tests
 

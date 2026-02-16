@@ -8,6 +8,7 @@
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
+@inject IBrowserTimeService BrowserTime
 
 <PageTitle>My Piggy Bank</PageTitle>
 
@@ -75,7 +76,7 @@
                                 @(request.Type == RequestType.Withdrawal ? "💰" : "🎁") @request.Description
                             </MudText>
                             <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                                @request.CreatedAt.ToString("dd MMM yyyy")
+                                @BrowserTime.ToLocal(request.CreatedAt).ToString("dd MMM yyyy")
                             </MudText>
                         </div>
                         <div style="text-align: right;">

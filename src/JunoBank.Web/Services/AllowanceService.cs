@@ -24,19 +24,21 @@ public class AllowanceService : IAllowanceService
     /// <inheritdoc />
     public async Task<int> ProcessDueAllowancesAsync()
     {
-        var now = _timeProvider.GetLocalNow().DateTime;
+        var utcNow = _timeProvider.GetUtcNow().DateTime;
         var processedCount = 0;
 
-        // Get active allowances that are due (NextRunDate <= now)
+        // Get active allowances that are due (NextRunDate <= utcNow)
         var dueAllowances = await _db.ScheduledAllowances
             .Include(a => a.Child)
-            .Where(a => a.IsActive && a.NextRunDate <= now)
+            .Where(a => a.IsActive && a.NextRunDate <= utcNow)
             .ToListAsync();
 
         foreach (var allowance in dueAllowances)
         {
+            var tz = GetTimeZone(allowance.TimeZoneId);
+
             // Process all missed allowances (catch-up logic)
-            while (allowance.NextRunDate <= now)
+            while (allowance.NextRunDate <= utcNow)
             {
                 _logger.LogInformation(
                     "Processing allowance for {ChildName}: {Amount:C} (scheduled for {ScheduledDate})",
@@ -59,9 +61,13 @@ public class AllowanceService : IAllowanceService
                 // Update child's balance
                 allowance.Child.Balance += allowance.Amount;
 
-                // Update schedule tracking
+                // Update schedule tracking — calculate next run in user's timezone, store as UTC
                 allowance.LastRunDate = allowance.NextRunDate;
-                allowance.NextRunDate = CalculateNextRunDate(allowance, allowance.NextRunDate.AddMinutes(1));
+                var localAfterRun = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(allowance.NextRunDate.AddMinutes(1), DateTimeKind.Utc), tz);
+                var nextLocal = CalculateNextRunDate(allowance, localAfterRun);
+                allowance.NextRunDate = TimeZoneInfo.ConvertTimeToUtc(
+                    DateTime.SpecifyKind(nextLocal, DateTimeKind.Unspecified), tz);
 
                 processedCount++;
             }
@@ -208,7 +214,11 @@ public class AllowanceService : IAllowanceService
     /// <inheritdoc />
     public async Task<ScheduledAllowance> CreateOrderAsync(ScheduledAllowance order)
     {
-        order.NextRunDate = CalculateNextRunDate(order, _timeProvider.GetLocalNow().DateTime);
+        var tz = GetTimeZone(order.TimeZoneId);
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().DateTime, tz);
+        var nextLocal = CalculateNextRunDate(order, localNow);
+        order.NextRunDate = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(nextLocal, DateTimeKind.Unspecified), tz);
         _db.ScheduledAllowances.Add(order);
         await _db.SaveChangesAsync();
         return order;
@@ -217,7 +227,11 @@ public class AllowanceService : IAllowanceService
     /// <inheritdoc />
     public async Task UpdateOrderAsync(ScheduledAllowance order)
     {
-        order.NextRunDate = CalculateNextRunDate(order, _timeProvider.GetLocalNow().DateTime);
+        var tz = GetTimeZone(order.TimeZoneId);
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().DateTime, tz);
+        var nextLocal = CalculateNextRunDate(order, localNow);
+        order.NextRunDate = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(nextLocal, DateTimeKind.Unspecified), tz);
         _db.ScheduledAllowances.Update(order);
         await _db.SaveChangesAsync();
     }
@@ -230,6 +244,18 @@ public class AllowanceService : IAllowanceService
         {
             _db.ScheduledAllowances.Remove(order);
             await _db.SaveChangesAsync();
+        }
+    }
+
+    private static TimeZoneInfo GetTimeZone(string timeZoneId)
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch
+        {
+            return TimeZoneInfo.Utc;
         }
     }
 }

@@ -9,6 +9,7 @@
 @inject IUserService UserService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IBrowserTimeService BrowserTime
 
 <PageTitle>Pending Requests - @(_child?.Name ?? "Child")</PageTitle>
 
@@ -58,7 +59,7 @@
                                 @request.Description
                             </MudText>
                             <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                                @request.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                @BrowserTime.ToLocal(request.CreatedAt).ToString("dd MMM yyyy HH:mm")
                             </MudText>
                         </div>
                         <MudText Typo="Typo.h5" Style="color: var(--mud-palette-primary); font-weight: bold;">

@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Services
 
 <MudThemeProvider Theme="_theme" IsDarkMode="true" />
 <MudPopoverProvider />
@@ -31,6 +32,17 @@
 @code {
     [Inject] private CustomAuthStateProvider AuthProvider { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IBrowserTimeService BrowserTime { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await BrowserTime.InitializeAsync(JS);
+            StateHasChanged(); // Re-render child pages with correct timezone
+        }
+    }
 
     private MudTheme _theme = new()
     {

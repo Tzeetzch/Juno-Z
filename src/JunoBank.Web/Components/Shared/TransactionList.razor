@@ -1,4 +1,6 @@
 @using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+@inject IBrowserTimeService BrowserTime
 
 <div class="transaction-list">
     @if (!Transactions.Any())
@@ -24,7 +26,7 @@
                         @transaction.Description
                     </MudText>
                     <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-size: 0.875rem;">
-                        @transaction.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                        @BrowserTime.ToLocal(transaction.CreatedAt).ToString("MMM dd, yyyy")
                     </MudText>
                 </div>
 

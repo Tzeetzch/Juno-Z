@@ -25,6 +25,9 @@ public class ScheduledAllowance
     public DateTime NextRunDate { get; set; }
     public DateTime? LastRunDate { get; set; }
 
+    // Timezone — IANA ID used to calculate next run dates in the user's local time
+    public string TimeZoneId { get; set; } = "UTC";
+
     // Status
     public bool IsActive { get; set; } = true;
 

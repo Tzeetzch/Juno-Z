@@ -8,6 +8,7 @@
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
+@inject IBrowserTimeService BrowserTime
 
 <PageTitle>Request History - @(_child?.Name ?? "Child")</PageTitle>
 
@@ -64,12 +65,12 @@
                                 @request.Description
                             </MudText>
                             <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                                Requested: @request.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                Requested: @BrowserTime.ToLocal(request.CreatedAt).ToString("dd MMM yyyy HH:mm")
                             </MudText>
                             @if (request.ResolvedAt.HasValue)
                             {
                                 <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                                    @(request.Status == RequestStatus.Approved ? "Approved" : "Denied"): @request.ResolvedAt.Value.ToString("dd MMM yyyy HH:mm")
+                                    @(request.Status == RequestStatus.Approved ? "Approved" : "Denied"): @BrowserTime.ToLocal(request.ResolvedAt.Value).ToString("dd MMM yyyy HH:mm")
                                 </MudText>
                             }
                             @if (!string.IsNullOrEmpty(request.ParentNote))
