@@ -154,12 +154,11 @@
                                MaxDate="DateTime.Today"
                                Required="true"
                                Class="mb-3" />
-                <MudNumericField @bind-Value="_newChild.StartingBalance"
-                                 Label="Starting Balance"
-                                 Min="0"
-                                 Adornment="Adornment.Start"
-                                 AdornmentText="$"
-                                 Class="mb-3" />
+                <MoneyInput @bind-Value="_newChild.StartingBalance"
+                            Label="Starting Balance"
+                            Min="0m"
+                            Max="10000m"
+                            Class="mb-3" />
 
                 <MudText Typo="Typo.body2" Class="mb-2">Picture Password (select 4 in order)</MudText>
                 <PictureGridSetup SelectedPictures="_newChild.PictureSequence" />

@@ -1,6 +1,7 @@
 @page "/parent/transaction"
 @attribute [Authorize(Roles = "Parent")]
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @inject CustomAuthStateProvider AuthProvider
@@ -40,16 +41,9 @@
                 </MudRadio>
             </MudRadioGroup>
 
-            <MudNumericField @bind-Value="_model.Amount"
-                             Label="Amount"
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.Start"
-                             AdornmentText="€"
-                             Min="0.01m"
-                             Max="1000m"
-                             Step="0.01m"
-                             Required="true"
-                             HelperText="Max €1000" />
+            <MoneyInput @bind-Value="_model.Amount"
+                        Required="true"
+                        HelperText="Max €1000" />
 
             <MudTextField @bind-Value="_model.Description"
                           Label="Description"

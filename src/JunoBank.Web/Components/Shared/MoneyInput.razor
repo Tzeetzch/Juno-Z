@@ -1,0 +1,27 @@
+<MudNumericField T="decimal"
+                 Value="Value"
+                 ValueChanged="ValueChanged"
+                 Label="@Label"
+                 Variant="Variant.Outlined"
+                 Adornment="Adornment.Start"
+                 AdornmentText="€"
+                 Min="Min"
+                 Max="Max"
+                 Step="0.01m"
+                 Format="F2"
+                 Required="Required"
+                 Disabled="Disabled"
+                 HelperText="@HelperText"
+                 Class="@Class" />
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Amount";
+    [Parameter] public decimal Min { get; set; } = 0.01m;
+    [Parameter] public decimal Max { get; set; } = 1000m;
+    [Parameter] public string? HelperText { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

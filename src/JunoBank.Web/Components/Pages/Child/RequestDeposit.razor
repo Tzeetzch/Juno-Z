@@ -1,6 +1,7 @@
 @page "/child/request-deposit"
 @attribute [Authorize(Roles = "Child")]
 @using JunoBank.Web.Auth
+@using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Data.Entities
 @using JunoBank.Web.Services
 @inject IAuthStateProvider AuthProvider
@@ -65,16 +66,9 @@
                     How much money did you get? 🤔
                 </MudText>
 
-                <MudNumericField @bind-Value="_model.Amount"
-                                 Label="Amount"
-                                 Variant="Variant.Outlined"
-                                 Adornment="Adornment.Start"
-                                 AdornmentText="€"
-                                 Min="0.01m"
-                                 Max="1000m"
-                                 Step="0.01m"
-                                 Required="true"
-                                 HelperText="How much? (Max €1000)" />
+                <MoneyInput @bind-Value="_model.Amount"
+                            Required="true"
+                            HelperText="How much? (Max €1000)" />
 
                 <MudTextField @bind-Value="_model.Reason"
                               Label="Where did it come from?"

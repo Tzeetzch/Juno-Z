@@ -56,12 +56,11 @@ else
                        MaxDate="DateTime.Today.AddDays(-1)"
                        Class="mb-4" />
 
-        <MudNumericField @bind-Value="_newChild.StartingBalance"
-                         Label="Starting Balance (€)"
-                         Variant="Variant.Outlined"
-                         Min="0" Max="10000"
-                         Format="F2"
-                         Class="mb-4" />
+        <MoneyInput @bind-Value="_newChild.StartingBalance"
+                    Label="Starting Balance"
+                    Min="0m"
+                    Max="10000m"
+                    Class="mb-4" />
 
         <MudText Typo="Typo.subtitle1" Class="mb-2">Picture Password</MudText>
         <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">

@@ -53,15 +53,8 @@
         <div class="neu-card" style="padding: 2rem;">
             <MudSwitch @bind-Value="_isActive" Color="Color.Primary" Label="Active" Class="mb-4" />
 
-            <MudNumericField @bind-Value="_amount"
-                             Label="Amount"
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.Start"
-                             AdornmentText="€"
-                             Min="0.01m"
-                             Max="1000m"
-                             Step="0.50m"
-                             HelperText="How much per payment? (Max €1000)" />
+            <MoneyInput @bind-Value="_amount"
+                        HelperText="How much per payment? (Max €1000)" />
 
             <MudTextField @bind-Value="_description"
                           Label="Description"

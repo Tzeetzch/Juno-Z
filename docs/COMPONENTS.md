@@ -135,6 +135,30 @@ Admin-only user management panel. Extracted from Settings.razor. Displays parent
 
 ---
 
+### MoneyInput.razor
+Standardized currency input for all money fields. Wraps MudNumericField with consistent € adornment, 0.01 step, and F2 formatting.
+
+**Parameters:**
+```csharp
+[Parameter] public decimal Value { get; set; }
+[Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+[Parameter] public string Label { get; set; } = "Amount";
+[Parameter] public decimal Min { get; set; } = 0.01m;
+[Parameter] public decimal Max { get; set; } = 1000m;
+[Parameter] public string? HelperText { get; set; }
+[Parameter] public bool Required { get; set; }
+[Parameter] public bool Disabled { get; set; }
+[Parameter] public string? Class { get; set; }
+```
+
+**Usage:**
+```razor
+<MoneyInput @bind-Value="_amount" Required="true" HelperText="Max €1000" />
+<MoneyInput @bind-Value="_balance" Label="Starting Balance" Min="0m" Max="10000m" />
+```
+
+---
+
 ### TransactionList.razor
 Displays a list of transactions with type-based icons, descriptions, dates, and color-coded amounts (green for deposits/allowance, red for withdrawals).
 
