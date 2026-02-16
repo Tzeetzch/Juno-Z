@@ -1,3 +1,4 @@
+@using JunoBank.Web.Components.Shared
 @using static JunoBank.Web.Components.Pages.Setup.SetupWizard
 
 <div style="text-align: center; margin-bottom: 2rem;">
@@ -51,27 +52,11 @@ else
                           Class="mb-4"
                           FullWidth="true" />
 
-            <MudTextField @bind-Value="Model.Password"
-                          Label="Password"
-                          Variant="Variant.Outlined"
-                          InputType="InputType.Password"
-                          Required="true"
-                          HelperText="At least 8 characters"
-                          Class="mb-4"
-                          FullWidth="true" />
+            <PasswordFields @bind-Password="Model.Password"
+                            @bind-ConfirmPassword="Model.ConfirmPassword"
+                            Required="true" />
 
-            <MudTextField @bind-Value="Model.ConfirmPassword"
-                          Label="Confirm Password"
-                          Variant="Variant.Outlined"
-                          InputType="InputType.Password"
-                          Required="true"
-                          Class="mb-6"
-                          FullWidth="true" />
-
-            @if (!string.IsNullOrEmpty(_error))
-            {
-                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
-            }
+            <ErrorAlert Message="@_error" />
 
             <div style="display: flex; justify-content: space-between;">
                 <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="HandleBack">

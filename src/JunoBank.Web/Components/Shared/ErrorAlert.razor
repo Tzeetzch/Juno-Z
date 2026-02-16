@@ -1,0 +1,24 @@
+@if (!string.IsNullOrEmpty(Message))
+{
+    @if (OnClose.HasDelegate)
+    {
+        <MudAlert Severity="@Severity" Class="@Class"
+                  CloseIcon="@Icons.Material.Filled.Close"
+                  CloseIconClicked="OnClose">
+            @Message
+        </MudAlert>
+    }
+    else
+    {
+        <MudAlert Severity="@Severity" Class="@Class">
+            @Message
+        </MudAlert>
+    }
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Severity Severity { get; set; } = Severity.Error;
+    [Parameter] public string Class { get; set; } = "mb-4";
+}

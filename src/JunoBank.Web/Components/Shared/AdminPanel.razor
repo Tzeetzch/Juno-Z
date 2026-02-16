@@ -105,16 +105,7 @@
                               RequiredError="Password is required"
                               Class="mb-3" />
                 <MudCheckBox @bind-Value="_newParent.IsAdmin" Label="Make Admin" Class="mb-3" />
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           ButtonType="ButtonType.Submit"
-                           Disabled="_isSaving">
-                    @if (_isSaving)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    }
-                    Add Parent
-                </MudButton>
+                <SubmitButton Text="Add Parent" IsLoading="_isSaving" FullWidth="false" />
             </form>
         </MudForm>
     </MudExpansionPanel>
@@ -163,35 +154,18 @@
                 <MudText Typo="Typo.body2" Class="mb-2">Picture Password (select 4 in order)</MudText>
                 <PictureGridSetup SelectedPictures="_newChild.PictureSequence" />
 
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           ButtonType="ButtonType.Submit"
-                           Disabled="_isSaving || _newChild.PictureSequence.Count != 4"
-                           Class="mt-3">
-                    @if (_isSaving)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    }
-                    Add Child
-                </MudButton>
+                <SubmitButton Text="Add Child"
+                              IsLoading="_isSaving"
+                              Disabled="_newChild.PictureSequence.Count != 4"
+                              FullWidth="false"
+                              Class="mt-3" />
             </form>
         </MudForm>
     </MudExpansionPanel>
 </MudExpansionPanels>
 
-@if (!string.IsNullOrEmpty(_successMessage))
-{
-    <MudAlert Severity="Severity.Success" Class="mt-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _successMessage = string.Empty)">
-        @_successMessage
-    </MudAlert>
-}
-
-@if (!string.IsNullOrEmpty(_errorMessage))
-{
-    <MudAlert Severity="Severity.Error" Class="mt-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
-        @_errorMessage
-    </MudAlert>
-}
+<ErrorAlert Message="@_successMessage" Severity="Severity.Success" Class="mt-4" OnClose="@(() => _successMessage = string.Empty)" />
+<ErrorAlert Message="@_errorMessage" Class="mt-4" OnClose="@(() => _errorMessage = string.Empty)" />
 
 @code {
     [Parameter, EditorRequired] public int CurrentUserId { get; set; }

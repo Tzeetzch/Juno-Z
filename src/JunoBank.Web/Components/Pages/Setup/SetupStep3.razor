@@ -69,10 +69,7 @@ else
 
         <PictureGridSetup @bind-SelectedImages="_newChild.PictureSequence" RequiredLength="4" />
 
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
-        }
+        <ErrorAlert Message="@_error" Class="mt-4" />
 
         <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
             <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="CancelAddingChild">

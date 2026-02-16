@@ -135,6 +135,49 @@ Admin-only user management panel. Extracted from Settings.razor. Displays parent
 
 ---
 
+### DescriptionField.razor
+Multi-line text input for transaction descriptions and request reasons. Standardizes MaxLength=500, Counter=500, Variant.Outlined.
+
+**Parameters:**
+```csharp
+[Parameter] public string Value { get; set; } = string.Empty;
+[Parameter] public EventCallback<string> ValueChanged { get; set; }
+[Parameter] public string Label { get; set; } = "Description";
+[Parameter] public int Lines { get; set; } = 2;
+[Parameter] public string? HelperText { get; set; }
+[Parameter] public string? Placeholder { get; set; }
+[Parameter] public bool Required { get; set; } = true;
+[Parameter] public string Class { get; set; } = "mt-4";
+```
+
+**Usage:**
+```razor
+<DescriptionField @bind-Value="_model.Description" HelperText="What is this for?" />
+<DescriptionField @bind-Value="_model.Reason" Label="Where did it come from?" Lines="3" />
+```
+
+---
+
+### ErrorAlert.razor
+Conditionally rendered alert with optional close button. Renders nothing when Message is null/empty.
+
+**Parameters:**
+```csharp
+[Parameter] public string? Message { get; set; }
+[Parameter] public EventCallback OnClose { get; set; }
+[Parameter] public Severity Severity { get; set; } = Severity.Error;
+[Parameter] public string Class { get; set; } = "mb-4";
+```
+
+**Usage:**
+```razor
+<ErrorAlert Message="@_error" />
+<ErrorAlert Message="@_error" OnClose="@(() => _error = string.Empty)" />
+<ErrorAlert Message="@_success" Severity="Severity.Success" OnClose="@(() => _success = string.Empty)" />
+```
+
+---
+
 ### MoneyInput.razor
 Standardized currency input for all money fields. Wraps MudNumericField with consistent € adornment, 0.01 step, and F2 formatting.
 
@@ -155,6 +198,51 @@ Standardized currency input for all money fields. Wraps MudNumericField with con
 ```razor
 <MoneyInput @bind-Value="_amount" Required="true" HelperText="Max €1000" />
 <MoneyInput @bind-Value="_balance" Label="Starting Balance" Min="0m" Max="10000m" />
+```
+
+---
+
+### PasswordFields.razor
+Password + Confirm Password field pair with built-in visibility toggle. Used in setup wizard and password reset flows.
+
+**Parameters:**
+```csharp
+[Parameter] public string Password { get; set; } = string.Empty;
+[Parameter] public EventCallback<string> PasswordChanged { get; set; }
+[Parameter] public string ConfirmPassword { get; set; } = string.Empty;
+[Parameter] public EventCallback<string> ConfirmPasswordChanged { get; set; }
+[Parameter] public string PasswordLabel { get; set; } = "Password";
+[Parameter] public bool Required { get; set; }
+[Parameter] public bool Disabled { get; set; }
+```
+
+**Usage:**
+```razor
+<PasswordFields @bind-Password="Model.Password" @bind-ConfirmPassword="Model.ConfirmPassword" Required="true" />
+<PasswordFields @bind-Password="_newPassword" @bind-ConfirmPassword="_confirmPassword" PasswordLabel="New Password" />
+```
+
+---
+
+### SubmitButton.razor
+Form submit button with loading spinner. Shows spinner alongside text when loading. When `LoadingText` is set, swaps the label during loading.
+
+**Parameters:**
+```csharp
+[Parameter] public string Text { get; set; } = "Submit";
+[Parameter] public string? LoadingText { get; set; }
+[Parameter] public bool IsLoading { get; set; }
+[Parameter] public bool Disabled { get; set; }
+[Parameter] public bool FullWidth { get; set; } = true;
+[Parameter] public Color Color { get; set; } = Color.Primary;
+[Parameter] public string? Class { get; set; }
+```
+
+**Usage:**
+```razor
+<SubmitButton Text="Ask Mom or Dad" LoadingText="Sending..." IsLoading="_isSubmitting" Class="mt-6" />
+<SubmitButton Text="Save" IsLoading="_isSaving" />
+<SubmitButton Text="Add Parent" IsLoading="_isSaving" FullWidth="false" />
 ```
 
 ---

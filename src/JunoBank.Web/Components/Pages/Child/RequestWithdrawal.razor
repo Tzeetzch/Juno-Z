@@ -33,11 +33,9 @@
             Back to My Piggy Bank
         </MudButton>
     }
-    else if (!string.IsNullOrEmpty(_errorMessage))
+    else
     {
-        <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
-            @_errorMessage
-        </MudAlert>
+        <ErrorAlert Message="@_errorMessage" OnClose="@(() => _errorMessage = string.Empty)" />
     }
 
     @if (_submitted)
@@ -70,33 +68,16 @@
                             Required="true"
                             HelperText="How much? (Max €1000)" />
 
-                <MudTextField @bind-Value="_model.Reason"
-                              Label="What do you want it for?"
-                              Variant="Variant.Outlined"
-                              Lines="3"
-                              Required="true"
-                              MaxLength="500"
-                              Counter="500"
-                              Class="mt-4"
-                              HelperText="Tell Mom or Dad why you need the money"
-                              Placeholder="For candy, toys, etc." />
+                <DescriptionField @bind-Value="_model.Reason"
+                                  Label="What do you want it for?"
+                                  Lines="3"
+                                  HelperText="Tell Mom or Dad why you need the money"
+                                  Placeholder="For candy, toys, etc." />
 
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Class="mt-6"
-                           Disabled="_isSubmitting">
-                    @if (_isSubmitting)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Sending...</span>
-                    }
-                    else
-                    {
-                        <span>Ask Mom or Dad</span>
-                    }
-                </MudButton>
+                <SubmitButton Text="Ask Mom or Dad"
+                              LoadingText="Sending..."
+                              IsLoading="_isSubmitting"
+                              Class="mt-6" />
 
                 <MudButton Variant="Variant.Text"
                            Color="Color.Default"

@@ -44,10 +44,7 @@
             }
         </MudText>
 
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
-        }
+        <ErrorAlert Message="@_errorMessage" />
 
         <form @onsubmit="Save" @onsubmit:preventDefault>
         <div class="neu-card" style="padding: 2rem;">
@@ -145,17 +142,7 @@
                            OnClick="Cancel">
                     Cancel
                 </MudButton>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Disabled="_isSaving"
-                           ButtonType="ButtonType.Submit">
-                    @if (_isSaving)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    }
-                    Save
-                </MudButton>
+                <SubmitButton Text="Save" IsLoading="_isSaving" />
             </div>
         </div>
         </form>

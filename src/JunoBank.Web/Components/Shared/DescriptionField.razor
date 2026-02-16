@@ -1,0 +1,23 @@
+<MudTextField T="string"
+              Value="Value"
+              ValueChanged="ValueChanged"
+              Label="@Label"
+              Variant="Variant.Outlined"
+              Lines="Lines"
+              Required="Required"
+              MaxLength="500"
+              Counter="500"
+              Class="@Class"
+              HelperText="@HelperText"
+              Placeholder="@Placeholder" />
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Description";
+    [Parameter] public int Lines { get; set; } = 2;
+    [Parameter] public string? HelperText { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool Required { get; set; } = true;
+    [Parameter] public string Class { get; set; } = "mt-4";
+}

@@ -38,12 +38,7 @@
             Current balance: €@_child.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
         </MudText>
 
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
-                @_errorMessage
-            </MudAlert>
-        }
+        <ErrorAlert Message="@_errorMessage" OnClose="@(() => _errorMessage = string.Empty)" />
 
         <div class="neu-card" style="padding: 2rem;">
             <EditForm Model="_model" OnValidSubmit="HandleSubmit">
@@ -62,33 +57,13 @@
                             Required="true"
                             HelperText="Max €1000" />
 
-                <MudTextField @bind-Value="_model.Description"
-                              Label="Description"
-                              Variant="Variant.Outlined"
-                              Lines="2"
-                              Required="true"
-                              MaxLength="500"
-                              Counter="500"
-                              Class="mt-4"
-                              HelperText="What is this for?"
-                              Placeholder="Chores, birthday money, etc." />
+                <DescriptionField @bind-Value="_model.Description"
+                                  HelperText="What is this for?"
+                                  Placeholder="Chores, birthday money, etc." />
 
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Class="mt-6"
-                           Disabled="_isSubmitting">
-                    @if (_isSubmitting)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Processing...</span>
-                    }
-                    else
-                    {
-                        <span>Submit</span>
-                    }
-                </MudButton>
+                <SubmitButton LoadingText="Processing..."
+                              IsLoading="_isSubmitting"
+                              Class="mt-6" />
             </EditForm>
         </div>
     }
