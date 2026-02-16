@@ -9,7 +9,7 @@ namespace JunoBank.Web.Utils;
 public static class StatusDisplayHelper
 {
     /// <summary>
-    /// Gets human-readable status text with emoji indicator.
+    /// Gets human-readable status text.
     /// </summary>
     public static string GetStatusText(RequestStatus status) => status switch
     {

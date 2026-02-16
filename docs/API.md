@@ -45,7 +45,7 @@ Core service for user data, balances, transactions, requests, and user managemen
 // Balance & Transactions
 Task<decimal> GetBalanceAsync(int userId);
 Task<List<Transaction>> GetRecentTransactionsAsync(int userId, int limit = 50);
-Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int limit = 100);
+Task<List<Transaction>> GetTransactionsForChildAsync(int childId, int skip = 0, int limit = 20);
 Task<List<Transaction>> GetAllTransactionsAsync(int limit = 100);
 
 // Dashboard data
@@ -61,7 +61,7 @@ Task<int> GetOpenRequestCountAsync(int childId);
 Task<MoneyRequest> CreateMoneyRequestAsync(int childId, decimal amount, RequestType type, string description);
 Task<List<MoneyRequest>> GetPendingRequestsAsync();
 Task<List<MoneyRequest>> GetPendingRequestsForChildAsync(int childId);
-Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int limit = 50);
+Task<List<MoneyRequest>> GetCompletedRequestsForChildAsync(int childId, int skip = 0, int limit = 20);
 Task ResolveRequestAsync(int requestId, int parentUserId, bool approve, string? parentNote = null);
 
 // Manual transactions
@@ -231,9 +231,9 @@ CurrencyFormatter.FormatInvariant(10.5m)     // Invariant culture format
 Request status display helpers.
 
 ```csharp
-StatusDisplayHelper.GetStatusText(RequestStatus.Pending)   // "⏳ Waiting"
-StatusDisplayHelper.GetStatusText(RequestStatus.Approved)  // "✅ Approved"
-StatusDisplayHelper.GetStatusText(RequestStatus.Denied)    // "❌ Denied"
+StatusDisplayHelper.GetStatusText(RequestStatus.Pending)   // "Waiting"
+StatusDisplayHelper.GetStatusText(RequestStatus.Approved)  // "Approved"
+StatusDisplayHelper.GetStatusText(RequestStatus.Denied)    // "Denied"
 
 StatusDisplayHelper.GetStatusColor(RequestStatus.Pending)  // "#FFA726" (orange)
 ```
