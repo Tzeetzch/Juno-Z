@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -23,3 +27,115 @@ jobs:
 
     - name: Unit tests
       run: dotnet test tests/JunoBank.Tests/JunoBank.Tests.csproj --configuration Release --verbosity normal
+
+  mutation-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+
+    - name: Restore tools
+      run: dotnet tool restore
+
+    - name: Run Stryker mutation testing
+      working-directory: tests/JunoBank.Tests
+      run: dotnet stryker --config-file ../../stryker-config.json -O ../../StrykerOutput
+
+    - name: Post mutation score to PR
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+
+          // Parse current report
+          let current = { score: 0, killed: 0, survived: 0, timeout: 0, noCoverage: 0 };
+          try {
+            const report = JSON.parse(fs.readFileSync('StrykerOutput/reports/mutation-report.json', 'utf8'));
+            for (const [file, info] of Object.entries(report.files)) {
+              for (const m of info.mutants) {
+                switch(m.status) {
+                  case 'Killed': current.killed++; break;
+                  case 'Survived': current.survived++; break;
+                  case 'Timeout': current.timeout++; break;
+                  case 'NoCoverage': current.noCoverage++; break;
+                }
+              }
+            }
+            const detected = current.killed + current.timeout;
+            const total = current.killed + current.survived + current.timeout + current.noCoverage;
+            current.score = total > 0 ? parseFloat(((detected / total) * 100).toFixed(2)) : 0;
+          } catch (e) {
+            core.warning('Could not parse mutation report: ' + e.message);
+            return;
+          }
+
+          // Parse baseline
+          let baseline = { score: 0 };
+          try {
+            baseline = JSON.parse(fs.readFileSync('mutation-baseline.json', 'utf8'));
+          } catch (e) {
+            core.info('No baseline found, skipping comparison');
+          }
+
+          const diff = (current.score - baseline.score).toFixed(2);
+          const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
+          const sign = diff > 0 ? '+' : '';
+
+          const body = [
+            `## 🧬 Mutation Testing`,
+            ``,
+            `| Metric | Value |`,
+            `|--------|-------|`,
+            `| Score | **${current.score}%** ${emoji} (${sign}${diff}% vs baseline) |`,
+            `| Killed | ${current.killed} |`,
+            `| Survived | ${current.survived} |`,
+            `| No Coverage | ${current.noCoverage} |`,
+            `| Timeout | ${current.timeout} |`,
+            ``,
+            `<details><summary>What does this mean?</summary>`,
+            ``,
+            `Stryker mutates your code (flips conditions, removes lines, changes values) and runs tests against each mutation. **Killed** = tests caught it (good). **Survived** = tests missed it (weak spot). **No Coverage** = no test touches this code.`,
+            ``,
+            `Download the full HTML report from the **Artifacts** section below for per-file details.`,
+            `</details>`,
+          ].join('\n');
+
+          // Find and update existing comment, or create new one
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const existing = comments.find(c => c.body.includes('## 🧬 Mutation Testing'));
+
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }
+
+    - name: Upload mutation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mutation-report
+        path: StrykerOutput/reports/
+        retention-days: 14

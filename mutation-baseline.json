@@ -1,0 +1,9 @@
+{
+  "score": 47.95,
+  "killed": 337,
+  "survived": 134,
+  "timeout": 2,
+  "noCoverage": 234,
+  "totalDetected": 339,
+  "totalMutants": 707
+}
