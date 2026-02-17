@@ -12,7 +12,10 @@ using MudBlazor.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Load email config from data volume (written by setup wizard, persists across restarts)
-var emailConfigPath = Path.Combine("Data", "email-config.json");
+// Derive path from connection string so it matches EmailConfigService.GetConfigPath() on all platforms
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Data/junobank.db";
+var dataDir = Path.GetDirectoryName(connStr.Replace("Data Source=", "")) ?? "Data";
+var emailConfigPath = Path.Combine(dataDir, "email-config.json");
 builder.Configuration.AddJsonFile(emailConfigPath, optional: true, reloadOnChange: true);
 
 // Add services to the container.
