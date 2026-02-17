@@ -2,9 +2,7 @@ version: "3.8"
 
 services:
   junobank:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: ghcr.io/tzeetzch/juno-z:latest
     container_name: junobank
     restart: unless-stopped
     ports:
