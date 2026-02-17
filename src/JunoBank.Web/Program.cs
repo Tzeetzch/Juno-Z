@@ -59,6 +59,7 @@ builder.Services.AddScoped<IAllowanceService, AllowanceService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<IEmailConfigService, EmailConfigService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IBrowserTimeService, BrowserTimeService>();
 
 // Email service - checks config at runtime so setup wizard changes take effect immediately
@@ -75,6 +76,7 @@ builder.Services.AddScoped<IEmailService>(sp =>
 
 // Background services
 builder.Services.AddHostedService<AllowanceBackgroundService>();
+builder.Services.AddHostedService<NotificationBackgroundService>();
 
 // Data Protection - use custom path if specified (for Docker)
 var dataProtectionKeysPath = builder.Configuration["DataProtection:Keys"];

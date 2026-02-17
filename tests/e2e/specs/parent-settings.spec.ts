@@ -128,21 +128,66 @@ test.describe('Parent Settings Page', () => {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible({ timeout: 10000 });
   });
 
+  test('should show notification section for all parents', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('No notifications configured')).toBeVisible();
+  });
+
+  test('should open notification settings dialog', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    // First Configure button is for notifications (before admin panel)
+    await page.locator('button:has-text("Configure")').first().click();
+
+    await expect(page.getByText('Notification Settings')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Weekly summary email')).toBeVisible();
+    await expect(page.locator('.mud-dialog button:has-text("Cancel")')).toBeVisible();
+    await expect(page.locator('.mud-dialog button:has-text("Save")')).toBeVisible();
+  });
+
+  test('should save notification preference and show schedule', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    // Open notification dialog
+    await page.locator('button:has-text("Configure")').first().click();
+    await expect(page.getByText('Notification Settings')).toBeVisible({ timeout: 10000 });
+
+    // Enable the toggle (scoped to dialog)
+    await page.locator('.mud-dialog .mud-switch').first().click();
+
+    // Day and time fields should appear
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Day of week' })).toBeVisible();
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Time' })).toBeVisible();
+
+    // Save with defaults (Sunday 08:00)
+    await page.locator('.mud-dialog button:has-text("Save")').click();
+
+    // Dialog should close and schedule should be visible
+    await expect(page.getByText('Weekly summary enabled')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Every Sunday at 08:00/)).toBeVisible();
+  });
+
   test('should show email settings section for admin', async ({ page }) => {
     await loginAsParent(page);
     await navigateToParentSettings(page);
 
     await expect(page.getByText('Email Settings')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('button:has-text("Configure")')).toBeVisible();
   });
 
   test('should open email settings dialog', async ({ page }) => {
     await loginAsParent(page);
     await navigateToParentSettings(page);
 
-    await page.locator('button:has-text("Configure")').click();
+    // Email Configure button is the second one (after notifications)
+    const emailSection = page.locator('.neu-card', { hasText: 'SMTP' }).or(page.locator('.neu-card', { hasText: 'Not configured' }));
+    await emailSection.locator('button:has-text("Configure")').click();
 
-    await expect(page.getByText('Email Settings').nth(1)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.mud-dialog').getByText('Email Settings')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'SMTP Host' })).toBeVisible();
     await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'Port' })).toBeVisible();
     await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'Email / Username' })).toBeVisible();

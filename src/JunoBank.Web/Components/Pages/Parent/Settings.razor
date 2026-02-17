@@ -6,6 +6,7 @@
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject IEmailConfigService EmailConfigService
+@inject INotificationService NotificationService
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 
@@ -42,6 +43,42 @@
                     <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-1" /> @child.Name's Settings
                 </MudButton>
             }
+        </div>
+
+        <!-- Notifications — all parents -->
+        <MudDivider Class="my-6" />
+        <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
+            <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" /> Notifications
+        </MudText>
+
+        <div class="neu-card" style="padding: 1.5rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    @if (_notificationEnabled)
+                    {
+                        <MudText Typo="Typo.body1">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mr-1" />
+                            Weekly summary enabled
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @_notificationSchedule
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body1">
+                            <MudIcon Icon="@Icons.Material.Filled.NotificationsOff" Color="Color.Default" Size="Size.Small" Class="mr-1" />
+                            No notifications configured
+                        </MudText>
+                    }
+                </div>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="OpenNotificationDialog">
+                    Configure
+                </MudButton>
+            </div>
         </div>
 
         @if (_isAdmin)
@@ -97,6 +134,8 @@
     private bool _isLoading = true;
     private bool _isAdmin;
     private int _currentUserId;
+    private bool _notificationEnabled;
+    private string _notificationSchedule = "";
 
     private List<ChildSummary> _children = new();
     private List<ParentSummary> _parents = new();
@@ -117,10 +156,46 @@
     private async Task RefreshData()
     {
         _children = await UserService.GetAllChildrenSummaryAsync();
+        await LoadNotificationPreference();
 
         if (_isAdmin)
         {
             _parents = await UserService.GetAllParentsAsync();
+        }
+    }
+
+    private async Task LoadNotificationPreference()
+    {
+        var pref = await NotificationService.GetPreferenceAsync(
+            _currentUserId, Data.Entities.NotificationType.WeeklySummary);
+
+        if (pref is { Enabled: true })
+        {
+            _notificationEnabled = true;
+            _notificationSchedule = $"Every {pref.DayOfWeek} at {pref.TimeOfDay:HH:mm}";
+        }
+        else
+        {
+            _notificationEnabled = false;
+            _notificationSchedule = "";
+        }
+    }
+
+    private async Task OpenNotificationDialog()
+    {
+        var parameters = new DialogParameters<NotificationSettingsDialog>
+        {
+            { x => x.UserId, _currentUserId }
+        };
+
+        var dialog = await DialogService.ShowAsync<NotificationSettingsDialog>(
+            null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadNotificationPreference();
+            StateHasChanged();
         }
     }
 

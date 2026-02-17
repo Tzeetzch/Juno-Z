@@ -1,8 +1,8 @@
 # Project Status
 
-## Current Phase: K (First-Run Setup Wizard)
+## Current Phase: Post-K (feature additions and polish)
 
-**Completed:** Phases A through J
+**Completed:** Phases A through K
 
 | Phase | Topic | Status |
 |-------|-------|--------|
@@ -16,12 +16,13 @@
 | H | Docker & Deployment | Done |
 | I | Polish (responsive, UX refinements) | Done |
 | J | Multi-Child Support | Done |
+| K | First-Run Setup Wizard | Done |
 
 ---
 
 ## Phase K: First-Run Setup Wizard
 
-**Status:** In progress - UI and service layer implemented, needs testing and polish.
+**Status:** Done — UI, service layer, email step, and E2E tests all complete.
 
 **What's done:**
 - `ISetupService` with `IsSetupRequiredAsync()`, `HasAdminAsync()`, `CompleteSetupAsync()`
@@ -87,14 +88,14 @@
 
 ---
 
-## Test Results (2026-02-16)
+## Test Results (2026-02-17)
 
-**All 181 tests passing.**
+**All 205 tests passing.**
 
 | Suite | Pass | Fail | Total |
 |-------|------|------|-------|
-| Unit tests (xUnit) | 115 | 0 | 115 |
-| E2E tests (Playwright) | 66 | 0 | 66 |
+| Unit tests (xUnit) | 135 | 0 | 135 |
+| E2E tests (Playwright) | 70 | 0 | 70 |
 
 **E2E spec breakdown:**
 
@@ -109,7 +110,7 @@
 | parent-history.spec.ts | 4 | Pass |
 | parent-login-ratelimit.spec.ts | 2 | Pass |
 | parent-requests.spec.ts | 6 | Pass |
-| parent-settings.spec.ts | 8 | Pass |
+| parent-settings.spec.ts | 12 | Pass |
 | parent-transaction.spec.ts | 5 | Pass |
 | request-deposit.spec.ts | 4 | Pass |
 | request-withdrawal.spec.ts | 4 | Pass |
@@ -178,6 +179,48 @@ All components in `Components/Shared/`, documented in `docs/COMPONENTS.md`.
 **What was fixed:**
 - `SmtpEmailService` now uses STARTTLS for port 587 (was incorrectly using full SSL)
 - Email service DI registration changed from static (build-time) to runtime factory so setup wizard email config takes effect without restart
+
+---
+
+## Browser Timezone Support
+
+**Status:** Done (commit `7809a9d`)
+
+**What's done:**
+- `IBrowserTimeService` / `BrowserTimeService` — scoped service detecting browser timezone via JS interop (`Intl.DateTimeFormat`)
+- `MainLayout.razor` initializes timezone on first render, calls `StateHasChanged()` to re-render children
+- All displayed UTC timestamps converted to local time via `BrowserTime.ToLocal()`
+- `ScheduledAllowance` entity stores `TimeZoneId` — background service calculates next run in user's timezone
+- Migration: `AddAllowanceTimeZone` (adds `TimeZoneId` TEXT column with "UTC" default)
+
+---
+
+## Dialog Conversions
+
+**Status:** Done (commit `a1b36e2`)
+
+**What's done:**
+- **ManualTransactionDialog** — Deposit/withdrawal form opened from ChildDetail (replaced `ChildManualTransaction.razor` page)
+- **OrderEditorDialog** — Standing order create/edit opened from ChildSettings (replaced `ChildOrderEditor.razor` page)
+- **ResetPicturePasswordDialog** — Picture password reset opened from ChildSettings (new feature)
+- Backend: `UpdatePicturePasswordAsync`, `UnlockChildAsync`, `GetChildLockoutStatusAsync` in UserService
+- ChildSettings shows lockout status, unlock button, reset password button
+- Dead pages and unused route helpers removed
+- 10 new unit tests for picture password service methods
+
+---
+
+## Email Settings Outside Wizard
+
+**Status:** Done (commit `c847c96`)
+
+**What's done:**
+- `IEmailConfigService` / `EmailConfigService` — read, write, and test SMTP config
+- `EmailSettingsDialog` — MudDialog with SMTP form, test email button, pre-fills from saved config
+- `Settings.razor` — admin-only email section with configured/not-configured status + Configure button
+- Password never exposed from `GetEmailConfig()`; blank password on save preserves existing
+- Refactored `SetupService` and `SetupStep4Email` to use shared `IEmailConfigService`
+- 10 new unit tests, 3 new E2E tests
 
 ---
 

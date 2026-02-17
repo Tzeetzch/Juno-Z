@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<MoneyRequest> MoneyRequests => Set<MoneyRequest>();
     public DbSet<ScheduledAllowance> ScheduledAllowances => Set<ScheduledAllowance>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +95,20 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // NotificationPreference
+        modelBuilder.Entity<NotificationPreference>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One row per parent per notification type
+            entity.HasIndex(e => new { e.UserId, e.Type }).IsUnique();
         });
 
         // PasswordResetToken

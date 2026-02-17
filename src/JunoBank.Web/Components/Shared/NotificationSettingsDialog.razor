@@ -1,0 +1,125 @@
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" /> Notification Settings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+            Receive a weekly email with each child's balance, transactions, and pending requests.
+        </MudAlert>
+
+        <ErrorAlert Message="@_errorMessage" OnClose="@(() => _errorMessage = string.Empty)" />
+
+        <MudSwitch @bind-Value="_enabled"
+                   Label="Weekly summary email"
+                   Color="Color.Primary"
+                   Class="mb-4" />
+
+        @if (_enabled)
+        {
+            <MudSelect @bind-Value="_dayOfWeek"
+                       Label="Day of week"
+                       Variant="Variant.Outlined"
+                       Class="mb-3">
+                <MudSelectItem Value="DayOfWeek.Monday">Monday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Tuesday">Tuesday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Wednesday">Wednesday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Thursday">Thursday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Friday">Friday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Saturday">Saturday</MudSelectItem>
+                <MudSelectItem Value="DayOfWeek.Sunday">Sunday</MudSelectItem>
+            </MudSelect>
+
+            <MudTimePicker @bind-Time="_timeOfDay"
+                           Label="Time"
+                           Variant="Variant.Outlined"
+                           Class="mb-3" />
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Timezone: @(_timeZoneId ?? "UTC")
+            </MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@_isSaving">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int UserId { get; set; }
+
+    [Inject] private INotificationService NotificationService { get; set; } = default!;
+    [Inject] private IBrowserTimeService BrowserTimeService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private bool _enabled;
+    private DayOfWeek _dayOfWeek = DayOfWeek.Sunday;
+    private TimeSpan? _timeOfDay = new TimeSpan(8, 0, 0);
+    private string? _timeZoneId;
+
+    private bool _isSaving;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _timeZoneId = BrowserTimeService.TimeZoneId ?? "UTC";
+
+        var existing = await NotificationService.GetPreferenceAsync(UserId, NotificationType.WeeklySummary);
+        if (existing != null)
+        {
+            _enabled = existing.Enabled;
+            _dayOfWeek = existing.DayOfWeek;
+            _timeOfDay = existing.TimeOfDay.ToTimeSpan();
+            _timeZoneId = existing.TimeZoneId;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        _isSaving = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var time = _timeOfDay ?? new TimeSpan(8, 0, 0);
+
+            await NotificationService.UpsertPreferenceAsync(new NotificationPreference
+            {
+                UserId = UserId,
+                Type = NotificationType.WeeklySummary,
+                Enabled = _enabled,
+                DayOfWeek = _dayOfWeek,
+                TimeOfDay = TimeOnly.FromTimeSpan(time),
+                TimeZoneId = _timeZoneId ?? "UTC"
+            });
+
+            Snackbar.Add("Notification settings saved!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}
