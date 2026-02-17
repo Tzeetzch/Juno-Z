@@ -71,6 +71,28 @@ public interface IUserService
     /// Also clears lockout state.
     /// </summary>
     Task ResetParentPasswordAsync(int targetUserId, string newPassword, int callerAdminId);
+
+    /// <summary>
+    /// Updates a child's picture password to a new sequence.
+    /// </summary>
+    Task UpdatePicturePasswordAsync(int childId, string[] newSequence);
+
+    /// <summary>
+    /// Clears a child's lockout state (failed attempts + locked until).
+    /// </summary>
+    Task UnlockChildAsync(int childId);
+
+    /// <summary>
+    /// Gets a child's current lockout status.
+    /// </summary>
+    Task<ChildLockoutStatus> GetChildLockoutStatusAsync(int childId);
+}
+
+public class ChildLockoutStatus
+{
+    public bool IsLocked { get; set; }
+    public DateTime? LockedUntil { get; set; }
+    public int FailedAttempts { get; set; }
 }
 
 public class ParentDashboardData

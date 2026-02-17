@@ -492,4 +492,59 @@ public class UserService : IUserService
 
         await _db.SaveChangesAsync();
     }
+
+    public async Task UpdatePicturePasswordAsync(int childId, string[] newSequence)
+    {
+        if (newSequence == null || newSequence.Length != 4)
+            throw new ArgumentException("Picture password must be exactly 4 images.", nameof(newSequence));
+
+        var picturePassword = await _db.PicturePasswords
+            .FirstOrDefaultAsync(p => p.UserId == childId);
+
+        if (picturePassword == null)
+            throw new ArgumentException("Child not found or has no picture password.", nameof(childId));
+
+        _logger.LogInformation("Updating picture password for child {ChildId}", childId);
+
+        picturePassword.ImageSequenceHash = SecurityUtils.HashPictureSequence(string.Join(",", newSequence));
+        picturePassword.FailedAttempts = 0;
+        picturePassword.LockedUntil = null;
+
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UnlockChildAsync(int childId)
+    {
+        var picturePassword = await _db.PicturePasswords
+            .FirstOrDefaultAsync(p => p.UserId == childId);
+
+        if (picturePassword == null)
+            throw new ArgumentException("Child not found or has no picture password.", nameof(childId));
+
+        _logger.LogInformation("Unlocking child account {ChildId}", childId);
+
+        picturePassword.FailedAttempts = 0;
+        picturePassword.LockedUntil = null;
+
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<ChildLockoutStatus> GetChildLockoutStatusAsync(int childId)
+    {
+        var picturePassword = await _db.PicturePasswords
+            .FirstOrDefaultAsync(p => p.UserId == childId);
+
+        if (picturePassword == null)
+            return new ChildLockoutStatus();
+
+        var now = DateTime.UtcNow;
+        var isLocked = picturePassword.LockedUntil.HasValue && picturePassword.LockedUntil > now;
+
+        return new ChildLockoutStatus
+        {
+            IsLocked = isLocked,
+            LockedUntil = isLocked ? picturePassword.LockedUntil : null,
+            FailedAttempts = picturePassword.FailedAttempts
+        };
+    }
 }

@@ -108,14 +108,35 @@
         <!-- Picture Password Section -->
         <div class="neu-card" style="padding: 2rem;">
             <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
-                <MudIcon Icon="@Icons.Material.Filled.Image" Class="mr-2" /> Picture Password
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Class="mr-2" /> Picture Password
             </MudText>
-            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); margin-bottom: 1rem;">
-                Change @_child.Name's picture password for logging in.
-            </MudText>
-            <MudAlert Severity="Severity.Info">
-                Coming soon! For now, the picture password can be set during initial setup.
-            </MudAlert>
+
+            @if (_lockoutStatus is { IsLocked: true })
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-3">
+                    @_child.Name's account is locked until @BrowserTime.ToLocal(_lockoutStatus.LockedUntil!.Value).ToString("h:mm tt").
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Warning"
+                               Size="Size.Small"
+                               OnClick="UnlockChild"
+                               Class="ml-2">
+                        Unlock Now
+                    </MudButton>
+                </MudAlert>
+            }
+            else if (_lockoutStatus is { FailedAttempts: > 0 })
+            {
+                <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true">
+                    @_lockoutStatus.FailedAttempts failed login attempt(s).
+                </MudAlert>
+            }
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="OpenResetDialog">
+                Reset Password
+            </MudButton>
         </div>
     }
 </div>
@@ -125,6 +146,7 @@
 
     private User? _child;
     private List<ScheduledAllowance> _orders = new();
+    private ChildLockoutStatus? _lockoutStatus;
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -141,8 +163,9 @@
         if (_child != null)
         {
             await LoadOrders();
+            _lockoutStatus = await UserService.GetChildLockoutStatusAsync(ChildId);
         }
-        
+
         _isLoading = false;
     }
 
@@ -187,14 +210,61 @@
         return local.ToString("MMM d 'at' h:mm tt");
     }
 
-    private void AddNewOrder()
+    private async Task AddNewOrder()
     {
-        Navigation.NavigateTo(AppRoutes.Parent.ChildOrderNew(ChildId));
+        await OpenOrderDialog(null);
     }
 
-    private void EditOrder(ScheduledAllowance order)
+    private async Task EditOrder(ScheduledAllowance order)
     {
-        Navigation.NavigateTo(AppRoutes.Parent.ChildOrderEdit(ChildId, order.Id));
+        await OpenOrderDialog(order.Id);
+    }
+
+    private async Task OpenOrderDialog(int? orderId)
+    {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session == null) return;
+
+        var parameters = new DialogParameters<OrderEditorDialog>
+        {
+            { x => x.ChildId, ChildId },
+            { x => x.ParentUserId, session.UserId },
+            { x => x.OrderId, orderId }
+        };
+
+        var dialog = await DialogService.ShowAsync<OrderEditorDialog>(
+            null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadOrders();
+        }
+    }
+
+    private async Task OpenResetDialog()
+    {
+        var parameters = new DialogParameters<ResetPicturePasswordDialog>
+        {
+            { x => x.ChildId, ChildId },
+            { x => x.ChildName, _child!.Name }
+        };
+
+        var dialog = await DialogService.ShowAsync<ResetPicturePasswordDialog>(
+            null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _lockoutStatus = await UserService.GetChildLockoutStatusAsync(ChildId);
+        }
+    }
+
+    private async Task UnlockChild()
+    {
+        await UserService.UnlockChildAsync(ChildId);
+        _lockoutStatus = await UserService.GetChildLockoutStatusAsync(ChildId);
+        Snackbar.Add($"{_child!.Name}'s account unlocked!", Severity.Success);
     }
 
     private async Task DeleteOrder(ScheduledAllowance order)

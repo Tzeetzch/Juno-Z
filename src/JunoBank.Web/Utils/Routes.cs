@@ -39,24 +39,9 @@ public static class AppRoutes
         public static string ChildTransactionHistory(int childId) => $"/parent/child/{childId}/transactions";
 
         /// <summary>
-        /// Generates the manual transaction URL for a specific child.
-        /// </summary>
-        public static string ChildTransaction(int childId) => $"/parent/child/{childId}/transaction";
-
-        /// <summary>
         /// Generates the settings URL for a specific child.
         /// </summary>
         public static string ChildSettings(int childId) => $"/parent/child/{childId}/settings";
-
-        /// <summary>
-        /// Generates the URL to create a new standing order for a child.
-        /// </summary>
-        public static string ChildOrderNew(int childId) => $"/parent/child/{childId}/order/new";
-
-        /// <summary>
-        /// Generates the URL to edit a standing order for a child.
-        /// </summary>
-        public static string ChildOrderEdit(int childId, int orderId) => $"/parent/child/{childId}/order/{orderId}";
     }
 
     public static class Auth

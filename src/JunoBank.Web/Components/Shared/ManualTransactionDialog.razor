@@ -1,0 +1,101 @@
+@using JunoBank.Web.Data.Entities
+@using JunoBank.Web.Services
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add or Remove Money
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); margin-bottom: 1.5rem;">
+            Current balance: @FormatBalance()
+        </MudText>
+
+        <ErrorAlert Message="@_errorMessage" OnClose="@(() => _errorMessage = string.Empty)" />
+
+        <MudRadioGroup @bind-Value="_type" Class="mb-4">
+            <MudRadio Value="TransactionType.Deposit" Color="Color.Success">
+                Add Money (Deposit)
+            </MudRadio>
+            <MudRadio Value="TransactionType.Withdrawal" Color="Color.Error">
+                Remove Money (Withdrawal)
+            </MudRadio>
+        </MudRadioGroup>
+
+        <MoneyInput @bind-Value="_amount"
+                    Required="true"
+                    HelperText="Max €1000" />
+
+        <DescriptionField @bind-Value="_description"
+                          HelperText="What is this for?"
+                          Placeholder="Chores, birthday money, etc." />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Submit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int ChildId { get; set; }
+    [Parameter] public string ChildName { get; set; } = string.Empty;
+    [Parameter] public decimal ChildBalance { get; set; }
+    [Parameter] public int ParentUserId { get; set; }
+
+    [Inject] private IUserService UserService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private TransactionType _type = TransactionType.Deposit;
+    private decimal _amount;
+    private string _description = string.Empty;
+    private bool _isSubmitting;
+    private string _errorMessage = string.Empty;
+
+    private string FormatBalance() =>
+        $"€{ChildBalance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}";
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        _isSubmitting = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            await UserService.CreateManualTransactionForChildAsync(
+                ParentUserId, ChildId, _amount, _type, _description);
+
+            var action = _type == TransactionType.Deposit ? "added to" : "removed from";
+            Snackbar.Add($"€{_amount:0.00} {action} {ChildName}'s balance!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (ArgumentException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

@@ -1,10 +1,13 @@
 @page "/parent/child/{ChildId:int}"
 @attribute [Authorize(Roles = "Parent")]
+@using JunoBank.Web.Auth
 @using JunoBank.Web.Components.Shared
 @using JunoBank.Web.Services
 @using JunoBank.Web.Utils
 @using JunoBank.Web.Data.Entities
+@inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
 <PageTitle>@(_child?.Name ?? "Child") - Juno Bank</PageTitle>
@@ -69,8 +72,8 @@
                        Color="Color.Secondary"
                        Size="Size.Large"
                        Style="flex: 1; min-width: 200px;"
-                       OnClick="@(() => Navigation.NavigateTo(AppRoutes.Parent.ChildTransaction(ChildId)))">
-                💰 Add/Remove Money
+                       OnClick="OpenTransactionDialog">
+                Add/Remove Money
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Default"
@@ -102,15 +105,44 @@
 
     private User? _child;
     private int _openRequestCount;
+    private int _parentUserId;
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
+        var session = await AuthProvider.GetCurrentUserAsync();
+        if (session != null)
+            _parentUserId = session.UserId;
+
         _child = await UserService.GetChildByIdAsync(ChildId);
         if (_child != null)
         {
             _openRequestCount = await UserService.GetOpenRequestCountAsync(ChildId);
         }
         _isLoading = false;
+    }
+
+    private async Task OpenTransactionDialog()
+    {
+        if (_child == null) return;
+
+        var parameters = new DialogParameters<ManualTransactionDialog>
+        {
+            { x => x.ChildId, ChildId },
+            { x => x.ChildName, _child.Name },
+            { x => x.ChildBalance, _child.Balance },
+            { x => x.ParentUserId, _parentUserId }
+        };
+
+        var dialog = await DialogService.ShowAsync<ManualTransactionDialog>(
+            null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            // Reload child data to reflect updated balance
+            _child = await UserService.GetChildByIdAsync(ChildId);
+            _openRequestCount = await UserService.GetOpenRequestCountAsync(ChildId);
+        }
     }
 }

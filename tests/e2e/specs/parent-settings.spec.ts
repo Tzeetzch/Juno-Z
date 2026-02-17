@@ -5,7 +5,7 @@ import { loginAsParent } from '../helpers';
  * Parent Settings (Per-Child) — Standing Orders & Picture Password.
  *
  * The settings page now uses Standing Orders (not the old Scheduled Allowance toggle).
- * Each standing order is managed via a separate order editor page.
+ * Each standing order is managed via an inline dialog.
  *
  * IMPORTANT: Use in-app navigation instead of page.goto() to preserve session.
  */
@@ -62,20 +62,38 @@ test.describe('Parent Settings (Per-Child)', () => {
     }
   });
 
-  test('should navigate to add new order', async ({ page }) => {
+  test('should open add new order dialog', async ({ page }) => {
     await loginAsParent(page);
     await navigateToChildSettings(page, 'Junior');
 
     await page.locator('button:has-text("Add")').click();
-    await expect(page).toHaveURL(/\/parent\/child\/\d+\/order\/new/, { timeout: 10000 });
+
+    // Dialog should open with order editor form
+    await expect(page.getByText('New Standing Order')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.mud-input-control').filter({ hasText: 'Amount' })).toBeVisible();
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible();
+    await expect(page.locator('button:has-text("Save")')).toBeVisible();
   });
 
-  test('should show picture password section', async ({ page }) => {
+  test('should show picture password section with reset button', async ({ page }) => {
     await loginAsParent(page);
     await navigateToChildSettings(page, 'Junior');
 
     await expect(page.getByRole('heading', { name: 'Picture Password' })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/Coming soon/i)).toBeVisible();
+    await expect(page.locator('button:has-text("Reset Password")')).toBeVisible();
+  });
+
+  test('should open reset picture password dialog', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToChildSettings(page, 'Junior');
+
+    await page.locator('button:has-text("Reset Password")').click();
+
+    // Dialog should open with PictureGridSetup
+    await expect(page.getByText('Reset Picture Password')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Pick 4 images/)).toBeVisible();
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible();
+    await expect(page.locator('button:has-text("Save")')).toBeVisible();
   });
 
   test('should navigate back to child detail', async ({ page }) => {

@@ -1,6 +1,7 @@
 using JunoBank.Tests.Helpers;
 using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace JunoBank.Tests.Services;
 
@@ -716,6 +717,204 @@ public class UserServiceTests : DatabaseTestBase
 
         // Assert
         Assert.Empty(result);
+    }
+
+    #endregion
+
+    #region UpdatePicturePasswordAsync Tests
+
+    [Fact]
+    public async Task UpdatePicturePasswordAsync_UpdatesHash()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "oldhash",
+            GridSize = 9,
+            SequenceLength = 4
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.UpdatePicturePasswordAsync(child.Id, new[] { "star", "moon", "cat", "dog" });
+
+        // Assert
+        var updated = await Db.PicturePasswords.FirstAsync(p => p.UserId == child.Id);
+        Assert.NotEqual("oldhash", updated.ImageSequenceHash);
+        Assert.Equal(Web.Utils.SecurityUtils.HashPictureSequence("star,moon,cat,dog"), updated.ImageSequenceHash);
+    }
+
+    [Fact]
+    public async Task UpdatePicturePasswordAsync_ClearsLockoutState()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "oldhash",
+            FailedAttempts = 5,
+            LockedUntil = DateTime.UtcNow.AddMinutes(5)
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.UpdatePicturePasswordAsync(child.Id, new[] { "a", "b", "c", "d" });
+
+        // Assert
+        var updated = await Db.PicturePasswords.FirstAsync(p => p.UserId == child.Id);
+        Assert.Equal(0, updated.FailedAttempts);
+        Assert.Null(updated.LockedUntil);
+    }
+
+    [Fact]
+    public async Task UpdatePicturePasswordAsync_WrongLength_ThrowsArgument()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.UpdatePicturePasswordAsync(1, new[] { "a", "b" }));
+    }
+
+    [Fact]
+    public async Task UpdatePicturePasswordAsync_ChildNotFound_ThrowsArgument()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.UpdatePicturePasswordAsync(999, new[] { "a", "b", "c", "d" }));
+    }
+
+    #endregion
+
+    #region UnlockChildAsync Tests
+
+    [Fact]
+    public async Task UnlockChildAsync_ClearsLockoutState()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "hash",
+            FailedAttempts = 5,
+            LockedUntil = DateTime.UtcNow.AddMinutes(5)
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.UnlockChildAsync(child.Id);
+
+        // Assert
+        var updated = await Db.PicturePasswords.FirstAsync(p => p.UserId == child.Id);
+        Assert.Equal(0, updated.FailedAttempts);
+        Assert.Null(updated.LockedUntil);
+    }
+
+    [Fact]
+    public async Task UnlockChildAsync_ChildNotFound_ThrowsArgument()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.UnlockChildAsync(999));
+    }
+
+    #endregion
+
+    #region GetChildLockoutStatusAsync Tests
+
+    [Fact]
+    public async Task GetChildLockoutStatusAsync_LockedChild_ReturnsLocked()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        var lockedUntil = DateTime.UtcNow.AddMinutes(5);
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "hash",
+            FailedAttempts = 5,
+            LockedUntil = lockedUntil
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        var status = await _service.GetChildLockoutStatusAsync(child.Id);
+
+        // Assert
+        Assert.True(status.IsLocked);
+        Assert.NotNull(status.LockedUntil);
+        Assert.Equal(5, status.FailedAttempts);
+    }
+
+    [Fact]
+    public async Task GetChildLockoutStatusAsync_UnlockedChild_ReturnsNotLocked()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "hash",
+            FailedAttempts = 0
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        var status = await _service.GetChildLockoutStatusAsync(child.Id);
+
+        // Assert
+        Assert.False(status.IsLocked);
+        Assert.Null(status.LockedUntil);
+        Assert.Equal(0, status.FailedAttempts);
+    }
+
+    [Fact]
+    public async Task GetChildLockoutStatusAsync_ExpiredLockout_ReturnsNotLocked()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        Db.PicturePasswords.Add(new PicturePassword
+        {
+            UserId = child.Id,
+            ImageSequenceHash = "hash",
+            FailedAttempts = 5,
+            LockedUntil = DateTime.UtcNow.AddMinutes(-1) // Expired
+        });
+        await Db.SaveChangesAsync();
+
+        // Act
+        var status = await _service.GetChildLockoutStatusAsync(child.Id);
+
+        // Assert
+        Assert.False(status.IsLocked);
+    }
+
+    [Fact]
+    public async Task GetChildLockoutStatusAsync_ChildNotFound_ReturnsDefault()
+    {
+        // Act
+        var status = await _service.GetChildLockoutStatusAsync(999);
+
+        // Assert
+        Assert.False(status.IsLocked);
+        Assert.Equal(0, status.FailedAttempts);
     }
 
     #endregion

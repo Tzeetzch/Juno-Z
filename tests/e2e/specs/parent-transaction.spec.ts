@@ -8,30 +8,23 @@ import { loginAsParent } from '../helpers';
  * IMPORTANT: Use in-app navigation instead of page.goto() to preserve session.
  */
 
-// Helper function to navigate to a child's transaction page
-async function navigateToChildTransaction(page: any, childName: string) {
+// Helper function to open the transaction dialog for a child
+async function openTransactionDialog(page: any, childName: string) {
   // Click on child card
   await page.locator(`.child-card:has-text("${childName}")`).click();
   await expect(page).toHaveURL(/\/parent\/child\/\d+/, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
 
-  // Click Add/Remove Money button on child detail page
+  // Click Add/Remove Money button — opens dialog instead of navigating
   await page.locator('button:has-text("Add/Remove Money")').click();
-  await expect(page).toHaveURL(/\/parent\/child\/\d+\/transaction/, { timeout: 10000 });
-  await page.waitForLoadState('networkidle');
+  await expect(page.getByText('Add or Remove Money')).toBeVisible({ timeout: 10000 });
 }
 
 test.describe('Parent Manual Transaction', () => {
 
-  test('should show manual transaction form for child', async ({ page }) => {
+  test('should show transaction dialog with form fields', async ({ page }) => {
     await loginAsParent(page);
-    await navigateToChildTransaction(page, 'Junior');
-
-    // Check for child context header
-    await expect(page.getByText(/Managing: Junior/i)).toBeVisible({ timeout: 10000 });
-
-    // Check page title
-    await expect(page.getByText('💰 Add or Remove Money')).toBeVisible();
+    await openTransactionDialog(page, 'Junior');
 
     // Check for radio buttons
     await expect(page.getByText('Add Money (Deposit)')).toBeVisible();
@@ -41,13 +34,14 @@ test.describe('Parent Manual Transaction', () => {
     await expect(page.locator('.mud-input-control').filter({ hasText: 'Amount' })).toBeVisible();
     await expect(page.locator('.mud-input-control').filter({ hasText: 'Description' })).toBeVisible();
 
-    // Check for submit button
+    // Check for dialog buttons
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible();
     await expect(page.locator('button:has-text("Submit")')).toBeVisible();
   });
 
   test('should add money successfully', async ({ page }) => {
     await loginAsParent(page);
-    await navigateToChildTransaction(page, 'Junior');
+    await openTransactionDialog(page, 'Junior');
 
     // Deposit is default, just fill the form
     await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('5.00');
@@ -60,7 +54,7 @@ test.describe('Parent Manual Transaction', () => {
 
   test('should remove money successfully', async ({ page }) => {
     await loginAsParent(page);
-    await navigateToChildTransaction(page, 'Junior');
+    await openTransactionDialog(page, 'Junior');
 
     // Select withdrawal by clicking the radio label
     await page.getByText('Remove Money (Withdrawal)').click();
@@ -81,12 +75,14 @@ test.describe('Parent Manual Transaction', () => {
     await expect(page).toHaveURL(/\/parent\/child\/\d+/, { timeout: 10000 });
   });
 
-  test('should navigate back to child detail from transaction page', async ({ page }) => {
+  test('should close dialog on cancel', async ({ page }) => {
     await loginAsParent(page);
-    await navigateToChildTransaction(page, 'Junior');
+    await openTransactionDialog(page, 'Junior');
 
-    // Use ChildContextHeader back button (text is "Back" with ArrowBack icon)
-    await page.locator('button:has-text("Back")').click();
-    await expect(page).toHaveURL(/\/parent\/child\/\d+$/, { timeout: 10000 });
+    await page.locator('button:has-text("Cancel")').click();
+
+    // Dialog should close, still on child detail page
+    await expect(page.getByText('Add or Remove Money').first()).toBeHidden({ timeout: 5000 });
+    await expect(page).toHaveURL(/\/parent\/child\/\d+$/, { timeout: 5000 });
   });
 });
