@@ -211,5 +211,6 @@
             null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
 
         await dialog.Result;
+        StateHasChanged();
     }
 }
