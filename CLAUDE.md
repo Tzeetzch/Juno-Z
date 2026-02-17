@@ -7,7 +7,6 @@
 
 Before responding, read these files for full context:
 - `docs/ARCHITECTURE.md` - Tech decisions, entities, structure
-- `docs/STATUS.md` - Current phase and open tickets
 - `docs/CONVENTIONS.md` - Coding standards
 - `docs/COMPONENTS.md` - Reusable components and page patterns
 - `docs/API.md` - Services, utilities, and entities reference
@@ -18,9 +17,8 @@ Before responding, read these files for full context:
 
 ## Project Status
 
-**Completed:** Phases A-J (setup through multi-child support)
-**Current:** Phase K (First-Run Setup Wizard) - UI and service layer implemented
-**Parked:** Request notifications, production email config
+All core phases (A-K) complete. Backlog tracked in [GitHub Issues](https://github.com/Tzeetzch/Juno-Z/issues).
+Development history in [GitHub Wiki](https://github.com/Tzeetzch/Juno-Z/wiki).
 
 ### Test Credentials
 - **Parent:** dad@junobank.local / parent123
