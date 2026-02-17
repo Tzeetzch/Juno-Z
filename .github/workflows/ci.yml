@@ -23,3 +23,31 @@ jobs:
 
     - name: Unit tests
       run: dotnet test tests/JunoBank.Tests/JunoBank.Tests.csproj --configuration Release --verbosity normal
+
+  mutation-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+
+    - name: Restore tools
+      run: dotnet tool restore
+
+    - name: Run Stryker mutation testing
+      working-directory: tests/JunoBank.Tests
+      run: dotnet stryker -O ../../StrykerOutput
+
+    - name: Upload mutation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mutation-report
+        path: StrykerOutput/reports/
+        retention-days: 14

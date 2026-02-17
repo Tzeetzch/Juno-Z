@@ -4,6 +4,7 @@ WORKDIR /src
 
 # Copy solution and project files
 COPY src/src.sln ./src/
+COPY src/JunoBank.Core/JunoBank.Core.csproj ./src/JunoBank.Core/
 COPY src/JunoBank.Web/JunoBank.Web.csproj ./src/JunoBank.Web/
 
 # Restore dependencies
