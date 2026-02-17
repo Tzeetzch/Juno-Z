@@ -210,6 +210,10 @@
         var dialog = await DialogService.ShowAsync<EmailSettingsDialog>(
             null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
 
-        await dialog.Result;
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            StateHasChanged();
+        }
     }
 }
