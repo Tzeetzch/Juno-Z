@@ -5,6 +5,8 @@
 @using JunoBank.Web.Services
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
+@inject IEmailConfigService EmailConfigService
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
 <PageTitle>Settings</PageTitle>
@@ -48,6 +50,45 @@
                         Parents="_parents"
                         Children="_children"
                         OnDataChanged="RefreshData" />
+
+            <!-- Email Settings -->
+            <MudDivider Class="my-6" />
+            <MudText Typo="Typo.h5" HtmlTag="h2" Style="margin-bottom: 1rem;">
+                <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" /> Email Settings
+            </MudText>
+
+            <div class="neu-card" style="padding: 1.5rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        @if (EmailConfigService.IsConfigured)
+                        {
+                            <MudText Typo="Typo.body1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mr-1" />
+                                SMTP configured
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Password reset emails are enabled
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1">
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" Class="mr-1" />
+                                Not configured
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Password reset emails are disabled
+                            </MudText>
+                        }
+                    </div>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick="OpenEmailDialog">
+                        Configure
+                    </MudButton>
+                </div>
+            </div>
         }
     }
 </div>
@@ -81,5 +122,19 @@
         {
             _parents = await UserService.GetAllParentsAsync();
         }
+    }
+
+    private async Task OpenEmailDialog()
+    {
+        var adminUser = _parents.FirstOrDefault(p => p.Id == _currentUserId);
+        var parameters = new DialogParameters<EmailSettingsDialog>
+        {
+            { x => x.AdminEmail, adminUser?.Email ?? "" }
+        };
+
+        var dialog = await DialogService.ShowAsync<EmailSettingsDialog>(
+            null, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        await dialog.Result;
     }
 }

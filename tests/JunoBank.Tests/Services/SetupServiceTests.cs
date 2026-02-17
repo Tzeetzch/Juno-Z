@@ -2,7 +2,7 @@ using JunoBank.Tests.Helpers;
 using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
 using JunoBank.Web.Utils;
-using Microsoft.Extensions.Configuration;
+using Moq;
 
 namespace JunoBank.Tests.Services;
 
@@ -12,8 +12,8 @@ public class SetupServiceTests : DatabaseTestBase
 
     public SetupServiceTests()
     {
-        var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
-        _service = new SetupService(Db, config);
+        var emailConfig = new Mock<IEmailConfigService>();
+        _service = new SetupService(Db, emailConfig.Object);
     }
 
     #region IsSetupRequiredAsync Tests

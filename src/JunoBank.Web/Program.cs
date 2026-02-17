@@ -58,6 +58,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAllowanceService, AllowanceService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<ISetupService, SetupService>();
+builder.Services.AddScoped<IEmailConfigService, EmailConfigService>();
 builder.Services.AddScoped<IBrowserTimeService, BrowserTimeService>();
 
 // Email service - checks config at runtime so setup wizard changes take effect immediately

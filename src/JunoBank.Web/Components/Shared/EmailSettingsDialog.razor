@@ -1,0 +1,193 @@
+@using JunoBank.Web.Services
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" /> Email Settings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+            Configure SMTP to enable password reset emails.
+        </MudAlert>
+
+        <ErrorAlert Message="@_errorMessage" OnClose="@(() => _errorMessage = string.Empty)" />
+
+        <MudTextField @bind-Value="_host"
+                      Label="SMTP Host"
+                      Placeholder="smtp.gmail.com"
+                      Variant="Variant.Outlined"
+                      Class="mb-3" />
+        <MudNumericField @bind-Value="_port"
+                         Label="Port"
+                         Min="1" Max="65535"
+                         Variant="Variant.Outlined"
+                         Class="mb-3" />
+        <MudTextField @bind-Value="_username"
+                      Label="Email / Username"
+                      Placeholder="you@gmail.com"
+                      InputType="InputType.Email"
+                      Variant="Variant.Outlined"
+                      Class="mb-3" />
+        <MudTextField @bind-Value="_password"
+                      Label="Password"
+                      Placeholder="@(_isExisting ? "Leave blank to keep current" : "App password")"
+                      InputType="InputType.Password"
+                      Variant="Variant.Outlined"
+                      Class="mb-3" />
+        <MudTextField @bind-Value="_fromEmail"
+                      Label="From Email (optional)"
+                      Placeholder="Defaults to username"
+                      InputType="InputType.Email"
+                      Variant="Variant.Outlined"
+                      Class="mb-3" />
+
+        @if (!string.IsNullOrEmpty(_testResult))
+        {
+            <MudAlert Severity="@_testSeverity" Class="mb-3" Dense="true">@_testResult</MudAlert>
+        }
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   OnClick="SendTestEmail"
+                   Disabled="@(_isTesting || !HasRequiredFields)"
+                   Size="Size.Small"
+                   Class="mb-2">
+            @if (_isTesting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+            }
+            Send Test Email
+        </MudButton>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(_isSaving || !HasRequiredFields)">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string AdminEmail { get; set; } = "";
+
+    [Inject] private IEmailConfigService EmailConfigService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private string _host = "smtp.gmail.com";
+    private int _port = 587;
+    private string _username = "";
+    private string _password = "";
+    private string? _fromEmail;
+    private bool _isExisting;
+
+    private bool _isSaving;
+    private bool _isTesting;
+    private string _errorMessage = string.Empty;
+    private string _testResult = "";
+    private Severity _testSeverity = Severity.Info;
+
+    private bool HasRequiredFields =>
+        !string.IsNullOrWhiteSpace(_host) &&
+        _port > 0 &&
+        !string.IsNullOrWhiteSpace(_username) &&
+        (_isExisting || !string.IsNullOrWhiteSpace(_password));
+
+    protected override void OnInitialized()
+    {
+        var existing = EmailConfigService.GetEmailConfig();
+        if (existing != null)
+        {
+            _isExisting = true;
+            _host = existing.Host;
+            _port = existing.Port;
+            _username = existing.Username;
+            _fromEmail = existing.FromEmail;
+            // Password left blank — user must re-enter to change
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        _isSaving = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var config = BuildConfig();
+            await EmailConfigService.SaveEmailConfigAsync(config);
+            Snackbar.Add("Email settings saved!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task SendTestEmail()
+    {
+        _isTesting = true;
+        _testResult = "";
+        StateHasChanged();
+
+        try
+        {
+            var config = BuildConfig();
+
+            // If editing and password is blank, we can't test (need the actual password)
+            if (_isExisting && string.IsNullOrWhiteSpace(_password))
+            {
+                _testResult = "Enter the password to send a test email.";
+                _testSeverity = Severity.Warning;
+                return;
+            }
+
+            var targetEmail = !string.IsNullOrWhiteSpace(AdminEmail) ? AdminEmail : _username;
+            var success = await EmailConfigService.SendTestEmailAsync(config, targetEmail);
+
+            if (success)
+            {
+                _testResult = $"Test email sent to {targetEmail} — check your inbox!";
+                _testSeverity = Severity.Success;
+            }
+            else
+            {
+                _testResult = "Failed to send. Check your settings.";
+                _testSeverity = Severity.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResult = $"Error: {ex.Message}";
+            _testSeverity = Severity.Error;
+        }
+        finally
+        {
+            _isTesting = false;
+        }
+    }
+
+    private EmailConfigData BuildConfig() => new()
+    {
+        Host = _host,
+        Port = _port,
+        Username = _username,
+        Password = _password,
+        FromEmail = string.IsNullOrWhiteSpace(_fromEmail) ? null : _fromEmail
+    };
+}

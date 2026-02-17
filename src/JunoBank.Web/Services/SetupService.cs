@@ -1,4 +1,3 @@
-using System.Text.Json;
 using JunoBank.Web.Data;
 using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Utils;
@@ -38,15 +37,6 @@ public class SetupData
     public EmailConfigData? Email { get; set; }
 }
 
-public class EmailConfigData
-{
-    public required string Host { get; set; }
-    public int Port { get; set; } = 587;
-    public required string Username { get; set; }
-    public required string Password { get; set; }
-    public string? FromEmail { get; set; }
-}
-
 public class AdminData
 {
     public required string Name { get; set; }
@@ -82,12 +72,12 @@ public class SetupResult
 public class SetupService : ISetupService
 {
     private readonly AppDbContext _db;
-    private readonly IConfiguration _configuration;
+    private readonly IEmailConfigService _emailConfig;
 
-    public SetupService(AppDbContext db, IConfiguration configuration)
+    public SetupService(AppDbContext db, IEmailConfigService emailConfig)
     {
         _db = db;
-        _configuration = configuration;
+        _emailConfig = emailConfig;
     }
 
     public async Task<bool> IsSetupRequiredAsync()
@@ -203,7 +193,7 @@ public class SetupService : ISetupService
             // Write email config file if email settings were provided
             if (data.Email != null)
             {
-                WriteEmailConfig(data.Email);
+                await _emailConfig.SaveEmailConfigAsync(data.Email);
             }
 
             return SetupResult.Succeeded(admin.Id);
@@ -215,30 +205,4 @@ public class SetupService : ISetupService
         }
     }
 
-    private void WriteEmailConfig(EmailConfigData email)
-    {
-        // Determine the data directory — use the DB connection string path, or fallback to "Data"
-        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Data/junobank.db";
-        var dbPath = connStr.Replace("Data Source=", "");
-        var dataDir = Path.GetDirectoryName(dbPath) ?? "Data";
-
-        Directory.CreateDirectory(dataDir);
-        var configPath = Path.Combine(dataDir, "email-config.json");
-
-        var configObj = new
-        {
-            Email = new
-            {
-                Host = email.Host,
-                Port = email.Port,
-                Username = email.Username,
-                Password = email.Password,
-                FromEmail = email.FromEmail ?? email.Username,
-                UseSsl = true
-            }
-        };
-
-        var json = JsonSerializer.Serialize(configObj, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(configPath, json);
-    }
 }

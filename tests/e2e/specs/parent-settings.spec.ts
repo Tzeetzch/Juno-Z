@@ -106,17 +106,48 @@ test.describe('Parent Settings (Per-Child)', () => {
   });
 });
 
-test.describe('Admin Panel — Reset Password', () => {
-  // NOTE: The Settings page (/parent/settings) uses ProtectedSessionStorage which
-  // has a known issue with Blazor Server enhanced navigation (ObjectDisposedException).
-  // The page gets stuck in loading when navigated to from another page.
-  // Full business logic is covered by 7 unit tests in UserServiceTests.cs.
-  // These E2E tests verify the dashboard has a settings button for navigation.
+test.describe('Parent Settings Page', () => {
+
+  async function navigateToParentSettings(page: any) {
+    // Click the settings icon on the dashboard
+    await page.locator('button[aria-label="Settings"]').click();
+    await expect(page).toHaveURL(/\/parent\/settings/, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
+  }
 
   test('should show settings icon on parent dashboard', async ({ page }) => {
     await loginAsParent(page);
 
-    // Settings icon button should be visible on the dashboard
     await expect(page.locator('button[aria-label="Settings"]')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should navigate to settings page', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should show email settings section for admin', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    await expect(page.getByText('Email Settings')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('button:has-text("Configure")')).toBeVisible();
+  });
+
+  test('should open email settings dialog', async ({ page }) => {
+    await loginAsParent(page);
+    await navigateToParentSettings(page);
+
+    await page.locator('button:has-text("Configure")').click();
+
+    await expect(page.getByText('Email Settings').nth(1)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'SMTP Host' })).toBeVisible();
+    await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'Port' })).toBeVisible();
+    await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: 'Email / Username' })).toBeVisible();
+    await expect(page.locator('.mud-dialog .mud-input-control').filter({ hasText: /^Password/ })).toBeVisible();
+    await expect(page.locator('.mud-dialog button:has-text("Cancel")')).toBeVisible();
+    await expect(page.locator('.mud-dialog button:has-text("Save")')).toBeVisible();
   });
 });
