@@ -14,13 +14,12 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: |
+          8.0.x
+          9.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+    - name: Build web project
+      run: dotnet build src/JunoBank.Web/JunoBank.Web.csproj --configuration Release
 
     - name: Unit tests
-      run: dotnet test tests/JunoBank.Tests --configuration Release --no-build --verbosity normal
+      run: dotnet test tests/JunoBank.Tests/JunoBank.Tests.csproj --configuration Release --verbosity normal
