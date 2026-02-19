@@ -28,6 +28,85 @@ jobs:
     - name: Unit tests
       run: dotnet test tests/JunoBank.Tests/JunoBank.Tests.csproj --configuration Release --verbosity normal
 
+  update-mutation-baseline:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+
+    - name: Restore tools
+      run: dotnet tool restore
+
+    - name: Run Stryker mutation testing
+      working-directory: tests/JunoBank.Tests
+      run: dotnet stryker --config-file ../../stryker-config.json -O ../../StrykerOutput
+
+    - name: Update baseline
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+
+          let current = { score: 0, killed: 0, survived: 0, timeout: 0, noCoverage: 0, totalDetected: 0, totalMutants: 0 };
+          try {
+            const report = JSON.parse(fs.readFileSync('StrykerOutput/reports/mutation-report.json', 'utf8'));
+            for (const [file, info] of Object.entries(report.files)) {
+              for (const m of info.mutants) {
+                switch(m.status) {
+                  case 'Killed': current.killed++; break;
+                  case 'Survived': current.survived++; break;
+                  case 'Timeout': current.timeout++; break;
+                  case 'NoCoverage': current.noCoverage++; break;
+                }
+              }
+            }
+            current.totalDetected = current.killed + current.timeout;
+            current.totalMutants = current.killed + current.survived + current.timeout + current.noCoverage;
+            current.score = current.totalMutants > 0 ? parseFloat(((current.totalDetected / current.totalMutants) * 100).toFixed(2)) : 0;
+          } catch (e) {
+            core.setFailed('Could not parse mutation report: ' + e.message);
+            return;
+          }
+
+          // Read existing baseline to check if score changed
+          let baseline = { score: 0 };
+          try {
+            baseline = JSON.parse(fs.readFileSync('mutation-baseline.json', 'utf8'));
+          } catch (e) {
+            core.info('No existing baseline found');
+          }
+
+          if (current.score === baseline.score &&
+              current.killed === baseline.killed &&
+              current.survived === baseline.survived) {
+            core.info('Baseline unchanged, skipping commit');
+            core.exportVariable('BASELINE_CHANGED', 'false');
+            return;
+          }
+
+          fs.writeFileSync('mutation-baseline.json', JSON.stringify(current, null, 2) + '\n');
+          core.info(`Baseline updated: ${baseline.score}% → ${current.score}%`);
+          core.exportVariable('BASELINE_CHANGED', 'true');
+
+    - name: Commit updated baseline
+      if: env.BASELINE_CHANGED == 'true'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add mutation-baseline.json
+        git commit -m "chore: update mutation baseline [skip ci]"
+        git push
+
   docker:
     needs: test
     runs-on: ubuntu-latest
