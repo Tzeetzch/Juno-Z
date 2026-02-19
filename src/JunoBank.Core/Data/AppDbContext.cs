@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Email).HasMaxLength(200);
             entity.Property(e => e.Balance).HasPrecision(18, 2);
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
 
             // One-to-one with PicturePassword
             entity.HasOne(e => e.PicturePassword)

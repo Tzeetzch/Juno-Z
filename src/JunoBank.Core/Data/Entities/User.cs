@@ -24,6 +24,9 @@ public class User
     // Balance
     public decimal Balance { get; set; }
 
+    // Concurrency control for balance updates
+    public int ConcurrencyStamp { get; set; }
+
     // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -791,6 +791,120 @@ public class UserServiceTests : DatabaseTestBase
 
     #endregion
 
+    #region ConcurrencyStamp Tests
+
+    [Fact]
+    public async Task CreateManualTransactionAsync_IncrementsConcurrencyStamp()
+    {
+        // Arrange
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 50m, ConcurrencyStamp = 0 };
+        Db.Users.AddRange(parent, child);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.CreateManualTransactionAsync(parent.Id, 10m, TransactionType.Deposit, "Gift");
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(1, updated!.ConcurrencyStamp);
+    }
+
+    [Fact]
+    public async Task CreateManualTransactionForChildAsync_IncrementsConcurrencyStamp()
+    {
+        // Arrange
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 50m, ConcurrencyStamp = 0 };
+        Db.Users.AddRange(parent, child);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.CreateManualTransactionForChildAsync(parent.Id, child.Id, 10m, TransactionType.Deposit, "Gift");
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(1, updated!.ConcurrencyStamp);
+    }
+
+    [Fact]
+    public async Task ResolveRequestAsync_Approve_IncrementsConcurrencyStamp()
+    {
+        // Arrange
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 50m, ConcurrencyStamp = 0 };
+        Db.Users.AddRange(parent, child);
+        await Db.SaveChangesAsync();
+
+        var request = new MoneyRequest
+        {
+            ChildId = child.Id,
+            Amount = 5m,
+            Type = RequestType.Deposit,
+            Description = "Please",
+            Status = RequestStatus.Pending
+        };
+        Db.MoneyRequests.Add(request);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.ResolveRequestAsync(request.Id, parent.Id, approve: true);
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(1, updated!.ConcurrencyStamp);
+    }
+
+    [Fact]
+    public async Task ResolveRequestAsync_Deny_DoesNotIncrementConcurrencyStamp()
+    {
+        // Arrange
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 50m, ConcurrencyStamp = 0 };
+        Db.Users.AddRange(parent, child);
+        await Db.SaveChangesAsync();
+
+        var request = new MoneyRequest
+        {
+            ChildId = child.Id,
+            Amount = 5m,
+            Type = RequestType.Deposit,
+            Description = "Please",
+            Status = RequestStatus.Pending
+        };
+        Db.MoneyRequests.Add(request);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.ResolveRequestAsync(request.Id, parent.Id, approve: false);
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(0, updated!.ConcurrencyStamp);
+    }
+
+    [Fact]
+    public async Task MultipleTransactions_IncrementsConcurrencyStampEachTime()
+    {
+        // Arrange
+        var parent = new User { Name = "Dad", Email = "dad@test.com", PasswordHash = "hash", Role = UserRole.Parent };
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 100m, ConcurrencyStamp = 0 };
+        Db.Users.AddRange(parent, child);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.CreateManualTransactionForChildAsync(parent.Id, child.Id, 10m, TransactionType.Deposit, "Gift 1");
+        await _service.CreateManualTransactionForChildAsync(parent.Id, child.Id, 5m, TransactionType.Withdrawal, "Spent");
+        await _service.CreateManualTransactionForChildAsync(parent.Id, child.Id, 20m, TransactionType.Deposit, "Gift 2");
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(3, updated!.ConcurrencyStamp);
+        Assert.Equal(125m, updated.Balance); // 100 + 10 - 5 + 20
+    }
+
+    #endregion
+
     #region UnlockChildAsync Tests
 
     [Fact]

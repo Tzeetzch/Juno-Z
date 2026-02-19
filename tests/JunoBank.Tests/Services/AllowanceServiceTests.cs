@@ -317,6 +317,36 @@ public class AllowanceServiceTests : DatabaseTestBase
         Assert.True(allowance.NextRunDate > Now);
     }
 
+    [Fact]
+    public async Task ProcessDueAllowancesAsync_IncrementsConcurrencyStamp()
+    {
+        // Arrange
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m, ConcurrencyStamp = 0 };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        var scheduledTime = Now.AddMinutes(-5);
+        var allowance = new ScheduledAllowance
+        {
+            ChildId = child.Id,
+            Amount = 5m,
+            DayOfWeek = DayOfWeek.Wednesday,
+            TimeOfDay = new TimeOnly(9, 55),
+            Description = "Weekly Allowance",
+            IsActive = true,
+            NextRunDate = scheduledTime
+        };
+        Db.ScheduledAllowances.Add(allowance);
+        await Db.SaveChangesAsync();
+
+        // Act
+        await _service.ProcessDueAllowancesAsync();
+
+        // Assert
+        var updated = await Db.Users.FindAsync(child.Id);
+        Assert.Equal(1, updated!.ConcurrencyStamp);
+    }
+
     #endregion
 
     #region GetNextRunDateAsync Tests
