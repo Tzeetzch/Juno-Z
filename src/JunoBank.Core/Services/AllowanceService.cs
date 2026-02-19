@@ -60,6 +60,7 @@ public class AllowanceService : IAllowanceService
 
                 // Update child's balance
                 allowance.Child.Balance += allowance.Amount;
+                allowance.Child.ConcurrencyStamp++;
 
                 // Update schedule tracking — calculate next run in user's timezone, store as UTC
                 allowance.LastRunDate = allowance.NextRunDate;

@@ -16,6 +16,24 @@ public class UserService : IUserService
         _logger = logger;
     }
 
+    private async Task ExecuteWithConcurrencyRetryAsync(Func<Task> operation, int maxRetries = 3)
+    {
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                await operation();
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maxRetries)
+            {
+                _logger.LogWarning("Concurrency conflict on attempt {Attempt}, retrying...", attempt + 1);
+                foreach (var entry in _db.ChangeTracker.Entries())
+                    entry.State = EntityState.Detached;
+            }
+        }
+    }
+
     /// <summary>
     /// Validates that the given userId belongs to a parent. Throws UnauthorizedAccessException if not.
     /// </summary>
@@ -138,56 +156,61 @@ public class UserService : IUserService
     {
         await RequireParentAsync(parentUserId);
 
-        var request = await _db.MoneyRequests
-            .Include(r => r.Child)
-            .FirstOrDefaultAsync(r => r.Id == requestId);
-
-        if (request == null)
-            throw new ArgumentException("Request not found");
-
-        if (request.Status != RequestStatus.Pending)
-            throw new InvalidOperationException("Request has already been resolved");
-
-        _logger.LogInformation("Parent {ParentId} {Action} request {RequestId} for child {ChildId} ({Amount:C})",
-            parentUserId, approve ? "approving" : "denying", requestId, request.ChildId, request.Amount);
-
-        request.Status = approve ? RequestStatus.Approved : RequestStatus.Denied;
-        request.ResolvedByUserId = parentUserId;
-        request.ParentNote = parentNote;
-        request.ResolvedAt = DateTime.UtcNow;
-
-        if (approve)
+        await ExecuteWithConcurrencyRetryAsync(async () =>
         {
-            var child = request.Child;
+            var request = await _db.MoneyRequests
+                .Include(r => r.Child)
+                .FirstOrDefaultAsync(r => r.Id == requestId);
 
-            if (request.Type == RequestType.Withdrawal)
+            if (request == null)
+                throw new ArgumentException("Request not found");
+
+            if (request.Status != RequestStatus.Pending)
+                throw new InvalidOperationException("Request has already been resolved");
+
+            _logger.LogInformation("Parent {ParentId} {Action} request {RequestId} for child {ChildId} ({Amount:C})",
+                parentUserId, approve ? "approving" : "denying", requestId, request.ChildId, request.Amount);
+
+            request.Status = approve ? RequestStatus.Approved : RequestStatus.Denied;
+            request.ResolvedByUserId = parentUserId;
+            request.ParentNote = parentNote;
+            request.ResolvedAt = DateTime.UtcNow;
+
+            if (approve)
             {
-                if (child.Balance < request.Amount)
-                    throw new InvalidOperationException("Insufficient balance for withdrawal");
+                var child = request.Child;
 
-                child.Balance -= request.Amount;
+                if (request.Type == RequestType.Withdrawal)
+                {
+                    if (child.Balance < request.Amount)
+                        throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+                    child.Balance -= request.Amount;
+                }
+                else
+                {
+                    child.Balance += request.Amount;
+                }
+
+                child.ConcurrencyStamp++;
+
+                // Create a matching transaction record
+                var transaction = new Transaction
+                {
+                    UserId = child.Id,
+                    Amount = request.Amount,
+                    Type = request.Type == RequestType.Deposit ? TransactionType.Deposit : TransactionType.Withdrawal,
+                    Description = request.Description,
+                    IsApproved = true,
+                    ApprovedByUserId = parentUserId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _db.Transactions.Add(transaction);
             }
-            else
-            {
-                child.Balance += request.Amount;
-            }
 
-            // Create a matching transaction record
-            var transaction = new Transaction
-            {
-                UserId = child.Id,
-                Amount = request.Amount,
-                Type = request.Type == RequestType.Deposit ? TransactionType.Deposit : TransactionType.Withdrawal,
-                Description = request.Description,
-                IsApproved = true,
-                ApprovedByUserId = parentUserId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _db.Transactions.Add(transaction);
-        }
-
-        await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
+        });
     }
 
     public async Task<List<Transaction>> GetAllTransactionsAsync(int limit = 100)
@@ -203,10 +226,6 @@ public class UserService : IUserService
         await RequireParentAsync(parentUserId);
         _logger.LogInformation("Parent {ParentId} creating {Type} of {Amount:C}", parentUserId, type, amount);
 
-        var child = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Child);
-        if (child == null)
-            throw new InvalidOperationException("No child account found");
-
         if (amount <= 0)
             throw new ArgumentException("Amount must be greater than zero", nameof(amount));
 
@@ -216,27 +235,37 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Description is required", nameof(description));
 
-        if (type == TransactionType.Withdrawal && child.Balance < amount)
-            throw new InvalidOperationException("Insufficient balance for withdrawal");
-
-        if (type == TransactionType.Deposit)
-            child.Balance += amount;
-        else if (type == TransactionType.Withdrawal)
-            child.Balance -= amount;
-
-        var transaction = new Transaction
+        Transaction transaction = null!;
+        await ExecuteWithConcurrencyRetryAsync(async () =>
         {
-            UserId = child.Id,
-            Amount = amount,
-            Type = type,
-            Description = description,
-            IsApproved = true,
-            ApprovedByUserId = parentUserId,
-            CreatedAt = DateTime.UtcNow
-        };
+            var child = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Child);
+            if (child == null)
+                throw new InvalidOperationException("No child account found");
 
-        _db.Transactions.Add(transaction);
-        await _db.SaveChangesAsync();
+            if (type == TransactionType.Withdrawal && child.Balance < amount)
+                throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+            if (type == TransactionType.Deposit)
+                child.Balance += amount;
+            else if (type == TransactionType.Withdrawal)
+                child.Balance -= amount;
+
+            child.ConcurrencyStamp++;
+
+            transaction = new Transaction
+            {
+                UserId = child.Id,
+                Amount = amount,
+                Type = type,
+                Description = description,
+                IsApproved = true,
+                ApprovedByUserId = parentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _db.Transactions.Add(transaction);
+            await _db.SaveChangesAsync();
+        });
 
         return transaction;
     }
@@ -246,10 +275,6 @@ public class UserService : IUserService
         await RequireParentAsync(parentUserId);
         _logger.LogInformation("Parent {ParentId} creating {Type} of {Amount:C} for child {ChildId}", parentUserId, type, amount, childId);
 
-        var child = await _db.Users.FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
-        if (child == null)
-            throw new InvalidOperationException("Child account not found");
-
         if (amount <= 0)
             throw new ArgumentException("Amount must be greater than zero", nameof(amount));
 
@@ -259,27 +284,37 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Description is required", nameof(description));
 
-        if (type == TransactionType.Withdrawal && child.Balance < amount)
-            throw new InvalidOperationException("Insufficient balance for withdrawal");
-
-        if (type == TransactionType.Deposit)
-            child.Balance += amount;
-        else if (type == TransactionType.Withdrawal)
-            child.Balance -= amount;
-
-        var transaction = new Transaction
+        Transaction transaction = null!;
+        await ExecuteWithConcurrencyRetryAsync(async () =>
         {
-            UserId = child.Id,
-            Amount = amount,
-            Type = type,
-            Description = description,
-            IsApproved = true,
-            ApprovedByUserId = parentUserId,
-            CreatedAt = DateTime.UtcNow
-        };
+            var child = await _db.Users.FirstOrDefaultAsync(u => u.Id == childId && u.Role == UserRole.Child);
+            if (child == null)
+                throw new InvalidOperationException("Child account not found");
 
-        _db.Transactions.Add(transaction);
-        await _db.SaveChangesAsync();
+            if (type == TransactionType.Withdrawal && child.Balance < amount)
+                throw new InvalidOperationException("Insufficient balance for withdrawal");
+
+            if (type == TransactionType.Deposit)
+                child.Balance += amount;
+            else if (type == TransactionType.Withdrawal)
+                child.Balance -= amount;
+
+            child.ConcurrencyStamp++;
+
+            transaction = new Transaction
+            {
+                UserId = child.Id,
+                Amount = amount,
+                Type = type,
+                Description = description,
+                IsApproved = true,
+                ApprovedByUserId = parentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _db.Transactions.Add(transaction);
+            await _db.SaveChangesAsync();
+        });
 
         return transaction;
     }
