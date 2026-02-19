@@ -1,8 +1,5 @@
 @page "/parent/requests"
 @attribute [Authorize(Roles = "Parent")]
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Data.Entities
-@using JunoBank.Web.Services
 @inject CustomAuthStateProvider AuthProvider
 @inject IBrowserTimeService BrowserTime
 @inject IUserService UserService

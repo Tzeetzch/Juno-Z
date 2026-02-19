@@ -1,9 +1,5 @@
 @page "/child/request-withdrawal"
 @attribute [Authorize(Roles = "Child")]
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Components.Shared
-@using JunoBank.Web.Data.Entities
-@using JunoBank.Web.Services
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation

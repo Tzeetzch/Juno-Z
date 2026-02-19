@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using JunoBank.Web.Services;
+using JunoBank.Application.Interfaces;
+using JunoBank.Infrastructure.Email;
 
 namespace JunoBank.Tests.Services;
 

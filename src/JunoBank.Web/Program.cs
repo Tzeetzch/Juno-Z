@@ -1,9 +1,13 @@
+using JunoBank.Application.Interfaces;
+using JunoBank.Application.Services;
+using JunoBank.Infrastructure.BackgroundServices;
+using JunoBank.Infrastructure.Data;
+using JunoBank.Infrastructure.Email;
 using JunoBank.Web.Auth;
-using JunoBank.Web.BackgroundServices;
 using JunoBank.Web.Components;
-using JunoBank.Web.Data;
-using JunoBank.Web.Data.Entities;
 using JunoBank.Web.Services;
+using JunoBank.Domain.Entities;
+using JunoBank.Domain.Enums;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +35,8 @@ var connectionString = string.IsNullOrEmpty(testDbName)
     : $"Data Source=Data/{testDbName}";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseSqlite(connectionString, b => b.MigrationsAssembly("JunoBank.Infrastructure")));
+builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
 // Authentication - hardened cookie configuration
 builder.Services.AddAuthentication(options =>
@@ -123,8 +128,9 @@ app.MapRazorComponents<App>()
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
     await context.Database.MigrateAsync();
-    await DbInitializer.SeedAsync(context);
+    await DbInitializer.SeedAsync(context, passwordService);
 }
 
 // CLI: emergency password reset
@@ -142,6 +148,7 @@ if (args.Length >= 3 && args[0] == "reset-password")
 
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var pwdService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
     var user = await db.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == email && u.Role == UserRole.Parent);
 
     if (user == null)
@@ -150,7 +157,7 @@ if (args.Length >= 3 && args[0] == "reset-password")
         return;
     }
 
-    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+    user.PasswordHash = pwdService.HashPassword(newPassword);
     user.FailedLoginAttempts = 0;
     user.LockoutUntil = null;
     await db.SaveChangesAsync();

@@ -22,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\JunoBank.Core\JunoBank.Core.csproj" />
+    <ProjectReference Include="..\..\src\JunoBank.Application\JunoBank.Application.csproj" />
+    <ProjectReference Include="..\..\src\JunoBank.Infrastructure\JunoBank.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\JunoBank.Domain\JunoBank.Domain.csproj" />
   </ItemGroup>
 
 </Project>

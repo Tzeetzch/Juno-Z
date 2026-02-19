@@ -1,5 +1,5 @@
-using JunoBank.Web.BackgroundServices;
-using JunoBank.Web.Services;
+using JunoBank.Infrastructure.BackgroundServices;
+using JunoBank.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

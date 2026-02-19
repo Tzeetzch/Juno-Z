@@ -1,8 +1,10 @@
 using JunoBank.Tests.Helpers;
-using JunoBank.Web.Auth;
-using JunoBank.Web.Data.Entities;
-using JunoBank.Web.Services;
-using JunoBank.Web.Utils;
+using JunoBank.Application.DTOs;
+using JunoBank.Application.Interfaces;
+using JunoBank.Application.Services;
+using JunoBank.Domain.Entities;
+using JunoBank.Domain.Enums;
+using JunoBank.Application.Utils;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 

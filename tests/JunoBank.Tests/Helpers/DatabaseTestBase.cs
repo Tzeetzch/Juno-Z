@@ -1,4 +1,4 @@
-using JunoBank.Web.Data;
+using JunoBank.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;

@@ -15,7 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JunoBank.Core\JunoBank.Core.csproj" />
+    <ProjectReference Include="..\JunoBank.Application\JunoBank.Application.csproj" />
+    <ProjectReference Include="..\JunoBank.Infrastructure\JunoBank.Infrastructure.csproj" />
+    <ProjectReference Include="..\JunoBank.Domain\JunoBank.Domain.csproj" />
   </ItemGroup>
 
 </Project>

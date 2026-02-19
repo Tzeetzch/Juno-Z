@@ -45,6 +45,7 @@ Development history in [GitHub Wiki](https://github.com/Tzeetzch/Juno-Z/wiki).
 | `/test` | Run all tests |
 | `/docker` | Docker build and deploy |
 | `/security` | Security review |
+| `/clean-architecture` | Restructure project toward Clean Architecture |
 
 ## Key Rules
 

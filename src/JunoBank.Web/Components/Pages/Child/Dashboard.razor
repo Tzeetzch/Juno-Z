@@ -1,10 +1,5 @@
 @page "/child"
 @attribute [Authorize(Roles = "Child")]
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Data.Entities
-@using JunoBank.Web.Services
-@using JunoBank.Web.Components.Shared
-@using JunoBank.Web.Utils
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject NavigationManager Navigation
