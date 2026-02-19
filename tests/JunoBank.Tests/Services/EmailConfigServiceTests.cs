@@ -1,4 +1,6 @@
-using JunoBank.Web.Services;
+using JunoBank.Application.DTOs;
+using JunoBank.Application.Interfaces;
+using JunoBank.Infrastructure.Email;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;

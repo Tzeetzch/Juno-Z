@@ -1,8 +1,5 @@
 @page "/parent/settings"
 @attribute [Authorize(Roles = "Parent")]
-@using JunoBank.Web.Auth
-@using JunoBank.Web.Components.Shared
-@using JunoBank.Web.Services
 @inject IAuthStateProvider AuthProvider
 @inject IUserService UserService
 @inject IEmailConfigService EmailConfigService
@@ -167,7 +164,7 @@
     private async Task LoadNotificationPreference()
     {
         var pref = await NotificationService.GetPreferenceAsync(
-            _currentUserId, Data.Entities.NotificationType.WeeklySummary);
+            _currentUserId, NotificationType.WeeklySummary);
 
         if (pref is { Enabled: true })
         {

@@ -64,12 +64,27 @@ Physical money is becoming rare, but parents want to teach their 5-year-old abou
 | **Email** | MailKit + SMTP | Microsoft-recommended; works with Gmail, SendGrid, etc. |
 | **State Management** | Scoped services + events | Fluxor/Redux overkill for small app |
 
-### Solution Structure
+### Solution Structure (Clean Architecture)
 
 ```
 JunoBank/
 ├── src/
-│   └── JunoBank.Web/                # Single Blazor Server project
+│   ├── JunoBank.Domain/             # Layer 1: Entities & enums (zero dependencies)
+│   │   ├── Entities/                # User, Transaction, MoneyRequest, ScheduledAllowance, etc.
+│   │   └── Enums/                   # UserRole, TransactionType, RequestStatus, etc.
+│   │
+│   ├── JunoBank.Application/        # Layer 2: Interfaces, DTOs, services
+│   │   ├── Interfaces/              # IUserService, IAuthService, IAllowanceService, IAppDbContext, etc.
+│   │   ├── DTOs/                    # AuthResult, DashboardData, SetupData, EmailConfigData, etc.
+│   │   ├── Services/                # Service implementations (business logic)
+│   │   └── Utils/                   # SecurityUtils (picture password hashing)
+│   │
+│   ├── JunoBank.Infrastructure/     # Layer 3: External concerns
+│   │   ├── Data/                    # AppDbContext, DbInitializer, Migrations/
+│   │   ├── Email/                   # SmtpEmailService, ConsoleEmailService, EmailConfigService
+│   │   └── BackgroundServices/      # AllowanceBackgroundService, NotificationBackgroundService
+│   │
+│   └── JunoBank.Web/                # Layer 4: Blazor Server presentation
 │       ├── Components/
 │       │   ├── Layout/              # MainLayout, EmptyLayout, NavMenu
 │       │   ├── Pages/
@@ -80,17 +95,12 @@ JunoBank/
 │       │   │   └── Setup/           # SetupWizard, SetupStep1-4, SetupComplete
 │       │   └── Shared/              # ChildCard, ChildSelector, ChildContextHeader,
 │       │                            # PictureGrid, PictureGridSetup, TransactionList
-│       ├── Data/
-│       │   ├── AppDbContext.cs
-│       │   ├── DbInitializer.cs     # Demo data seeding (JUNO_SEED_DEMO=true)
-│       │   ├── Entities/            # User, Transaction, MoneyRequest, ScheduledAllowance, etc.
-│       │   └── Migrations/
-│       ├── Services/                # IAuthService, IUserService, IAllowanceService, ISetupService, etc.
-│       ├── BackgroundServices/      # AllowanceBackgroundService (scheduled tasks)
-│       ├── Auth/                    # CustomAuthStateProvider, UserSession
+│       ├── Auth/                    # CustomAuthStateProvider
+│       ├── Services/                # BrowserTimeService (presentation-layer)
 │       ├── Constants/               # PicturePasswordImages
-│       ├── Utils/                   # AppRoutes, CurrencyFormatter, SecurityUtils, StatusDisplayHelper
+│       ├── Utils/                   # AppRoutes, CurrencyFormatter, StatusDisplayHelper
 │       └── wwwroot/                 # app.css, css/neumorphic.css
+│
 ├── docker/
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -98,7 +108,17 @@ JunoBank/
 ├── docs/                            # This folder
 └── tests/
     ├── e2e/                         # Playwright E2E tests (64 specs, 13 files)
-    └── JunoBank.Tests/              # xUnit unit tests (96 tests, 8 files)
+    └── JunoBank.Tests/              # xUnit unit tests (160 tests)
+```
+
+### Dependency Rules
+
+```
+Domain        → (nothing)
+Application   → Domain
+Infrastructure→ Application (+ Domain transitively)
+Web           → Application + Infrastructure (for DI wiring)
+Tests         → Application + Infrastructure + Domain
 ```
 
 ### Database Entities

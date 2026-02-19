@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using JunoBank.Web.Services;
+using JunoBank.Application.Interfaces;
+using JunoBank.Infrastructure.Email;
 
 namespace JunoBank.Tests.Services;
 

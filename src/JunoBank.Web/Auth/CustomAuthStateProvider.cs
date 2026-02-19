@@ -1,5 +1,7 @@
 using System.Security.Claims;
-using JunoBank.Web.Data.Entities;
+using JunoBank.Application.DTOs;
+using JunoBank.Application.Interfaces;
+using JunoBank.Domain.Enums;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 

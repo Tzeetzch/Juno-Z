@@ -1,0 +1,36 @@
+namespace JunoBank.Domain.Entities;
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public UserRole Role { get; set; }
+
+    // Admin flag (system-level privilege, separate from family role)
+    public bool IsAdmin { get; set; }
+
+    // Parent authentication
+    public string? Email { get; set; }
+    public string? PasswordHash { get; set; }
+    public int? FailedLoginAttempts { get; set; }
+    public DateTime? LockoutUntil { get; set; }
+
+    // Child authentication
+    public PicturePassword? PicturePassword { get; set; }
+
+    // Child info
+    public DateTime? Birthday { get; set; }
+
+    // Balance
+    public decimal Balance { get; set; }
+
+    // Concurrency control for balance updates
+    public int ConcurrencyStamp { get; set; }
+
+    // Timestamps
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation properties
+    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+    public ICollection<MoneyRequest> MoneyRequests { get; set; } = new List<MoneyRequest>();
+}

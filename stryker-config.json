@@ -1,12 +1,10 @@
 {
   "stryker-config": {
-    "project": "JunoBank.Core.csproj",
+    "project": "JunoBank.Application.csproj",
     "reporters": ["html", "json", "progress", "cleartext"],
     "mutate": [
       "Services/**/*.cs",
-      "BackgroundServices/**/*.cs",
-      "!Services/I*.cs",
-      "!Services/SmtpEmailService.cs",
+      "Utils/**/*.cs",
       "!Services/WeeklySummaryEmailBuilder.cs"
     ],
     "thresholds": {

@@ -1,6 +1,8 @@
 using JunoBank.Tests.Helpers;
-using JunoBank.Web.Data.Entities;
-using JunoBank.Web.Services;
+using JunoBank.Domain.Entities;
+using JunoBank.Domain.Enums;
+using JunoBank.Application.Interfaces;
+using JunoBank.Application.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace JunoBank.Tests.Services;
@@ -11,7 +13,7 @@ public class UserServiceTests : DatabaseTestBase
 
     public UserServiceTests()
     {
-        _service = new UserService(Db, CreateLogger<UserService>());
+        _service = new UserService(Db, CreateLogger<UserService>(), new PasswordService());
     }
 
     #region GetAllChildrenSummaryAsync Tests
@@ -746,7 +748,7 @@ public class UserServiceTests : DatabaseTestBase
         // Assert
         var updated = await Db.PicturePasswords.FirstAsync(p => p.UserId == child.Id);
         Assert.NotEqual("oldhash", updated.ImageSequenceHash);
-        Assert.Equal(Web.Utils.SecurityUtils.HashPictureSequence("star,moon,cat,dog"), updated.ImageSequenceHash);
+        Assert.Equal(JunoBank.Application.Utils.SecurityUtils.HashPictureSequence("star,moon,cat,dog"), updated.ImageSequenceHash);
     }
 
     [Fact]
