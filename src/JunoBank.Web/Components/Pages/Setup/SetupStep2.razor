@@ -112,9 +112,9 @@ else
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(Model.Email) || !Model.Email.Contains('@'))
+        if (string.IsNullOrWhiteSpace(Model.Email) || !ValidationUtils.IsValidEmail(Model.Email))
         {
-            _error = "Please enter a valid email";
+            _error = "Please enter a valid email address.";
             return;
         }
 
