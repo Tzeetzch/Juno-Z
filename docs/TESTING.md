@@ -6,7 +6,7 @@
 
 | Project | Type | Location | Count |
 |---------|------|----------|-------|
-| JunoBank.Tests | xUnit unit tests | `tests/JunoBank.Tests/` | 96 tests |
+| JunoBank.Tests | xUnit unit tests | `tests/JunoBank.Tests/` | 160 tests |
 | E2E | Playwright | `tests/e2e/` | 64 specs |
 
 ---
@@ -29,19 +29,21 @@ tests/JunoBank.Tests/
 ├── BackgroundServices/
 │   └── AllowanceBackgroundServiceTests.cs  # 3 tests
 ├── Services/
-│   ├── AllowanceServiceTests.cs         # 19 tests
+│   ├── AllowanceServiceTests.cs         # 20 tests
 │   ├── AuthServiceTests.cs             # 14 tests (includes rate limiting)
 │   ├── ConsoleEmailServiceTests.cs      # 3 tests
+│   ├── EmailConfigServiceTests.cs       # 10 tests
 │   ├── EmailServiceRegistrationTests.cs # 3 tests
-│   ├── PasswordResetServiceTests.cs     # 20 tests (19 Fact + 1 Theory)
+│   ├── NotificationServiceTests.cs      # 19 tests
+│   ├── PasswordResetServiceTests.cs     # 26 tests (19 Fact + 1 Theory)
 │   ├── SetupServiceTests.cs            # 11 tests
-│   └── UserServiceTests.cs             # 23 tests
+│   └── UserServiceTests.cs             # 51 tests
 └── JunoBank.Tests.csproj
 ```
 
 ### Database Test Base
 
-All service tests inherit from `DatabaseTestBase` for in-memory SQLite:
+All service tests inherit from `DatabaseTestBase` for in-memory SQLite. `Db` is an `AppDbContext` from `JunoBank.Infrastructure.Data`:
 
 ```csharp
 public class MyServiceTests : DatabaseTestBase

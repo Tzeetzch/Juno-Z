@@ -21,9 +21,12 @@ Standard .NET conventions for Juno Bank.
 - File name matches class name
 - Group by feature, not by type:
   ```
-  Components/Pages/Child/Dashboard.razor  (not Pages/Dashboard.razor)
-  Services/TransactionService.cs          (not Services/ITransactionService.cs + TransactionService.cs in separate folders)
+  src/JunoBank.Web/Components/Pages/Child/Dashboard.razor
+  src/JunoBank.Application/Services/UserService.cs
+  src/JunoBank.Domain/Entities/User.cs
+  src/JunoBank.Infrastructure/Data/AppDbContext.cs
   ```
+- Project placement: Services → Application, Entities → Domain, DbContext/Email → Infrastructure, Components/UI → Web
 
 ## Code Style
 
