@@ -4,8 +4,7 @@
     "reporters": ["html", "json", "progress", "cleartext"],
     "mutate": [
       "Services/**/*.cs",
-      "Utils/**/*.cs",
-      "!Services/WeeklySummaryEmailBuilder.cs"
+      "Utils/**/*.cs"
     ],
     "thresholds": {
       "high": 80,
