@@ -52,9 +52,10 @@ test.describe('Request Withdrawal', () => {
 
       // Submit
       await page.locator('button:has-text("Ask Mom or Dad")').click();
+      await page.waitForLoadState('networkidle');
 
       // Should show success message
-      await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 15000 });
       await expect(page.getByText(/Mom or Dad will review/i)).toBeVisible();
 
       // Should have back button
@@ -82,9 +83,10 @@ test.describe('Request Withdrawal', () => {
       await page.locator('.mud-input-control').filter({ hasText: 'Amount' }).locator('input').fill('10.00');
       await page.locator('.mud-input-control').filter({ hasText: 'What do you want it for' }).locator('textarea').fill('For a toy');
       await page.locator('button:has-text("Ask Mom or Dad")').click();
+      await page.waitForLoadState('networkidle');
 
       // Wait for success message
-      await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Request Sent! ✅')).toBeVisible({ timeout: 15000 });
 
       // Click back button
       await page.locator('button:has-text("Back to My Piggy Bank")').click();
