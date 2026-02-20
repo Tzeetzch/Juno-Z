@@ -402,5 +402,37 @@ public class AllowanceServiceTests : DatabaseTestBase
     }
 
     #endregion
+
+    #region Timezone Fallback Tests
+
+    [Fact]
+    public async Task ProcessDueAllowancesAsync_InvalidTimeZone_FallsBackToUtcAndProcesses()
+    {
+        var child = new User { Name = "Junior", Role = UserRole.Child, Balance = 10m };
+        Db.Users.Add(child);
+        await Db.SaveChangesAsync();
+
+        var scheduledTime = Now.AddMinutes(-5);
+        var allowance = new ScheduledAllowance
+        {
+            ChildId = child.Id,
+            Amount = 5m,
+            DayOfWeek = DayOfWeek.Wednesday,
+            TimeOfDay = new TimeOnly(9, 55),
+            Description = "Weekly Allowance",
+            IsActive = true,
+            NextRunDate = scheduledTime,
+            TimeZoneId = "Invalid/Timezone"
+        };
+        Db.ScheduledAllowances.Add(allowance);
+        await Db.SaveChangesAsync();
+
+        var count = await _service.ProcessDueAllowancesAsync();
+
+        Assert.Equal(1, count);
+        Assert.Equal(15m, child.Balance);
+    }
+
+    #endregion
 }
 
