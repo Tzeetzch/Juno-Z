@@ -211,14 +211,15 @@ public class AllowanceService : IAllowanceService
         }
     }
 
-    private static TimeZoneInfo GetTimeZone(string timeZoneId)
+    private TimeZoneInfo GetTimeZone(string timeZoneId)
     {
         try
         {
             return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Invalid timezone '{TimeZoneId}', falling back to UTC", timeZoneId);
             return TimeZoneInfo.Utc;
         }
     }
