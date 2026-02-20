@@ -1,116 +1,51 @@
-Clean Architecture Specialist - Restructure the project toward Clean Architecture.
+Clean Architecture Reference — Post-migration guide for the Juno Bank project.
 
-**Mode:** Incremental (never break the build; migrate layer by layer)
-
-**Goal:** Migrate from the current single-project Blazor Server structure to Clean Architecture with proper dependency inversion and separation of concerns.
-
-## Target Structure
+## Current Architecture
 
 ```
-JunoBank/
-├── src/
-│   ├── JunoBank.Domain/              # Layer 1: Entities & business rules (zero dependencies)
-│   │   ├── Entities/                 # User, Transaction, MoneyRequest, ScheduledAllowance, etc.
-│   │   ├── Enums/                    # UserRole, TransactionType, RequestStatus, etc.
-│   │   └── Exceptions/              # Domain-specific exceptions
-│   │
-│   ├── JunoBank.Application/         # Layer 2: Use cases & interfaces
-│   │   ├── Interfaces/              # IUserService, IAuthService, IAllowanceService, etc.
-│   │   ├── DTOs/                    # ChildDashboardData, ParentDashboardData, ChildSummary, etc.
-│   │   └── Services/                # Service implementations (business logic)
-│   │
-│   ├── JunoBank.Infrastructure/      # Layer 3: External concerns
-│   │   ├── Data/                    # AppDbContext, Migrations, entity configs
-│   │   ├── Email/                   # EmailService, EmailConfigService
-│   │   └── BackgroundServices/      # AllowanceBackgroundService
-│   │
-│   └── JunoBank.Web/                 # Layer 4: Presentation (Blazor)
-│       ├── Components/              # Pages, Layout, Shared
-│       ├── Auth/                    # CustomAuthStateProvider, UserSession
-│       └── wwwroot/                 # Static assets
-│
-├── tests/
-│   ├── JunoBank.Tests/              # Unit tests (Domain + Application)
-│   └── e2e/                         # Playwright E2E tests
-└── docs/
+src/
+├── JunoBank.Domain/          # Layer 1: Entities + Enums (zero dependencies)
+├── JunoBank.Application/     # Layer 2: Interfaces, DTOs, Services, Utils
+├── JunoBank.Infrastructure/  # Layer 3: AppDbContext, Migrations, Email, BackgroundServices
+└── JunoBank.Web/             # Layer 4: Blazor UI, Auth, Constants, wwwroot
 ```
 
-## Dependency Rules
+### Dependency Rules
 
 ```
 Domain ← Application ← Infrastructure
                      ← Web (references Application + Infrastructure for DI registration)
 ```
 
-- **Domain** references NOTHING (no NuGet packages except maybe annotations)
+- **Domain** references nothing
 - **Application** references only Domain
-- **Infrastructure** references Application + Domain (implements interfaces)
-- **Web** references Application + Infrastructure (for DI wiring only)
-- **NEVER** let inner layers reference outer layers
+- **Infrastructure** references Application + Domain
+- **Web** references Application + Infrastructure
 
-## Migration Process
+## Where Does New Code Go?
 
-Follow this order strictly. Each step must compile and pass tests before moving to the next.
+| Type | Project | Path |
+|------|---------|------|
+| Entity / Enum | Domain | `Entities/` or `Enums/` |
+| Service interface | Application | `Interfaces/` |
+| Service implementation | Application | `Services/` |
+| DTO | Application | `DTOs/` |
+| Utility (business logic) | Application | `Utils/` |
+| DbContext / Migration | Infrastructure | `Data/` |
+| Email service | Infrastructure | `Email/` |
+| Background service | Infrastructure | `BackgroundServices/` |
+| Blazor page / component | Web | `Components/Pages/` or `Components/Shared/` |
+| Auth provider | Web | `Auth/` |
+| UI utility (routes, formatters) | Web | `Utils/` or `Constants/` |
 
-### Step 1: Create Domain Layer
-1. Create `JunoBank.Domain` project
-2. Move entities from `JunoBank.Core/Data/Entities/` → `JunoBank.Domain/Entities/`
-3. Move enums to `JunoBank.Domain/Enums/`
-4. Remove ALL framework dependencies from entities (no EF annotations on domain objects)
-5. Update namespaces
-6. Run `/build` and `/test`
+## Architecture Compliance Checklist
 
-### Step 2: Create Application Layer
-1. Create `JunoBank.Application` project (references Domain only)
-2. Move service interfaces (`IUserService`, `IAuthService`, etc.) → `JunoBank.Application/Interfaces/`
-3. Move DTOs (`ChildDashboardData`, `ParentDashboardData`, etc.) → `JunoBank.Application/DTOs/`
-4. Move service implementations → `JunoBank.Application/Services/`
-5. Services should depend on abstractions (e.g., `IAppDbContext` or repository interfaces), not concrete DbContext
-6. Run `/build` and `/test`
+When adding new code, verify:
 
-### Step 3: Create Infrastructure Layer
-1. Create `JunoBank.Infrastructure` project (references Application + Domain)
-2. Move `AppDbContext`, migrations, entity configurations → `JunoBank.Infrastructure/Data/`
-3. Move `EmailService`, `EmailConfigService` → `JunoBank.Infrastructure/Email/`
-4. Move `AllowanceBackgroundService` → `JunoBank.Infrastructure/BackgroundServices/`
-5. EF Core fluent API configs go here (not on domain entities)
-6. Create `IAppDbContext` interface in Application, implement in Infrastructure
-7. Run `/build` and `/test`
-
-### Step 4: Slim Down Web Layer
-1. Web project should only contain: Components, Auth, Program.cs, wwwroot
-2. Move any remaining business logic out of components into Application services
-3. Register all DI in `Program.cs` using extension methods from each layer
-4. Run `/build` and `/test`
-
-### Step 5: Verify & Document
-1. Run full test suite: `/test`
-2. Run architecture check: `/architect`
-3. Update `docs/ARCHITECTURE.md` with new structure
-4. Update `CLAUDE.md` if paths changed
-
-## Rules
-
-- **One step at a time** — never move to the next step until current step compiles and tests pass
-- **No behavior changes** — all existing tests must continue to pass throughout
-- **Preserve git history** — use `git mv` where possible for file moves
-- **Update namespaces** — find and replace across the entire solution after each move
-- **Keep EF Core OUT of Domain** — use fluent API in Infrastructure, not data annotations
-- **DTOs cross boundaries** — domain entities should NOT be returned directly from API/pages
-- **Ask before large moves** — confirm with user before restructuring each layer
-
-## What NOT to Do
-
-- Don't add MediatR/CQRS unless explicitly asked — it's overkill for this app size
-- Don't introduce repository pattern over EF Core unless explicitly asked — DbContext is already a unit of work
-- Don't change business logic while restructuring — that's a separate task
-- Don't rename files unnecessarily — focus on folder structure and namespaces
-- Don't gold-plate — the goal is proper separation, not enterprise astronautics
-
-## Checking Your Work
-
-After each step, verify:
-1. `dotnet build` — zero errors, zero warnings
-2. `dotnet test` — all tests pass
-3. No circular references between projects
-4. Inner layers have no `using` statements from outer layers
+1. **No upward references** — inner layers never reference outer layers
+2. **Services depend on `IAppDbContext`** — not concrete `AppDbContext`
+3. **Password hashing uses `IPasswordService`** — no direct BCrypt calls
+4. **New entities go in Domain** — with no framework dependencies
+5. **New interfaces go in Application** — implementations can be in Application or Infrastructure
+6. **DI registration in `Program.cs`** — Web wires everything together
+7. **Tests reference Application + Infrastructure + Domain** — not Web

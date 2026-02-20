@@ -2,7 +2,7 @@
 
 > Available services and utility classes for building features.
 
-## Services (`Services/`)
+## Application Services (`JunoBank.Application/Services/`)
 
 ### IAuthService
 Handles authentication for parents (email/password) and children (picture password). Includes rate limiting (5 attempts → 5-minute lockout for both).
@@ -179,7 +179,7 @@ Task<UserSession?> GetCurrentUserAsync();
 
 ---
 
-## Utilities (`Utils/`)
+## Application Utils (`JunoBank.Application/Utils/`)
 
 ### AppRoutes
 Centralized URL constants. **Always use these instead of magic strings.**
@@ -249,7 +249,68 @@ SecurityUtils.HashPictureSequence("cat,dog,star,moon")  // SHA256 hash (Base64)
 
 ---
 
-## Constants (`Constants/`)
+## Web Utils (`JunoBank.Web/Utils/`)
+
+### AppRoutes
+Centralized URL constants. **Always use these instead of magic strings.**
+
+```csharp
+// Child routes
+AppRoutes.Child.Dashboard           // "/child"
+AppRoutes.Child.RequestDeposit      // "/child/request-deposit"
+AppRoutes.Child.RequestWithdrawal   // "/child/request-withdrawal"
+
+// Parent routes
+AppRoutes.Parent.Dashboard          // "/parent"
+AppRoutes.Parent.PendingRequests    // "/parent/requests"
+AppRoutes.Parent.Settings           // "/parent/settings"
+
+// Parent child-context routes (methods)
+AppRoutes.Parent.ChildDetail(childId)             // "/parent/child/{id}"
+AppRoutes.Parent.ChildRequests(childId)            // "/parent/child/{id}/requests"
+AppRoutes.Parent.ChildRequestHistory(childId)      // "/parent/child/{id}/request-history"
+AppRoutes.Parent.ChildTransactionHistory(childId)  // "/parent/child/{id}/transactions"
+AppRoutes.Parent.ChildTransaction(childId)         // "/parent/child/{id}/transaction"
+AppRoutes.Parent.ChildSettings(childId)            // "/parent/child/{id}/settings"
+AppRoutes.Parent.ChildOrderNew(childId)            // "/parent/child/{id}/order/new"
+AppRoutes.Parent.ChildOrderEdit(childId, orderId)  // "/parent/child/{id}/order/{orderId}"
+
+// Auth routes
+AppRoutes.Auth.Login                // "/login"
+AppRoutes.Auth.ParentLogin          // "/login/parent"
+
+// Setup routes
+AppRoutes.Setup.Wizard              // "/setup"
+```
+
+---
+
+### CurrencyFormatter
+Consistent Euro formatting.
+
+```csharp
+CurrencyFormatter.Format(10.5m)              // "€10.50"
+CurrencyFormatter.FormatWithSign(5m, false)  // "+€5.00" (deposit)
+CurrencyFormatter.FormatWithSign(5m, true)   // "-€5.00" (withdrawal)
+CurrencyFormatter.FormatInvariant(10.5m)     // Invariant culture format
+```
+
+---
+
+### StatusDisplayHelper
+Request status display helpers.
+
+```csharp
+StatusDisplayHelper.GetStatusText(RequestStatus.Pending)   // "Waiting"
+StatusDisplayHelper.GetStatusText(RequestStatus.Approved)  // "Approved"
+StatusDisplayHelper.GetStatusText(RequestStatus.Denied)    // "Denied"
+
+StatusDisplayHelper.GetStatusColor(RequestStatus.Pending)  // "#FFA726" (orange)
+```
+
+---
+
+## Constants (`JunoBank.Web/Constants/`)
 
 ### PicturePasswordImages
 Picture password configuration.
@@ -266,7 +327,7 @@ PicturePasswordImages.GetEmoji("cat")         // "🐱"
 
 ---
 
-## Entities (`Data/Entities/`)
+## Entities (`JunoBank.Domain/Entities/`)
 
 ### User
 ```csharp
