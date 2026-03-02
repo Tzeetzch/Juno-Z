@@ -6,7 +6,8 @@
 
 | Project | Type | Location | Count |
 |---------|------|----------|-------|
-| JunoBank.Tests | xUnit unit tests | `tests/JunoBank.Tests/` | 96 tests |
+| JunoBank.Tests | xUnit unit tests | `tests/JunoBank.Tests/` | 160 tests |
+| JunoBank.Web.Tests | bUnit component tests | `tests/JunoBank.Web.Tests/` | 21 tests |
 | E2E | Playwright | `tests/e2e/` | 64 specs |
 
 ---
@@ -96,6 +97,88 @@ public void CalculateNextRunDate_Weekly_SameDayAfterTime_ReturnsNextWeek()
 [Fact]
 public async Task ProcessDueAllowances_AllowanceIsDue_CreatesTransaction()
 ```
+
+---
+
+## Component Tests (bUnit)
+
+### Running Tests
+
+```bash
+cd tests/JunoBank.Web.Tests
+dotnet test
+```
+
+### Why a Separate Project?
+
+`JunoBank.Tests` deliberately does NOT reference the Web project (clean architecture boundary). `JunoBank.Web.Tests` exists specifically for testing Blazor components in isolation.
+
+### Test Structure
+
+```
+tests/JunoBank.Web.Tests/
+├── Helpers/
+│   └── ComponentTestBase.cs               # MudBlazor + mock setup
+├── Components/Shared/
+│   ├── ChildCardTests.cs                  # 6 tests (presentational)
+│   ├── PictureGridTests.cs                # 7 tests (stateful)
+│   └── TransactionListTests.cs            # 8 tests (service-injected)
+├── _Imports.razor
+└── JunoBank.Web.Tests.csproj
+```
+
+### Component Test Base
+
+All component tests inherit from `ComponentTestBase` for MudBlazor and mock setup:
+
+```csharp
+public class MyComponentTests : ComponentTestBase
+{
+    [Fact]
+    public void Render_ShowsExpectedContent()
+    {
+        var cut = RenderComponent<MyComponent>(p => p
+            .Add(x => x.SomeParam, "value"));
+
+        Assert.Contains("value", cut.Markup);
+    }
+}
+```
+
+`ComponentTestBase` provides:
+- MudBlazor services registered
+- `JSInterop.Mode = JSRuntimeMode.Loose` (handles MudBlazor JS calls)
+- `MockBrowserTime` pre-configured (returns input unchanged by default)
+
+### Key Patterns
+
+**Re-query after state changes** — bUnit's `FindAll` returns a snapshot. After clicks that trigger re-renders, call `FindAll` again:
+
+```csharp
+// WRONG — stale reference after re-render
+var buttons = cut.FindAll("button");
+buttons[0].Click();
+buttons[1].Click();  // May throw UnknownEventHandlerIdException
+
+// CORRECT — re-query each time
+cut.FindAll("button")[0].Click();
+cut.FindAll("button")[1].Click();
+```
+
+**Use InvokeAsync for direct method calls** — Methods that call `StateHasChanged()` must run on the render dispatcher:
+
+```csharp
+cut.InvokeAsync(() => cut.Instance.Reset());
+```
+
+### When to Use bUnit vs E2E
+
+| Use bUnit when... | Use Playwright when... |
+|---|---|
+| Testing component rendering logic | Testing full user flows |
+| Verifying parameter/callback behavior | Testing auth, navigation, sessions |
+| Testing conditional display | Testing cross-component integration |
+| Fast feedback (ms per test) | Realistic browser behavior needed |
 
 ---
 
@@ -246,6 +329,12 @@ await expect(page).toHaveURL(/\/parent/, { timeout: 15000 });
 - **Services:** Business logic, calculations, database operations
 - **Utilities:** Formatters, helpers, hash functions
 - **Background services:** Scheduled task processing
+
+### Component Tests (bUnit)
+
+- **Presentational components:** Correct rendering based on parameters
+- **Stateful components:** Internal state changes, user interactions
+- **Service-injected components:** Correct use of injected services (mock them)
 
 ### E2E Tests
 
